@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Starfield Particle System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .dropdown {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            min-width: 250px;
+        }
+
+        .dropdown-header {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 12px 20px;
+            border-radius: 10px;
+            color: #88ccff;
+            font-size: 16px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .dropdown-header:hover {
+            background: rgba(30, 30, 30, 0.8);
+        }
+
+        .dropdown-header .arrow {
+            transition: transform 0.3s ease;
+        }
+
+        .dropdown.open .dropdown-header .arrow {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-content {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 0 20px;
+            border-radius: 0 0 10px 10px;
+            color: #fff;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+
+        .dropdown.open .dropdown-content {
+            max-height: 700px;
+            padding: 15px 20px 20px;
+        }
+
+        .dropdown.open .dropdown-header {
+            border-radius: 10px 10px 0 0;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #88ccff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .control-group input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #88ccff;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .control-group .value {
+            text-align: right;
+            font-size: 12px;
+            color: #88ccff;
+            margin-top: 3px;
+        }
+
+        .control-group select {
+            width: 100%;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2388ccff' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+        }
+
+        .control-group select:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .control-group select option {
+            background: #1a1a2e;
+            color: #fff;
+            padding: 8px;
+        }
+
+        .switch-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.2);
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #fff;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #88ccff;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        .popup-message {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #88ccff;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .popup-message.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .color-gradient {
+            width: 100%;
+            height: 24px;
+            border-radius: 5px;
+            background: linear-gradient(to right,
+                hsl(0, 80%, 60%),
+                hsl(60, 80%, 60%),
+                hsl(120, 80%, 60%),
+                hsl(180, 80%, 60%),
+                hsl(240, 80%, 60%),
+                hsl(300, 80%, 60%),
+                hsl(360, 80%, 60%)
+            );
+            cursor: pointer;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .color-selector {
+            position: absolute;
+            top: -3px;
+            width: 6px;
+            height: 30px;
+            background: #fff;
+            border-radius: 3px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            transform: translateX(-50%);
+        }
+
+    </style>
+</head>
+<body>
+    <canvas id="starfield"></canvas>
+    <div class="popup-message" id="popupMessage">Click or hold anywhere on the screen</div>
+
+    <div class="dropdown open" id="dropdown">
+        <div class="dropdown-header" id="dropdownHeader">
+            <span>Starfield Controls</span>
+            <span class="arrow">&#9660;</span>
+        </div>
+        <div class="dropdown-content">
+            <div class="control-group">
+                <label for="pattern">Pattern</label>
+                <select id="pattern">
+                    <option value="default">Default</option>
+                    <option value="star">Star</option>
+                    <option value="flower">Flower</option>
+                    <option value="spiral">Spiral</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <div class="switch-container">
+                    <label for="manual">Manual</label>
+                    <label class="switch">
+                        <input type="checkbox" id="manual">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="starCount">Star Count</label>
+                <input type="range" id="starCount" min="50" max="500" value="200">
+                <div class="value" id="starCountValue">200</div>
+            </div>
+
+            <div class="control-group">
+                <label for="speed">Speed</label>
+                <input type="range" id="speed" min="1" max="20" value="8">
+                <div class="value" id="speedValue">8</div>
+            </div>
+
+            <div class="control-group">
+                <label for="trailLength">Trail Length</label>
+                <input type="range" id="trailLength" min="1" max="50" value="20">
+                <div class="value" id="trailLengthValue">20</div>
+            </div>
+
+            <div class="control-group">
+                <label for="starSize">Star Size</label>
+                <input type="range" id="starSize" min="1" max="5" value="2" step="0.5">
+                <div class="value" id="starSizeValue">2</div>
+            </div>
+
+            <div class="control-group">
+                <label for="fadeAmount">Trail Fade</label>
+                <input type="range" id="fadeAmount" min="1" max="30" value="10">
+                <div class="value" id="fadeAmountValue">10</div>
+            </div>
+
+            <div class="control-group">
+                <label>Color</label>
+                <div class="color-gradient" id="colorGradient">
+                    <div class="color-selector" id="colorSelector"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+
+        let width, height, centerX, centerY;
+        let stars = [];
+        let isMouseDown = false;
+
+        // Control values
+        let settings = {
+            pattern: 'default',
+            manual: false,
+            starCount: 200,
+            speed: 8,
+            trailLength: 20,
+            starSize: 2,
+            fadeAmount: 10,
+            colorHue: 200
+        };
+
+        // Star class
+        class Star {
+            constructor() {
+                this.active = true;
+                this.reset();
+            }
+
+            reset() {
+                // Trail history
+                this.trail = [];
+                this.maxTrail = settings.trailLength;
+                this.active = true;
+
+                // Visual properties
+                this.brightness = Math.random() * 0.5 + 0.5;
+                this.hueOffset = Math.random() * 30 - 15;
+
+                // Pattern-specific initialization
+                const speed = (Math.random() * 0.5 + 0.5) * settings.speed * 0.1;
+                let angle;
+
+                switch (settings.pattern) {
+                    case 'star':
+                        // 5-pointed star origin shape
+                        const starPoints = 5;
+                        const outerRadius = 50;
+                        const innerRadius = 20;
+
+                        // Pick a random edge of the star (10 edges)
+                        const edgeIndex = Math.floor(Math.random() * 10);
+                        const pointNum = Math.floor(edgeIndex / 2);
+                        const nextPointNum = (pointNum + 1) % starPoints;
+                        const isOuterToInner = edgeIndex % 2 === 0;
+
+                        // Calculate star vertices
+                        const outerAngle1 = (pointNum / starPoints) * Math.PI * 2 - Math.PI / 2;
+                        const outerAngle2 = (nextPointNum / starPoints) * Math.PI * 2 - Math.PI / 2;
+                        const innerAngle = ((pointNum + 0.5) / starPoints) * Math.PI * 2 - Math.PI / 2;
+
+                        // Get the two endpoints of this edge
+                        let x1, y1, x2, y2;
+                        if (isOuterToInner) {
+                            x1 = Math.cos(outerAngle1) * outerRadius;
+                            y1 = Math.sin(outerAngle1) * outerRadius;
+                            x2 = Math.cos(innerAngle) * innerRadius;
+                            y2 = Math.sin(innerAngle) * innerRadius;
+                        } else {
+                            x1 = Math.cos(innerAngle) * innerRadius;
+                            y1 = Math.sin(innerAngle) * innerRadius;
+                            x2 = Math.cos(outerAngle2) * outerRadius;
+                            y2 = Math.sin(outerAngle2) * outerRadius;
+                        }
+
+                        // Random position along the edge
+                        const t = Math.random();
+                        const spawnX = x1 + (x2 - x1) * t;
+                        const spawnY = y1 + (y2 - y1) * t;
+
+                        // Set position on star outline
+                        this.x = centerX + spawnX;
+                        this.y = centerY + spawnY;
+
+                        // Radiate outward from center
+                        angle = Math.atan2(spawnY, spawnX);
+                        this.vx = Math.cos(angle) * speed;
+                        this.vy = Math.sin(angle) * speed;
+                        this.angle = angle;
+                        return; // Skip the default position setting below
+
+                    case 'flower':
+                        // Spiral pattern - add rotational velocity
+                        angle = Math.random() * Math.PI * 2;
+                        this.spiralAngle = angle;
+                        this.spiralSpeed = (Math.random() * 0.02 + 0.01) * (Math.random() < 0.5 ? 1 : -1);
+                        break;
+
+                    case 'spiral':
+                        // Continuous spiral pattern - each star has fixed angle offset
+                        if (this.spiralOffset === undefined) {
+                            // Assign a unique offset once
+                            this.spiralOffset = Math.random() * Math.PI * 4;
+                        }
+                        // Always start from center/origin
+                        this.spiralRadius = Math.random() * 20;
+                        this.spiralTheta = this.spiralOffset + this.spiralRadius * 0.02;
+                        this.spiralGrowth = settings.speed * 0.3;
+
+                        // Position along spiral
+                        this.x = centerX + Math.cos(this.spiralTheta) * this.spiralRadius;
+                        this.y = centerY + Math.sin(this.spiralTheta) * this.spiralRadius;
+                        this.trail = [];
+                        angle = this.spiralTheta;
+                        return;
+
+                    default:
+                        // Default - random radial
+                        angle = Math.random() * Math.PI * 2;
+                }
+
+                const distance = Math.random() * 50;
+                this.x = centerX + Math.cos(angle) * distance;
+                this.y = centerY + Math.sin(angle) * distance;
+                this.angle = angle;
+
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+            }
+
+            update() {
+                // Store position in trail
+                this.trail.push({ x: this.x, y: this.y });
+
+                // Limit trail length
+                if (this.trail.length > this.maxTrail) {
+                    this.trail.shift();
+                }
+
+                // Accelerate as star moves away from center
+                const dx = this.x - centerX;
+                const dy = this.y - centerY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const acceleration = 1 + distance * 0.0005;
+
+                // Pattern-specific movement
+                switch (settings.pattern) {
+                    case 'flower':
+                        // Add rotation to create spiral
+                        this.spiralAngle += this.spiralSpeed;
+                        const spiralSpeed = settings.speed * 0.15;
+                        this.vx = Math.cos(this.spiralAngle) * spiralSpeed * (1 + distance * 0.002);
+                        this.vy = Math.sin(this.spiralAngle) * spiralSpeed * (1 + distance * 0.002);
+                        break;
+
+                    case 'spiral':
+                        // Grow outward along spiral continuously
+                        this.spiralRadius += this.spiralGrowth;
+                        this.spiralTheta = this.spiralOffset + this.spiralRadius * 0.02;
+                        this.x = centerX + Math.cos(this.spiralTheta) * this.spiralRadius;
+                        this.y = centerY + Math.sin(this.spiralTheta) * this.spiralRadius;
+                        break;
+
+                    default:
+                        // Default and star patterns use standard acceleration
+                        this.vx *= acceleration;
+                        this.vy *= acceleration;
+                }
+
+                // Update position (spiral handles its own positioning)
+                if (settings.pattern !== 'spiral') {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                }
+
+                // Reset if off screen
+                if (this.x < -50 || this.x > width + 50 ||
+                    this.y < -50 || this.y > height + 50) {
+                    if (settings.manual) {
+                        // In manual mode, deactivate instead of reset
+                        this.active = false;
+                    } else {
+                        this.reset();
+                    }
+                }
+
+                // Update trail length based on settings
+                this.maxTrail = settings.trailLength;
+            }
+
+            draw() {
+                // Draw trail
+                if (this.trail.length > 1) {
+                    for (let i = 0; i < this.trail.length - 1; i++) {
+                        const alpha = (i / this.trail.length) * this.brightness * 0.8;
+                        const size = (i / this.trail.length) * settings.starSize;
+
+                        const hue = (settings.colorHue + this.hueOffset) % 360;
+                        ctx.fillStyle = `hsla(${hue}, 80%, 70%, ${alpha})`;
+
+                        ctx.beginPath();
+                        ctx.arc(this.trail[i].x, this.trail[i].y, size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+
+                // Draw star head (brighter)
+                const hue = (settings.colorHue + this.hueOffset) % 360;
+                ctx.fillStyle = `hsla(${hue}, 60%, 90%, ${this.brightness})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, settings.starSize, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Add glow effect
+                ctx.fillStyle = `hsla(${hue}, 80%, 80%, ${this.brightness * 0.3})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, settings.starSize * 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            centerX = width / 2;
+            centerY = height / 2;
+        }
+
+        function initStars() {
+            stars = [];
+            for (let i = 0; i < settings.starCount; i++) {
+                stars.push(new Star());
+            }
+        }
+
+        function adjustStarCount() {
+            const diff = settings.starCount - stars.length;
+            if (diff > 0) {
+                for (let i = 0; i < diff; i++) {
+                    stars.push(new Star());
+                }
+            } else if (diff < 0) {
+                stars.splice(0, -diff);
+            }
+        }
+
+        function spawnStars() {
+            // Reactivate some inactive stars when mouse is held down
+            const spawnCount = Math.ceil(settings.starCount / 30);
+            let spawned = 0;
+            for (const star of stars) {
+                if (!star.active && spawned < spawnCount) {
+                    star.reset();
+                    spawned++;
+                }
+            }
+        }
+
+        function animate() {
+            // Fade effect for trails
+            ctx.fillStyle = `rgba(0, 0, 0, ${settings.fadeAmount / 100})`;
+            ctx.fillRect(0, 0, width, height);
+
+            // Spawn stars when mouse is held down in manual mode
+            if (settings.manual && isMouseDown) {
+                spawnStars();
+            }
+
+            // Update and draw stars
+            for (const star of stars) {
+                if (star.active) {
+                    star.update();
+                    star.draw();
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Control setup
+        function setupControls() {
+            const controls = {
+                starCount: { min: 50, max: 500, callback: adjustStarCount },
+                speed: { min: 1, max: 20 },
+                trailLength: { min: 1, max: 50 },
+                starSize: { min: 1, max: 5 },
+                fadeAmount: { min: 1, max: 30 }
+            };
+
+            for (const [key, config] of Object.entries(controls)) {
+                const slider = document.getElementById(key);
+                const valueDisplay = document.getElementById(key + 'Value');
+
+                slider.addEventListener('input', (e) => {
+                    const value = parseFloat(e.target.value);
+                    settings[key] = value;
+                    valueDisplay.textContent = value;
+
+                    if (config.callback) {
+                        config.callback();
+                    }
+                });
+            }
+
+            // Color gradient selector
+            const colorGradient = document.getElementById('colorGradient');
+            const colorSelector = document.getElementById('colorSelector');
+            let isDraggingColor = false;
+
+            function updateColor(e) {
+                const rect = colorGradient.getBoundingClientRect();
+                let x = e.clientX - rect.left;
+                x = Math.max(0, Math.min(x, rect.width));
+                const hue = (x / rect.width) * 360;
+                settings.colorHue = hue;
+                colorSelector.style.left = x + 'px';
+            }
+
+            // Set initial position
+            const initialPos = (settings.colorHue / 360) * 100;
+            colorSelector.style.left = initialPos + '%';
+
+            colorGradient.addEventListener('mousedown', (e) => {
+                isDraggingColor = true;
+                updateColor(e);
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDraggingColor) {
+                    updateColor(e);
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDraggingColor = false;
+            });
+
+            // Pattern selector
+            const patternSelect = document.getElementById('pattern');
+            patternSelect.addEventListener('change', (e) => {
+                settings.pattern = e.target.value;
+                // Reset all stars to apply new pattern
+                initStars();
+                // If in manual mode, deactivate all stars
+                if (settings.manual) {
+                    for (const star of stars) {
+                        star.active = false;
+                    }
+                }
+            });
+
+            // Manual switch
+            const manualSwitch = document.getElementById('manual');
+            const popupMessage = document.getElementById('popupMessage');
+            manualSwitch.addEventListener('change', (e) => {
+                settings.manual = e.target.checked;
+                if (settings.manual) {
+                    // Deactivate all stars when entering manual mode
+                    for (const star of stars) {
+                        star.active = false;
+                    }
+                    // Show popup message
+                    popupMessage.classList.add('visible');
+                } else {
+                    // Reactivate all stars when leaving manual mode
+                    for (const star of stars) {
+                        star.reset();
+                    }
+                    // Hide popup message
+                    popupMessage.classList.remove('visible');
+                }
+            });
+
+            // Dropdown toggle
+            const dropdown = document.getElementById('dropdown');
+            const dropdownHeader = document.getElementById('dropdownHeader');
+
+            dropdownHeader.addEventListener('click', () => {
+                dropdown.classList.toggle('open');
+            });
+
+            // Press H to toggle dropdown
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'h' || e.key === 'H') {
+                    dropdown.classList.toggle('open');
+                }
+            });
+        }
+
+        // Initialize
+        window.addEventListener('resize', resize);
+
+        // Mouse events for manual mode
+        canvas.addEventListener('mousedown', () => {
+            isMouseDown = true;
+        });
+        canvas.addEventListener('mouseup', () => {
+            isMouseDown = false;
+        });
+        canvas.addEventListener('mouseleave', () => {
+            isMouseDown = false;
+        });
+
+        resize();
+        initStars();
+        setupControls();
+        animate();
+    </script>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello World</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #1a1a2e;
+            font-family: 'Courier New', Consolas, monospace;
+        }
+
+        .terminal {
+            width: 600px;
+            background: #0d0d0d;
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            position: absolute;
+            cursor: default;
+        }
+
+        .terminal-header {
+            background: #2d2d2d;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .terminal-header:active {
+            cursor: grabbing;
+        }
+
+        .terminal-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .btn-red { background: #ff5f56; }
+        .btn-yellow { background: #ffbd2e; }
+        .btn-green { background: #27ca40; }
+
+        .terminal-title {
+            color: #888;
+            font-size: 14px;
+            margin-left: 8px;
+        }
+
+        .terminal-body {
+            padding: 24px;
+            min-height: 200px;
+        }
+
+        .prompt {
+            color: #27ca40;
+            margin-bottom: 8px;
+        }
+
+        .command {
+            color: #fff;
+        }
+
+        .output {
+            color: #00d9ff;
+            font-size: 2rem;
+            margin: 16px 0;
+        }
+
+        .author {
+            color: #888;
+            font-size: 1rem;
+        }
+
+        .input-text {
+            color: #fff;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 20px;
+            background: #27ca40;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <div class="terminal-header">
+            <div class="terminal-btn btn-red"></div>
+            <div class="terminal-btn btn-yellow"></div>
+            <div class="terminal-btn btn-green"></div>
+            <span class="terminal-title">chat</span>
+        </div>
+        <div class="terminal-body">
+            <div class="output">Hello World! I'm Rachel's Terminal Assistant.</div>
+            <div class="output" style="font-size: 1rem; margin: 8px 0;">Type something to chat with me! Type "clear" to clear the chat.</div>
+            <div class="prompt input-line">> <span class="input-text"></span><span class="cursor"></span></div>
+        </div>
+    </div>
+
+    <script>
+        const terminal = document.querySelector('.terminal');
+        const header = document.querySelector('.terminal-header');
+        let isDragging = false;
+        let offsetX, offsetY;
+
+        header.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offsetX = e.clientX - terminal.offsetLeft;
+            offsetY = e.clientY - terminal.offsetTop;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                terminal.style.left = (e.clientX - offsetX) + 'px';
+                terminal.style.top = (e.clientY - offsetY) + 'px';
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Terminal typing functionality
+        const terminalBody = document.querySelector('.terminal-body');
+        let inputText = document.querySelector('.input-text');
+        let currentInput = '';
+
+        document.addEventListener('keydown', (e) => {
+            if (isDragging) return;
+
+            if (e.key === 'Backspace') {
+                currentInput = currentInput.slice(0, -1);
+                inputText.textContent = currentInput;
+                e.preventDefault();
+            } else if (e.key === 'Enter') {
+                processCommand(currentInput);
+                currentInput = '';
+                e.preventDefault();
+            } else if (e.key.length === 1) {
+                currentInput += e.key;
+                inputText.textContent = currentInput;
+            }
+        });
+
+        function processCommand(cmd) {
+            const inputLine = document.querySelector('.input-line');
+            inputLine.classList.remove('input-line');
+            inputLine.innerHTML = `> <span class="command">${escapeHtml(cmd)}</span>`;
+
+            // Add response output
+            const output = document.createElement('div');
+            output.className = 'output';
+            output.style.fontSize = '1rem';
+            output.style.margin = '8px 0';
+
+            const response = getResponse(cmd);
+
+            if (cmd.toLowerCase() === 'clear') {
+                terminalBody.innerHTML = `
+                    <div class="output">Hello World! I'm Rachel's Terminal Assistant.</div>
+                    <div class="output" style="font-size: 1rem; margin: 8px 0;">Type something to chat with me! Type "clear" to clear the chat.</div>
+                `;
+            } else if (response) {
+                output.textContent = response;
+                terminalBody.appendChild(output);
+            }
+
+            // Add new input line
+            const newPrompt = document.createElement('div');
+            newPrompt.className = 'prompt input-line';
+            newPrompt.innerHTML = '> <span class="input-text"></span><span class="cursor"></span>';
+            terminalBody.appendChild(newPrompt);
+            inputText = newPrompt.querySelector('.input-text');
+        }
+
+        function getResponse(input) {
+            const text = input.toLowerCase().trim();
+
+            if (!text) return '';
+
+            // Greetings
+            if (/^(hi|hello|hey|howdy|greetings|yo|sup)/.test(text)) {
+                const greetings = ["Hello!", "Hey there!", "Hi! How can I help you?", "Hello! Nice to meet you!"];
+                return greetings[Math.floor(Math.random() * greetings.length)];
+            }
+
+            // How are you
+            if (/how are you|how('s| is) it going|what's up|how do you do/.test(text)) {
+                const responses = ["I'm doing great, thanks for asking!", "All systems running smoothly!", "I'm good! How about you?"];
+                return responses[Math.floor(Math.random() * responses.length)];
+            }
+
+            // Name questions
+            if (/what('s| is) your name|who are you/.test(text)) {
+                return "I'm Rachel's Terminal Assistant!";
+            }
+
+            // My name is
+            if (/my name is|i'm |i am /.test(text)) {
+                const name = text.replace(/my name is|i'm|i am/i, '').trim();
+                return `Nice to meet you, ${name}!`;
+            }
+
+            // Thank you
+            if (/thank|thanks/.test(text)) {
+                return "You're welcome!";
+            }
+
+            // Goodbye
+            if (/bye|goodbye|see you|later|cya/.test(text)) {
+                return "Goodbye! Have a great day!";
+            }
+
+            // Time
+            if (/what time|current time|time is it/.test(text)) {
+                return `The current time is ${new Date().toLocaleTimeString()}`;
+            }
+
+            // Date
+            if (/what('s| is) the date|today's date|what day/.test(text)) {
+                return `Today is ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+            }
+
+            // Help
+            if (/help|what can you do/.test(text)) {
+                return "I can chat with you! Try saying hello, asking how I am, telling me your name, or asking for the time/date. Type 'clear' to clear the screen.";
+            }
+
+            // Jokes
+            if (/joke|funny|make me laugh/.test(text)) {
+                const jokes = [
+                    "Why do programmers prefer dark mode? Because light attracts bugs!",
+                    "Why did the developer go broke? Because he used up all his cache!",
+                    "There are only 10 types of people in the world: those who understand binary and those who don't."
+                ];
+                return jokes[Math.floor(Math.random() * jokes.length)];
+            }
+
+            // Compliments
+            if (/you('re| are) (awesome|great|cool|amazing)/.test(text)) {
+                return "Thank you! You're pretty awesome yourself!";
+            }
+
+            // Love
+            if (/i love you|love you/.test(text)) {
+                return "Aw, that's sweet! I appreciate you too!";
+            }
+
+            // Default response
+            const defaults = [
+                `Interesting! Tell me more about "${input}"`,
+                "I see! What else is on your mind?",
+                "That's cool! Anything else you'd like to chat about?",
+                `Hmm, "${input}" - that's something to think about!`
+            ];
+            return defaults[Math.floor(Math.random() * defaults.length)];
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+
+</body>
+</html>

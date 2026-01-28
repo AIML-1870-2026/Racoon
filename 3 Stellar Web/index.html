@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stellar Web</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .panels-wrapper {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .controls {
+            background: rgba(20, 20, 40, 0.85);
+            border-radius: 12px 12px 0 0;
+            color: #fff;
+            min-width: 250px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            border-bottom: none;
+            overflow: hidden;
+        }
+
+        .controls-header {
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+
+        .controls-header:hover {
+            background: rgba(100, 150, 255, 0.1);
+        }
+
+        .controls h2 {
+            margin: 0;
+            font-size: 16px;
+            color: rgba(100, 150, 255, 0.9);
+            font-weight: 500;
+        }
+
+        .controls-toggle {
+            font-size: 12px;
+            color: rgba(100, 150, 255, 0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .controls-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .controls-content {
+            padding: 8px 20px 20px 20px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+
+        .controls-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .controls-content::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        .controls-content::-webkit-scrollbar-thumb {
+            background: rgba(100, 150, 255, 0.4);
+            border-radius: 3px;
+        }
+
+        .controls-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 150, 255, 0.6);
+        }
+
+        .controls-content.collapsed {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            overflow: hidden;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .control-group label span {
+            color: rgba(100, 150, 255, 0.9);
+            font-weight: 500;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(100, 150, 255, 0.9);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: rgba(130, 180, 255, 1);
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: transparent;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+        }
+
+        select {
+            width: 100%;
+            height: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 13px;
+            padding: 0 10px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        select:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        select option {
+            background: rgb(30, 30, 50);
+            color: #fff;
+        }
+
+        .stats-panel {
+            border-radius: 0 0 12px 12px;
+            border-top: 1px solid rgba(100, 150, 255, 0.3);
+            border-bottom: 1px solid rgba(100, 150, 255, 0.3);
+        }
+
+        .stats-panel .controls-content {
+            max-height: 150px;
+        }
+
+        .stats-panel .controls-content.collapsed {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            overflow: hidden;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .stat-value {
+            color: #fff;
+            font-weight: 500;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="starfield"></canvas>
+
+    <div class="panels-wrapper">
+    <div class="controls">
+        <div class="controls-header" onclick="toggleControls()">
+            <h2>Controls</h2>
+            <span class="controls-toggle" id="toggleIcon">▼</span>
+        </div>
+
+        <div class="controls-content" id="controlsContent">
+            <div class="control-group">
+                <label>Shape</label>
+                <select id="nodeShape">
+                    <option value="random">Random</option>
+                    <option value="circle">Sphere</option>
+                    <option value="square">Cube</option>
+                    <option value="triangle">Pyramid</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Node Size <span id="sizeValue">2</span></label>
+                <input type="range" id="nodeSize" min="1" max="8" step="0.5" value="2">
+            </div>
+
+            <div class="control-group">
+                <label>Node Frequency <span id="freqValue">150</span></label>
+                <input type="range" id="nodeFreq" min="20" max="400" step="10" value="150">
+            </div>
+
+            <div class="control-group">
+                <label>Node Lifespan <span id="lifespanValue">5</span>s</label>
+                <input type="range" id="nodeLifespan" min="1" max="15" step="0.5" value="5">
+            </div>
+
+            <div class="control-group">
+                <label>Connection Thickness <span id="thicknessValue">1.5</span></label>
+                <input type="range" id="connectionThickness" min="0.5" max="5" step="0.5" value="1.5">
+            </div>
+
+            <div class="control-group">
+                <label>Connectivity Radius <span id="radiusValue">150</span></label>
+                <input type="range" id="connectRadius" min="50" max="300" step="10" value="150">
+            </div>
+
+            <div class="control-group">
+                <label>Node Color</label>
+                <input type="color" id="nodeColor" value="#ffffff">
+            </div>
+
+            <div class="control-group">
+                <label>Connection Color</label>
+                <input type="color" id="connectionColor" value="#6496ff">
+            </div>
+
+        </div>
+    </div>
+
+    <div class="controls stats-panel" id="statsPanel">
+        <div class="controls-header" onclick="toggleStats()">
+            <h2>Network Statistics</h2>
+            <span class="controls-toggle" id="statsToggleIcon">▼</span>
+        </div>
+        <div class="controls-content" id="statsContent">
+            <div class="stat-row">
+                <span class="stat-label">Total Edges</span>
+                <span class="stat-value" id="totalEdges">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Avg Connections/Node</span>
+                <span class="stat-value" id="avgConnections">0</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Network Density</span>
+                <span class="stat-value" id="networkDensity">0%</span>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <script>
+        // Toggle controls dropdown
+        function toggleControls() {
+            const content = document.getElementById('controlsContent');
+            const icon = document.getElementById('toggleIcon');
+            content.classList.toggle('collapsed');
+            icon.classList.toggle('collapsed');
+        }
+
+        // Toggle stats panel
+        function toggleStats() {
+            const content = document.getElementById('statsContent');
+            const icon = document.getElementById('statsToggleIcon');
+            content.classList.toggle('collapsed');
+            icon.classList.toggle('collapsed');
+        }
+
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        // Settings
+        let settings = {
+            nodeShape: 'random',
+            nodeSize: 2,
+            connectionRadius: 150,
+            nodeFrequency: 150,
+            nodeLifespan: 5,
+            connectionThickness: 1.5,
+            nodeColor: '#ffffff',
+            connectionColor: '#6496ff',
+            starSpeed: 0.3
+        };
+
+        // Get control elements
+        const nodeShapeSelect = document.getElementById('nodeShape');
+        const nodeSizeSlider = document.getElementById('nodeSize');
+        const connectRadiusSlider = document.getElementById('connectRadius');
+        const nodeFreqSlider = document.getElementById('nodeFreq');
+        const nodeLifespanSlider = document.getElementById('nodeLifespan');
+        const connectionThicknessSlider = document.getElementById('connectionThickness');
+        const nodeColorPicker = document.getElementById('nodeColor');
+        const connectionColorPicker = document.getElementById('connectionColor');
+
+        const sizeValue = document.getElementById('sizeValue');
+        const radiusValue = document.getElementById('radiusValue');
+        const freqValue = document.getElementById('freqValue');
+        const lifespanValue = document.getElementById('lifespanValue');
+        const thicknessValue = document.getElementById('thicknessValue');
+
+        // Helper to convert hex to rgb
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : { r: 255, g: 255, b: 255 };
+        }
+
+        // Rotation angles for 3D shapes
+        let rotationY = 0;
+        let rotationX = 0;
+        let isDragging = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+
+        // Node dragging
+        let draggedStar = null;
+
+        // 3D rotation and projection
+        function rotateY(x, y, z, angle) {
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+            return {
+                x: x * cos - z * sin,
+                y: y,
+                z: x * sin + z * cos
+            };
+        }
+
+        function rotateX(x, y, z, angle) {
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+            return {
+                x: x,
+                y: y * cos - z * sin,
+                z: y * sin + z * cos
+            };
+        }
+
+        function project3D(x, y, z) {
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const scale = Math.min(width, height) * 0.3;
+            const perspective = 600;
+            const factor = perspective / (perspective + z);
+            return {
+                x: centerX + x * scale * factor,
+                y: centerY + y * scale * factor,
+                z: z
+            };
+        }
+
+        // Generate 3D positions - either on surface (outer) or inside (inner)
+        function get3DShapePosition(index, total, shape, angle, randomSeed, isOuter = false) {
+            let x, y, z;
+
+            // Use seeded random for consistent positions per star
+            const seededRandom = (seed, offset) => {
+                const val = Math.sin(seed * 12.9898 + offset * 78.233) * 43758.5453;
+                return val - Math.floor(val);
+            };
+
+            const r1 = seededRandom(randomSeed, 1);
+            const r2 = seededRandom(randomSeed, 2);
+            const r3 = seededRandom(randomSeed, 3);
+
+            switch (shape) {
+                case 'circle': // Sphere
+                    if (isOuter) {
+                        // Evenly distribute on sphere surface using fibonacci sphere
+                        const goldenRatio = (1 + Math.sqrt(5)) / 2;
+                        const i = index;
+                        const n = total;
+                        const theta = 2 * Math.PI * i / goldenRatio;
+                        const phi = Math.acos(1 - 2 * (i + 0.5) / n);
+                        x = Math.sin(phi) * Math.cos(theta);
+                        y = Math.sin(phi) * Math.sin(theta);
+                        z = Math.cos(phi);
+                    } else {
+                        const u = r1;
+                        const v = r2;
+                        const theta = u * 2 * Math.PI;
+                        const phi = Math.acos(2 * v - 1);
+                        const radius = Math.cbrt(r3) * 0.85;
+                        x = radius * Math.sin(phi) * Math.cos(theta);
+                        y = radius * Math.sin(phi) * Math.sin(theta);
+                        z = radius * Math.cos(phi);
+                    }
+                    break;
+
+                case 'square': // Cube
+                    if (isOuter) {
+                        // Evenly distribute on cube edges
+                        const edgeCount = 12;
+                        const pointsPerEdge = Math.ceil(total / edgeCount);
+                        const edgeIndex = Math.floor(index / pointsPerEdge);
+                        const edgeT = (index % pointsPerEdge) / Math.max(1, pointsPerEdge - 1);
+                        const cv = [
+                            [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
+                            [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]
+                        ];
+                        const edges = [
+                            [0, 1], [1, 2], [2, 3], [3, 0],
+                            [4, 5], [5, 6], [6, 7], [7, 4],
+                            [0, 4], [1, 5], [2, 6], [3, 7]
+                        ];
+                        const edge = edges[edgeIndex % edgeCount];
+                        x = cv[edge[0]][0] + (cv[edge[1]][0] - cv[edge[0]][0]) * edgeT;
+                        y = cv[edge[0]][1] + (cv[edge[1]][1] - cv[edge[0]][1]) * edgeT;
+                        z = cv[edge[0]][2] + (cv[edge[1]][2] - cv[edge[0]][2]) * edgeT;
+                    } else {
+                        x = (r1 * 2 - 1) * 0.85;
+                        y = (r2 * 2 - 1) * 0.85;
+                        z = (r3 * 2 - 1) * 0.85;
+                    }
+                    break;
+
+                case 'triangle': // Pyramid
+                    if (isOuter) {
+                        // Evenly distribute on pyramid edges
+                        const pyrEdgeCount = 8;
+                        const pyrPointsPerEdge = Math.ceil(total / pyrEdgeCount);
+                        const pyrEdgeIndex = Math.floor(index / pyrPointsPerEdge);
+                        const pyrEdgeT = (index % pyrPointsPerEdge) / Math.max(1, pyrPointsPerEdge - 1);
+                        const pv = [
+                            [0, -1, 0],
+                            [-1, 1, -1], [1, 1, -1], [1, 1, 1], [-1, 1, 1]
+                        ];
+                        const pyrEdges = [
+                            [0, 1], [0, 2], [0, 3], [0, 4],
+                            [1, 2], [2, 3], [3, 4], [4, 1]
+                        ];
+                        const pyrEdge = pyrEdges[pyrEdgeIndex % pyrEdgeCount];
+                        x = pv[pyrEdge[0]][0] + (pv[pyrEdge[1]][0] - pv[pyrEdge[0]][0]) * pyrEdgeT;
+                        y = pv[pyrEdge[0]][1] + (pv[pyrEdge[1]][1] - pv[pyrEdge[0]][1]) * pyrEdgeT;
+                        z = pv[pyrEdge[0]][2] + (pv[pyrEdge[1]][2] - pv[pyrEdge[0]][2]) * pyrEdgeT;
+                    } else {
+                        const h = r1 * 0.9;
+                        const baseSize = h * 0.85;
+                        const px = (r2 * 2 - 1) * baseSize;
+                        const pz = (r3 * 2 - 1) * baseSize;
+                        x = px;
+                        y = -1 + h * 2;
+                        z = pz;
+                    }
+                    break;
+
+                default: // random
+                    return {
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        z: 0
+                    };
+            }
+
+            // Apply rotation using global rotation angles
+            let rotated = rotateY(x, y, z, rotationY);
+            rotated = rotateX(rotated.x, rotated.y, rotated.z, rotationX);
+
+            // Project to 2D
+            return project3D(rotated.x, rotated.y, rotated.z);
+        }
+
+        // Get a position within a shape
+        function getShapePosition(index, total, shape, randomSeed, isOuter = false) {
+            return get3DShapePosition(index, total, shape, 0, randomSeed, isOuter);
+        }
+
+        class Star {
+            constructor(index, total, isOuter = false, staggerSpawn = true) {
+                this.index = index;
+                this.total = total;
+                this.isOuter = isOuter;
+                this.respawn(staggerSpawn);
+            }
+
+            respawn(stagger = false) {
+                this.randomSeed = this.isOuter ? (this.index + 1) * 1000 : Math.random() * 10000;
+                this.baseSize = Math.random() * 0.5 + 0.75;
+                this.brightness = this.isOuter ? 0.8 : Math.random() * 0.5 + 0.5;
+                this.twinkleSpeed = Math.random() * 0.02 + 0.01;
+                this.twinkleOffset = Math.random() * Math.PI * 2;
+                this.isManuallyPositioned = false; // Reset manual positioning
+
+                // Lifecycle - outer stars are permanent and always visible
+                if (this.isOuter) {
+                    this.lifespan = Infinity;
+                    this.age = 1000; // Already "alive"
+                    this.fadeTime = 0;
+                    this.lifeAlpha = 1; // Always fully visible
+                } else {
+                    // Use settings lifespan with some randomness (±30%)
+                    const baseLifespan = settings.nodeLifespan * 1000;
+                    this.lifespan = baseLifespan * (0.7 + Math.random() * 0.6);
+                    this.age = stagger ? Math.random() * this.lifespan : 0;
+                    this.fadeTime = 500; // Fade in/out duration in ms
+                }
+
+                // Initialize position
+                const pos = getShapePosition(this.index, this.total, settings.nodeShape, this.randomSeed, this.isOuter);
+                this.x = pos.x;
+                this.y = pos.y;
+                this.z = pos.z || 0;
+            }
+
+            containsPoint(px, py) {
+                const size = this.baseSize * settings.nodeSize;
+                const hitRadius = Math.max(size * 2, 15); // Minimum 15px hit area
+                const dx = this.x - px;
+                const dy = this.y - py;
+                return (dx * dx + dy * dy) <= (hitRadius * hitRadius);
+            }
+
+            setPosition(px, py) {
+                if (settings.nodeShape === 'random') {
+                    // For random mode, just store 2D position directly
+                    this.x = px;
+                    this.y = py;
+                    this.manual2D = { x: px, y: py };
+                } else {
+                    // Store screen position and convert to 3D coordinates
+                    // We'll unproject the 2D position to get approximate 3D coords
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    const scale = Math.min(width, height) * 0.3;
+
+                    // Simple unprojection (assuming z=0 for dragged position)
+                    const nx = (px - centerX) / scale;
+                    const ny = (py - centerY) / scale;
+
+                    // Reverse the current rotation to get the "base" 3D position
+                    // First reverse X rotation, then Y rotation
+                    let unrotated = rotateX(nx, ny, 0, -rotationX);
+                    unrotated = rotateY(unrotated.x, unrotated.y, unrotated.z, -rotationY);
+
+                    this.manual3D = { x: unrotated.x, y: unrotated.y, z: unrotated.z };
+                }
+                this.isManuallyPositioned = true;
+            }
+
+            update(time, deltaTime) {
+                // Update age for inner stars
+                if (!this.isOuter) {
+                    this.age += deltaTime;
+
+                    // Respawn if dead
+                    if (this.age >= this.lifespan) {
+                        this.respawn(false);
+                    }
+                }
+
+                // Get current position based on shape and manual positioning
+                if (settings.nodeShape === 'random') {
+                    // For random mode, keep manually positioned nodes in place
+                    if (this.isManuallyPositioned && this.manual2D) {
+                        this.x = this.manual2D.x;
+                        this.y = this.manual2D.y;
+                    }
+                    // Non-manually positioned random nodes keep their initial random position
+                } else {
+                    if (this.isManuallyPositioned && this.manual3D) {
+                        // Apply rotation to stored 3D position
+                        let rotated = rotateY(this.manual3D.x, this.manual3D.y, this.manual3D.z, rotationY);
+                        rotated = rotateX(rotated.x, rotated.y, rotated.z, rotationX);
+                        const pos = project3D(rotated.x, rotated.y, rotated.z);
+                        this.x = pos.x;
+                        this.y = pos.y;
+                        this.z = pos.z || 0;
+                    } else {
+                        const pos = getShapePosition(this.index, this.total, settings.nodeShape, this.randomSeed, this.isOuter);
+                        this.x = pos.x;
+                        this.y = pos.y;
+                        this.z = pos.z || 0;
+                    }
+                }
+
+                // Calculate life alpha (fade in/out) - outer stars always fully visible
+                let lifeAlpha = 1;
+                if (!this.isOuter) {
+                    if (this.age < this.fadeTime) {
+                        lifeAlpha = this.age / this.fadeTime; // Fade in
+                    } else if (this.age > this.lifespan - this.fadeTime) {
+                        lifeAlpha = (this.lifespan - this.age) / this.fadeTime; // Fade out
+                    }
+                }
+
+                // Twinkle effect combined with life alpha
+                this.currentBrightness = (this.brightness +
+                    Math.sin(time * this.twinkleSpeed + this.twinkleOffset) * 0.3) * lifeAlpha;
+                this.lifeAlpha = lifeAlpha;
+            }
+
+            draw() {
+                if (this.lifeAlpha <= 0) return;
+
+                const alpha = Math.max(0, Math.min(1, this.currentBrightness));
+                const size = this.baseSize * settings.nodeSize;
+                const rgb = hexToRgb(settings.nodeColor);
+
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+                ctx.fill();
+            }
+        }
+
+        let stars = [];
+
+        function createStars() {
+            stars = [];
+
+            // Calculate outer vs inner star counts
+            const outerCount = Math.floor(settings.nodeFrequency * 0.4); // 40% outer
+            const innerCount = settings.nodeFrequency - outerCount; // 60% inner
+
+            // Create outer (permanent) stars on the shape surface/edges
+            for (let i = 0; i < outerCount; i++) {
+                stars.push(new Star(i, outerCount, true, false));
+            }
+
+            // Create inner (spawning/despawning) stars inside the shape
+            for (let i = 0; i < innerCount; i++) {
+                stars.push(new Star(i, innerCount, false, true));
+            }
+        }
+
+        // Network statistics
+        let networkStats = {
+            totalEdges: 0,
+            avgConnections: 0,
+            density: 0
+        };
+
+        function drawConnections() {
+            const rgb = hexToRgb(settings.connectionColor);
+            let edgeCount = 0;
+            const connectionCounts = new Array(stars.length).fill(0);
+            let activeNodes = 0;
+
+            for (let i = 0; i < stars.length; i++) {
+                if (stars[i].lifeAlpha > 0.3) activeNodes++;
+
+                for (let j = i + 1; j < stars.length; j++) {
+                    // Skip if either star is fully faded
+                    if (stars[i].lifeAlpha <= 0.3 || stars[j].lifeAlpha <= 0.3) continue;
+
+                    const dx = stars[i].x - stars[j].x;
+                    const dy = stars[i].y - stars[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < settings.connectionRadius) {
+                        edgeCount++;
+                        connectionCounts[i]++;
+                        connectionCounts[j]++;
+
+                        const distanceOpacity = 1 - (distance / settings.connectionRadius);
+                        // Factor in both stars' life alpha
+                        const lifeOpacity = Math.min(stars[i].lifeAlpha, stars[j].lifeAlpha);
+                        const opacity = distanceOpacity * lifeOpacity;
+
+                        ctx.beginPath();
+                        ctx.moveTo(stars[i].x, stars[i].y);
+                        ctx.lineTo(stars[j].x, stars[j].y);
+                        ctx.strokeStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity * 0.4})`;
+                        ctx.lineWidth = opacity * settings.connectionThickness;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Calculate statistics
+            networkStats.totalEdges = edgeCount;
+            networkStats.avgConnections = activeNodes > 0 ? (edgeCount * 2 / activeNodes) : 0;
+            // Network density = actual edges / maximum possible edges
+            const maxEdges = activeNodes > 1 ? (activeNodes * (activeNodes - 1)) / 2 : 1;
+            networkStats.density = (edgeCount / maxEdges) * 100;
+        }
+
+        function updateStatsDisplay() {
+            document.getElementById('totalEdges').textContent = networkStats.totalEdges;
+            document.getElementById('avgConnections').textContent = networkStats.avgConnections.toFixed(2);
+            document.getElementById('networkDensity').textContent = networkStats.density.toFixed(1) + '%';
+        }
+
+        let lastTime = 0;
+
+        function animate(time) {
+            const deltaTime = time - lastTime;
+            lastTime = time;
+
+            ctx.fillStyle = 'rgba(0, 0, 10, 1)';
+            ctx.fillRect(0, 0, width, height);
+
+            // Auto-rotate for 3D shapes when not dragging
+            if (settings.nodeShape !== 'random' && !isDragging) {
+                rotationY += 0.005;
+            }
+
+            // Update and draw stars
+            stars.forEach(star => {
+                star.update(time, deltaTime);
+                star.draw();
+            });
+
+            // Draw connections between nearby stars
+            drawConnections();
+
+            // Update statistics display
+            updateStatsDisplay();
+
+            requestAnimationFrame(animate);
+        }
+
+        // Event listeners for controls
+        nodeShapeSelect.addEventListener('change', (e) => {
+            settings.nodeShape = e.target.value;
+            createStars();
+            // Update cursor based on shape
+            canvas.style.cursor = e.target.value !== 'random' ? 'grab' : 'crosshair';
+            // Reset rotation when changing shapes
+            rotationX = 0;
+            rotationY = 0;
+        });
+
+        nodeSizeSlider.addEventListener('input', (e) => {
+            settings.nodeSize = parseFloat(e.target.value);
+            sizeValue.textContent = e.target.value;
+        });
+
+        connectRadiusSlider.addEventListener('input', (e) => {
+            settings.connectionRadius = parseInt(e.target.value);
+            radiusValue.textContent = e.target.value;
+        });
+
+        nodeFreqSlider.addEventListener('input', (e) => {
+            settings.nodeFrequency = parseInt(e.target.value);
+            freqValue.textContent = e.target.value;
+            createStars();
+        });
+
+        nodeLifespanSlider.addEventListener('input', (e) => {
+            settings.nodeLifespan = parseFloat(e.target.value);
+            lifespanValue.textContent = e.target.value;
+        });
+
+        connectionThicknessSlider.addEventListener('input', (e) => {
+            settings.connectionThickness = parseFloat(e.target.value);
+            thicknessValue.textContent = e.target.value;
+        });
+
+        nodeColorPicker.addEventListener('input', (e) => {
+            settings.nodeColor = e.target.value;
+        });
+
+        connectionColorPicker.addEventListener('input', (e) => {
+            settings.connectionColor = e.target.value;
+        });
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // Mouse drag controls for rotation
+        // Helper to find star at position
+        function findStarAt(x, y) {
+            // Check in reverse order so top-rendered stars are checked first
+            for (let i = stars.length - 1; i >= 0; i--) {
+                if (stars[i].lifeAlpha > 0.3 && stars[i].containsPoint(x, y)) {
+                    return stars[i];
+                }
+            }
+            return null;
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            // Check if clicking on a node
+            draggedStar = findStarAt(mouseX, mouseY);
+
+            if (draggedStar) {
+                canvas.style.cursor = 'move';
+            } else if (settings.nodeShape !== 'random') {
+                isDragging = true;
+                lastMouseX = mouseX;
+                lastMouseY = mouseY;
+                canvas.style.cursor = 'grabbing';
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            if (draggedStar) {
+                draggedStar.setPosition(mouseX, mouseY);
+            } else if (isDragging) {
+                const deltaX = mouseX - lastMouseX;
+                const deltaY = mouseY - lastMouseY;
+                rotationY += deltaX * 0.005;
+                rotationX += deltaY * 0.005;
+                lastMouseX = mouseX;
+                lastMouseY = mouseY;
+            } else {
+                // Update cursor when hovering over nodes
+                const hoverStar = findStarAt(mouseX, mouseY);
+                if (hoverStar) {
+                    canvas.style.cursor = 'pointer';
+                } else {
+                    canvas.style.cursor = settings.nodeShape !== 'random' ? 'grab' : 'crosshair';
+                }
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            draggedStar = null;
+            isDragging = false;
+            canvas.style.cursor = settings.nodeShape !== 'random' ? 'grab' : 'crosshair';
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            draggedStar = null;
+            isDragging = false;
+            canvas.style.cursor = 'default';
+        });
+
+        // Touch support for mobile
+        canvas.addEventListener('touchstart', (e) => {
+            const touchX = e.touches[0].clientX;
+            const touchY = e.touches[0].clientY;
+
+            // Check if touching a node
+            draggedStar = findStarAt(touchX, touchY);
+
+            if (!draggedStar && settings.nodeShape !== 'random') {
+                isDragging = true;
+                lastMouseX = touchX;
+                lastMouseY = touchY;
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touchX = e.touches[0].clientX;
+            const touchY = e.touches[0].clientY;
+
+            if (draggedStar) {
+                draggedStar.setPosition(touchX, touchY);
+            } else if (isDragging) {
+                const deltaX = touchX - lastMouseX;
+                const deltaY = touchY - lastMouseY;
+                rotationY += deltaX * 0.005;
+                rotationX += deltaY * 0.005;
+                lastMouseX = touchX;
+                lastMouseY = touchY;
+            }
+        });
+
+        canvas.addEventListener('touchend', () => {
+            draggedStar = null;
+            isDragging = false;
+        });
+
+        // Initialize
+        createStars();
+        animate(0);
+    </script>
+</body>
+</html>
