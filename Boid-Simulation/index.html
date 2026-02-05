@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fish Simulation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #1a1a2e;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            min-height: 100vh;
+        }
+        #controls {
+            width: 280px;
+            background: #16213e;
+            padding: 20px;
+            color: #eee;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 1.4em;
+            color: #00d9ff;
+            margin: 0;
+        }
+        .header-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            margin: 0;
+            border-radius: 6px;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .icon-btn:hover {
+            background: #1a4a7a;
+        }
+        #pauseBtn .pause-icon {
+            display: flex;
+            gap: 3px;
+        }
+        #pauseBtn .pause-icon span {
+            width: 3px;
+            height: 14px;
+            background: #00d9ff;
+            border-radius: 1px;
+        }
+        #pauseBtn.paused .pause-icon {
+            display: none;
+        }
+        #pauseBtn .play-icon {
+            display: none;
+        }
+        #pauseBtn.paused .play-icon {
+            display: block;
+        }
+        #pauseBtn.paused {
+            background: #2d5a3d;
+        }
+        #pauseBtn.paused .pause-icon span,
+        #pauseBtn.paused .play-icon {
+            color: #4ade80;
+        }
+        #resetBtn span {
+            transform: translateY(-2px);
+            display: block;
+        }
+        .slider-group {
+            margin-bottom: 20px;
+        }
+        .slider-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+        .slider-group input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #0f3460;
+            border-radius: 3px;
+            outline: none;
+        }
+        .slider-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #00d9ff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .value {
+            float: right;
+            color: #00d9ff;
+            font-weight: bold;
+        }
+        #canvas-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        canvas {
+            background: #00b8c8;
+            border-radius: 8px;
+        }
+        .info {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #0f3460;
+            font-size: 0.85em;
+            color: #888;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background: #0f3460;
+            border: none;
+            color: #00d9ff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        button:hover {
+            background: #1a4a7a;
+        }
+        .presets {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #0f3460;
+        }
+        .presets h3 {
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            color: #aaa;
+        }
+        .preset-btn {
+            background: #1a3a5c;
+            border-left: 3px solid #00d9ff;
+        }
+        .preset-btn:hover {
+            background: #245080;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <div class="header">
+            <h1>Fish Simulation</h1>
+            <div class="header-buttons">
+                <button class="icon-btn" id="pauseBtn" title="Pause"><span class="pause-icon"><span></span><span></span></span><span class="play-icon">▶</span></button>
+                <button class="icon-btn" id="resetBtn" title="Reset" style="font-size: 1.5em; line-height: 1;"><span>↺</span></button>
+            </div>
+        </div>
+
+        <div class="slider-group">
+            <label>Fish Count <span class="value" id="countVal">150</span></label>
+            <input type="range" id="boidCountSlider" min="10" max="400" step="10" value="150">
+        </div>
+
+        <div class="slider-group">
+            <label>Separation Weight <span class="value" id="sepVal">1.5</span></label>
+            <input type="range" id="separation" min="0" max="5" step="0.1" value="1.5">
+        </div>
+
+        <div class="slider-group">
+            <label>Alignment Weight <span class="value" id="aliVal">1.0</span></label>
+            <input type="range" id="alignment" min="0" max="5" step="0.1" value="1.0">
+        </div>
+
+        <div class="slider-group">
+            <label>Cohesion Weight <span class="value" id="cohVal">1.0</span></label>
+            <input type="range" id="cohesion" min="0" max="5" step="0.1" value="1.0">
+        </div>
+
+        <div class="slider-group">
+            <label>Neighbor Radius <span class="value" id="radVal">50</span></label>
+            <input type="range" id="radius" min="20" max="150" step="5" value="50">
+        </div>
+
+        <div class="slider-group">
+            <label>Max Speed <span class="value" id="spdVal">4</span></label>
+            <input type="range" id="speed" min="1" max="10" step="0.5" value="4">
+        </div>
+
+        <div class="presets">
+            <h3>Presets</h3>
+            <button class="preset-btn" id="schoolingBtn">Schooling</button>
+            <button class="preset-btn" id="chaoticBtn">Chaotic Swarm</button>
+            <button class="preset-btn" id="clusterBtn">Tight Cluster</button>
+        </div>
+
+        <div class="info">
+            <strong>Fish Count:</strong> <span id="boidCount">150</span><br>
+            <strong>Avg Speed:</strong> <span id="avgSpeed">0.00</span><br>
+            <strong>Avg Neighbors:</strong> <span id="avgNeighbors">0.0</span><br>
+            <strong>FPS:</strong> <span id="fps">0</span><br><br>
+            <strong>Separation:</strong> Avoid crowding neighbors<br>
+            <strong>Alignment:</strong> Steer toward average heading<br>
+            <strong>Cohesion:</strong> Move toward group center
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Sizing
+        function resize() {
+            const container = document.getElementById('canvas-container');
+            canvas.width = container.clientWidth - 40;
+            canvas.height = container.clientHeight - 40;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        // Parameters
+        let params = {
+            separation: 1.5,
+            alignment: 1.0,
+            cohesion: 1.0,
+            radius: 50,
+            maxSpeed: 4
+        };
+
+        // Sliders
+        const sliders = {
+            separation: document.getElementById('separation'),
+            alignment: document.getElementById('alignment'),
+            cohesion: document.getElementById('cohesion'),
+            radius: document.getElementById('radius'),
+            speed: document.getElementById('speed')
+        };
+
+        const values = {
+            separation: document.getElementById('sepVal'),
+            alignment: document.getElementById('aliVal'),
+            cohesion: document.getElementById('cohVal'),
+            radius: document.getElementById('radVal'),
+            speed: document.getElementById('spdVal')
+        };
+
+        sliders.separation.addEventListener('input', e => {
+            params.separation = parseFloat(e.target.value);
+            values.separation.textContent = e.target.value;
+        });
+        sliders.alignment.addEventListener('input', e => {
+            params.alignment = parseFloat(e.target.value);
+            values.alignment.textContent = e.target.value;
+        });
+        sliders.cohesion.addEventListener('input', e => {
+            params.cohesion = parseFloat(e.target.value);
+            values.cohesion.textContent = e.target.value;
+        });
+        sliders.radius.addEventListener('input', e => {
+            params.radius = parseFloat(e.target.value);
+            values.radius.textContent = e.target.value;
+        });
+        sliders.speed.addEventListener('input', e => {
+            params.maxSpeed = parseFloat(e.target.value);
+            values.speed.textContent = e.target.value;
+        });
+
+        // Vector helpers
+        function vec(x, y) { return { x, y }; }
+        function add(a, b) { return vec(a.x + b.x, a.y + b.y); }
+        function sub(a, b) { return vec(a.x - b.x, a.y - b.y); }
+        function mult(v, n) { return vec(v.x * n, v.y * n); }
+        function div(v, n) { return vec(v.x / n, v.y / n); }
+        function mag(v) { return Math.sqrt(v.x * v.x + v.y * v.y); }
+        function normalize(v) { const m = mag(v); return m > 0 ? div(v, m) : vec(0, 0); }
+        function limit(v, max) { const m = mag(v); return m > max ? mult(normalize(v), max) : v; }
+        function dist(a, b) { return mag(sub(a, b)); }
+
+        // Lilypad class
+        class Lilypad {
+            constructor(x, y) {
+                this.pos = vec(x, y);
+                this.radius = 30 + Math.random() * 25;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.hasLotus = Math.random() > 0.5;
+                this.lotusColor = Math.random() > 0.5 ? '#ffb6c1' : '#ffffff';
+                this.lotusOutline = this.lotusColor === '#ffb6c1' ? '#e8929e' : '#d4d4d4';
+                this.padShade = '#2a9300';
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.pos.x, this.pos.y);
+                ctx.rotate(this.rotation);
+
+                // Lilypad (green circle with notch)
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0.2, Math.PI * 2 - 0.2);
+                ctx.lineTo(0, 0);
+                ctx.closePath();
+                ctx.fillStyle = this.padShade;
+                ctx.fill();
+
+                // Lotus flower if present
+                if (this.hasLotus) {
+                    ctx.rotate(-this.rotation);
+
+                    // Outer layer (largest petals)
+                    for (let i = 0; i < 8; i++) {
+                        ctx.save();
+                        ctx.rotate((i / 8) * Math.PI * 2);
+                        ctx.beginPath();
+                        ctx.moveTo(-this.radius * 0.35, -this.radius * 0.2);
+                        ctx.quadraticCurveTo(-this.radius * 0.45, -this.radius * 0.45, 0, -this.radius * 0.75);
+                        ctx.quadraticCurveTo(this.radius * 0.45, -this.radius * 0.45, this.radius * 0.35, -this.radius * 0.2);
+                        ctx.quadraticCurveTo(0, -this.radius * 0.25, -this.radius * 0.35, -this.radius * 0.2);
+                        ctx.fillStyle = this.lotusColor;
+                        ctx.fill();
+                        ctx.strokeStyle = this.lotusOutline;
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+
+                    // Middle layer
+                    for (let i = 0; i < 5; i++) {
+                        ctx.save();
+                        ctx.rotate((i / 5) * Math.PI * 2 + 0.2);
+                        ctx.beginPath();
+                        ctx.moveTo(-this.radius * 0.28, -this.radius * 0.15);
+                        ctx.quadraticCurveTo(-this.radius * 0.38, -this.radius * 0.35, 0, -this.radius * 0.55);
+                        ctx.quadraticCurveTo(this.radius * 0.38, -this.radius * 0.35, this.radius * 0.28, -this.radius * 0.15);
+                        ctx.quadraticCurveTo(0, -this.radius * 0.18, -this.radius * 0.28, -this.radius * 0.15);
+                        ctx.fillStyle = this.lotusColor;
+                        ctx.fill();
+                        ctx.strokeStyle = this.lotusOutline;
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+
+                    // Inner layer (smallest petals)
+                    for (let i = 0; i < 3; i++) {
+                        ctx.save();
+                        ctx.rotate((i / 3) * Math.PI * 2 + 0.1);
+                        ctx.beginPath();
+                        ctx.moveTo(-this.radius * 0.18, -this.radius * 0.03);
+                        ctx.quadraticCurveTo(-this.radius * 0.25, -this.radius * 0.15, 0, -this.radius * 0.3);
+                        ctx.quadraticCurveTo(this.radius * 0.25, -this.radius * 0.15, this.radius * 0.18, -this.radius * 0.03);
+                        ctx.quadraticCurveTo(0, -this.radius * 0.05, -this.radius * 0.18, -this.radius * 0.03);
+                        ctx.fillStyle = this.lotusColor;
+                        ctx.fill();
+                        ctx.strokeStyle = this.lotusOutline;
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+
+                    // Center
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.radius * 0.12, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ffd700';
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            }
+        }
+
+        // Initialize lilypads
+        let lilypads = [];
+
+        function initLilypads() {
+            lilypads = [];
+            const count = 5 + Math.floor(Math.random() * 4);
+            for (let i = 0; i < count; i++) {
+                const x = 100 + Math.random() * (canvas.width - 200);
+                const y = 100 + Math.random() * (canvas.height - 200);
+                // Check for overlap with existing lilypads
+                let overlapping = false;
+                for (let pad of lilypads) {
+                    if (dist(vec(x, y), pad.pos) < pad.radius + 80) {
+                        overlapping = true;
+                        break;
+                    }
+                }
+                if (!overlapping) {
+                    lilypads.push(new Lilypad(x, y));
+                }
+            }
+        }
+
+        // Boid class
+        class Boid {
+            constructor() {
+                this.pos = vec(Math.random() * canvas.width, Math.random() * canvas.height);
+                const angle = Math.random() * Math.PI * 2;
+                this.vel = vec(Math.cos(angle) * 2, Math.sin(angle) * 2);
+                this.acc = vec(0, 0);
+                // Koi fish colors: orange, red, white, gold, black spots
+                const koiColors = [
+                    { body: '#ff6b35', spots: '#ffffff' },  // Orange with white
+                    { body: '#ff4444', spots: '#ffffff' },  // Red with white
+                    { body: '#ffffff', spots: '#ff6b35' },  // White with orange
+                    { body: '#ffb347', spots: '#ffffff' },  // Gold with white
+                    { body: '#ff6b35', spots: '#222222' },  // Orange with black
+                    { body: '#ffffff', spots: '#ff4444' },  // White with red
+                ];
+                this.colors = koiColors[Math.floor(Math.random() * koiColors.length)];
+                this.spotOffset = Math.random() * 10;
+                this.neighborCount = 0;
+                this.wigglePhase = Math.random() * Math.PI * 2;
+            }
+
+            edges() {
+                if (this.pos.x > canvas.width) this.pos.x = 0;
+                if (this.pos.x < 0) this.pos.x = canvas.width;
+                if (this.pos.y > canvas.height) this.pos.y = 0;
+                if (this.pos.y < 0) this.pos.y = canvas.height;
+            }
+
+            flock(boids) {
+                let separation = vec(0, 0);
+                let alignment = vec(0, 0);
+                let cohesion = vec(0, 0);
+                let sepCount = 0;
+                let total = 0;
+
+                for (let other of boids) {
+                    const d = dist(this.pos, other.pos);
+                    if (other !== this && d < params.radius) {
+                        // Alignment - average velocity
+                        alignment = add(alignment, other.vel);
+                        // Cohesion - average position
+                        cohesion = add(cohesion, other.pos);
+                        total++;
+
+                        // Separation - closer = stronger
+                        if (d < params.radius * 0.5 && d > 0) {
+                            let diff = sub(this.pos, other.pos);
+                            diff = div(diff, d * d);
+                            separation = add(separation, diff);
+                            sepCount++;
+                        }
+                    }
+                }
+
+                if (total > 0) {
+                    // Alignment
+                    alignment = div(alignment, total);
+                    alignment = normalize(alignment);
+                    alignment = mult(alignment, params.maxSpeed);
+                    alignment = sub(alignment, this.vel);
+                    alignment = limit(alignment, 0.05);
+                    alignment = mult(alignment, params.alignment);
+
+                    // Cohesion
+                    cohesion = div(cohesion, total);
+                    cohesion = sub(cohesion, this.pos);
+                    cohesion = normalize(cohesion);
+                    cohesion = mult(cohesion, params.maxSpeed);
+                    cohesion = sub(cohesion, this.vel);
+                    cohesion = limit(cohesion, 0.05);
+                    cohesion = mult(cohesion, params.cohesion);
+                }
+
+                if (sepCount > 0) {
+                    separation = div(separation, sepCount);
+                    separation = normalize(separation);
+                    separation = mult(separation, params.maxSpeed);
+                    separation = sub(separation, this.vel);
+                    separation = limit(separation, 0.08);
+                    separation = mult(separation, params.separation);
+                }
+
+                this.acc = add(this.acc, separation);
+                this.acc = add(this.acc, alignment);
+                this.acc = add(this.acc, cohesion);
+                this.neighborCount = total;
+
+                // Avoid lilypads
+                for (let pad of lilypads) {
+                    const d = dist(this.pos, pad.pos);
+                    const avoidRadius = pad.radius + 40;
+                    if (d < avoidRadius && d > 0) {
+                        let diff = sub(this.pos, pad.pos);
+                        diff = normalize(diff);
+                        diff = mult(diff, (avoidRadius - d) / avoidRadius);
+                        diff = mult(diff, 0.3);
+                        this.acc = add(this.acc, diff);
+                    }
+                }
+            }
+
+            update() {
+                this.vel = add(this.vel, this.acc);
+                this.vel = limit(this.vel, params.maxSpeed);
+                this.pos = add(this.pos, this.vel);
+                this.acc = vec(0, 0);
+            }
+
+            draw(time) {
+                const angle = Math.atan2(this.vel.y, this.vel.x);
+                const size = 12;
+                const speed = mag(this.vel);
+
+                // Wiggle based on time and speed
+                const wiggle = Math.sin(time * 0.015 + this.wigglePhase) * size * 0.25 * (speed / params.maxSpeed);
+
+                ctx.save();
+                ctx.translate(this.pos.x, this.pos.y);
+                ctx.rotate(angle);
+
+                // Body (teardrop shape - elongated with round head, with wiggling tail)
+                ctx.beginPath();
+                ctx.moveTo(-size * 2.5, wiggle);
+                ctx.quadraticCurveTo(-size * 1.8, -size * 0.15 + wiggle * 0.6, -size * 0.8, -size * 0.3);
+                ctx.quadraticCurveTo(size * 0.2, -size * 0.4, size * 1.0, -size * 0.3);
+                ctx.arc(size * 1.0, 0, size * 0.3, -Math.PI * 0.5, Math.PI * 0.5);
+                ctx.quadraticCurveTo(size * 0.2, size * 0.4, -size * 0.8, size * 0.3);
+                ctx.quadraticCurveTo(-size * 1.8, size * 0.15 + wiggle * 0.6, -size * 2.5, wiggle);
+                ctx.fillStyle = this.colors.body;
+                ctx.fill();
+
+                // Spots/pattern
+                ctx.beginPath();
+                ctx.ellipse(size * 0.1 + this.spotOffset * 0.1, size * 0.1, size * 0.25, size * 0.12, 0.3, 0, Math.PI * 2);
+                ctx.fillStyle = this.colors.spots;
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.ellipse(-size * 1.0, -size * 0.06, size * 0.25, size * 0.1, -0.2, 0, Math.PI * 2);
+                ctx.fillStyle = this.colors.spots;
+                ctx.fill();
+
+                // Eye
+                ctx.beginPath();
+                ctx.arc(size * 0.85, -size * 0.08, size * 0.07, 0, Math.PI * 2);
+                ctx.fillStyle = '#111';
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // Initialize boids
+        let boids = [];
+        let boidCount = 150;
+
+        function initBoids() {
+            boids = [];
+            for (let i = 0; i < boidCount; i++) {
+                boids.push(new Boid());
+            }
+            document.getElementById('boidCount').textContent = boidCount;
+        }
+        initBoids();
+        initLilypads();
+
+        // Boid count slider
+        const boidCountSlider = document.getElementById('boidCountSlider');
+        const countVal = document.getElementById('countVal');
+        boidCountSlider.addEventListener('input', e => {
+            boidCount = parseInt(e.target.value);
+            countVal.textContent = boidCount;
+            initBoids();
+        });
+
+        // Default parameters
+        const defaults = { separation: 1.5, alignment: 1.0, cohesion: 1.0, radius: 50, maxSpeed: 4 };
+
+        // Pause state
+        let paused = false;
+        const pauseBtn = document.getElementById('pauseBtn');
+
+        pauseBtn.addEventListener('click', () => {
+            paused = !paused;
+            pauseBtn.title = paused ? 'Play' : 'Pause';
+            pauseBtn.classList.toggle('paused', paused);
+        });
+
+        // Reset button - resets boids and parameters
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            applyPreset(defaults);
+            boidCount = 150;
+            boidCountSlider.value = 150;
+            countVal.textContent = 150;
+            initBoids();
+            initLilypads();
+        });
+
+        // Preset function
+        function applyPreset(preset) {
+            params.separation = preset.separation;
+            params.alignment = preset.alignment;
+            params.cohesion = preset.cohesion;
+            params.radius = preset.radius;
+            params.maxSpeed = preset.maxSpeed;
+
+            // Update sliders
+            sliders.separation.value = preset.separation;
+            sliders.alignment.value = preset.alignment;
+            sliders.cohesion.value = preset.cohesion;
+            sliders.radius.value = preset.radius;
+            sliders.speed.value = preset.maxSpeed;
+
+            // Update displayed values
+            values.separation.textContent = preset.separation;
+            values.alignment.textContent = preset.alignment;
+            values.cohesion.textContent = preset.cohesion;
+            values.radius.textContent = preset.radius;
+            values.speed.textContent = preset.maxSpeed;
+        }
+
+        // Presets
+        const presets = {
+            schooling: { separation: 0.5, alignment: 4.0, cohesion: 2.0, radius: 60, maxSpeed: 4 },
+            chaotic: { separation: 1.5, alignment: 0.3, cohesion: 0.3, radius: 25, maxSpeed: 5 },
+            cluster: { separation: 1.5, alignment: 1.0, cohesion: 4.0, radius: 80, maxSpeed: 3 }
+        };
+
+        document.getElementById('schoolingBtn').addEventListener('click', () => applyPreset(presets.schooling));
+        document.getElementById('chaoticBtn').addEventListener('click', () => applyPreset(presets.chaotic));
+        document.getElementById('clusterBtn').addEventListener('click', () => applyPreset(presets.cluster));
+
+        // Stats elements
+        const avgSpeedEl = document.getElementById('avgSpeed');
+        const avgNeighborsEl = document.getElementById('avgNeighbors');
+        const fpsEl = document.getElementById('fps');
+
+        // FPS tracking
+        let lastTime = performance.now();
+        let frameCount = 0;
+        let fps = 0;
+
+        function updateStats() {
+            // FPS calculation
+            frameCount++;
+            const now = performance.now();
+            if (now - lastTime >= 1000) {
+                fps = frameCount;
+                frameCount = 0;
+                lastTime = now;
+                fpsEl.textContent = fps;
+            }
+
+            // Average speed and neighbors
+            let totalSpeed = 0;
+            let totalNeighbors = 0;
+            for (let boid of boids) {
+                totalSpeed += mag(boid.vel);
+                totalNeighbors += boid.neighborCount;
+            }
+            avgSpeedEl.textContent = (totalSpeed / boids.length).toFixed(2);
+            avgNeighborsEl.textContent = (totalNeighbors / boids.length).toFixed(1);
+        }
+
+        // Animation loop
+        function animate(time) {
+            if (!paused) {
+                ctx.fillStyle = '#00b8c8';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw fish first (underneath)
+                for (let boid of boids) {
+                    boid.flock(boids);
+                    boid.update();
+                    boid.edges();
+                    boid.draw(time);
+                }
+
+                // Draw lilypads on top (floating on surface)
+                for (let pad of lilypads) {
+                    pad.draw();
+                }
+
+                updateStats();
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate(0);
+    </script>
+</body>
+</html>
