@@ -113,7 +113,7 @@
             <span class="terminal-title">chat</span>
         </div>
         <div class="terminal-body">
-            <div class="output">Hello World! I'm Rachel's Terminal Assistant.</div>
+            <div class="output">Hello World! I'm your Terminal Assistant.</div>
             <div class="output" style="font-size: 1rem; margin: 8px 0;">Type something to chat with me! Type "clear" to clear the chat.</div>
             <div class="prompt input-line">> <span class="input-text"></span><span class="cursor"></span></div>
         </div>
@@ -179,7 +179,7 @@
 
             if (cmd.toLowerCase() === 'clear') {
                 terminalBody.innerHTML = `
-                    <div class="output">Hello World! I'm Rachel's Terminal Assistant.</div>
+                    <div class="output">Hello World! I'm your Terminal Assistant.</div>
                     <div class="output" style="font-size: 1rem; margin: 8px 0;">Type something to chat with me! Type "clear" to clear the chat.</div>
                 `;
             } else if (response) {
@@ -214,7 +214,7 @@
 
             // Name questions
             if (/what('s| is) your name|who are you/.test(text)) {
-                return "I'm Rachel's Terminal Assistant!";
+                return "I'm your Terminal Assistant!";
             }
 
             // My name is
