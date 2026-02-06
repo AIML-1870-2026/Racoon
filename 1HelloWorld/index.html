@@ -258,24 +258,8 @@
                 return jokes[Math.floor(Math.random() * jokes.length)];
             }
 
-            // Compliments
-            if (/you('re| are) (awesome|great|cool|amazing)/.test(text)) {
-                return "Thank you! You're pretty awesome yourself!";
-            }
-
-            // Love
-            if (/i love you|love you/.test(text)) {
-                return "Aw, that's sweet! I appreciate you too!";
-            }
-
             // Default response
-            const defaults = [
-                `Interesting! Tell me more about "${input}"`,
-                "I see! What else is on your mind?",
-                "That's cool! Anything else you'd like to chat about?",
-                `Hmm, "${input}" - that's something to think about!`
-            ];
-            return defaults[Math.floor(Math.random() * defaults.length)];
+            return "no";
         }
 
         function escapeHtml(text) {
