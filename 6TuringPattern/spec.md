@@ -9,6 +9,7 @@ An interactive Gray-Scott reaction-diffusion simulation that generates Turing pa
 - Interactive 2D graph showing feed rate (f) vs kill rate (k)
 - Preset pattern markers: Spots, Stripes, Waves, Mitosis, Coral, Maze
 - Click and drag points to adjust parameters in real-time
+- Click anywhere on empty space to move the first simulation point
 
 ### Multiple Simulations
 - Add multiple simulations running side-by-side
@@ -56,7 +57,7 @@ Where:
 
 | Control | Action |
 |---------|--------|
-| Parameter Space | Drag colored points to adjust f/k |
+| Parameter Space | Drag points or click anywhere to adjust f/k |
 | Color Slider | Drag to change pattern hue |
 | Add Simulation | Create new simulation panel |
 | Reset | Restart simulation with center seed |

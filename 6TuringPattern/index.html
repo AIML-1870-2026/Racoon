@@ -682,6 +682,11 @@
 
             draggedSim = getSimAtPosition(x, y);
 
+            // If no point clicked, use the first simulation
+            if (!draggedSim && simulations.length > 0) {
+                draggedSim = simulations[0];
+            }
+
             if (draggedSim) {
                 paramCanvas.style.cursor = 'grabbing';
                 handleParamDrag(e);
