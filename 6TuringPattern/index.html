@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turing Pattern Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a2e;
+            color: #eee;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #00d4ff;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .panel {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel h2 {
+            font-size: 14px;
+            color: #00d4ff;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .param-canvas {
+            cursor: crosshair;
+            display: block;
+        }
+
+        .param-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .color-slider {
+            width: 16px;
+            height: 400px;
+            cursor: pointer;
+            border-radius: 6px;
+            position: relative;
+        }
+
+        .color-slider canvas {
+            display: block;
+            border-radius: 6px;
+        }
+
+        .slider-indicator {
+            position: absolute;
+            left: -4px;
+            width: 24px;
+            height: 6px;
+            background: transparent;
+            border: 2px solid #fff;
+            border-radius: 3px;
+            pointer-events: none;
+            box-shadow: 0 0 4px rgba(0,0,0,0.5);
+        }
+
+        .sim-canvas {
+            display: block;
+        }
+
+        .info {
+            margin-top: 15px;
+            font-size: 13px;
+            color: #aaa;
+        }
+
+        .info span {
+            color: #00d4ff;
+            font-weight: bold;
+        }
+
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #0f3460;
+            color: #00d4ff;
+            border: 1px solid #00d4ff;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #00d4ff;
+            color: #16213e;
+        }
+
+        button.active {
+            background: #00d4ff;
+            color: #16213e;
+        }
+
+        button.no-hover:hover {
+            background: #0f3460;
+            color: #00d4ff;
+        }
+
+        button.no-hover.active {
+            background: #00d4ff;
+            color: #16213e;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 11px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .legend-item:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: #00d4ff;
+        }
+
+        .legend-item.active {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .instructions {
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+
+        .simulations-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .sim-panel {
+            position: relative;
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            font-size: 16px;
+            line-height: 1;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Turing Pattern Explorer</h1>
+    <p class="subtitle">Gray-Scott Reaction-Diffusion Model</p>
+
+    <div class="container">
+        <div class="panel">
+            <h2>Parameter Space</h2>
+            <div class="param-container">
+                <canvas id="parameterSpace" class="param-canvas" width="400" height="400"></canvas>
+                <div class="color-slider">
+                    <canvas id="colorSlider" width="16" height="400"></canvas>
+                    <div class="slider-indicator" id="sliderIndicator"></div>
+                </div>
+            </div>
+            <div class="info">
+                Feed Rate (f): <span id="feedValue">0.055</span><br>
+                Kill Rate (k): <span id="killValue">0.062</span>
+            </div>
+            <div class="legend" id="legend">
+                <div class="legend-item" data-f="0.020" data-k="0.050"><div class="legend-color" style="background: #e74c3c;"></div> Spots</div>
+                <div class="legend-item" data-f="0.040" data-k="0.060"><div class="legend-color" style="background: #3498db;"></div> Stripes</div>
+                <div class="legend-item" data-f="0.030" data-k="0.055"><div class="legend-color" style="background: #2ecc71;"></div> Waves</div>
+                <div class="legend-item" data-f="0.040" data-k="0.0625"><div class="legend-color" style="background: #9b59b6;"></div> Mitosis</div>
+                <div class="legend-item" data-f="0.060" data-k="0.0625"><div class="legend-color" style="background: #f39c12;"></div> Coral</div>
+                <div class="legend-item" data-f="0.0375" data-k="0.050"><div class="legend-color" style="background: #1abc9c;"></div> Maze</div>
+            </div>
+            <div class="controls">
+                <button id="addSimBtn">Add Simulation</button>
+            </div>
+        </div>
+
+        <div class="simulations-container" id="simContainer">
+        </div>
+    </div>
+
+    <p class="instructions">Click on the parameter space or legend items to explore different patterns</p>
+
+    <script>
+        // Global parameters
+        const width = 200;
+        const height = 200;
+        let f = 0.055;
+        let k = 0.062;
+        const Du = 0.16;
+        const Dv = 0.08;
+        const dt = 1.0;
+        const fMin = 0.01, fMax = 0.1;
+        const kMin = 0.04, kMax = 0.07;
+        let hue = 200;
+        let paused = false;
+
+        // Array of simulations
+        const simulations = [];
+        let simIdCounter = 0;
+        let draggedSim = null; // Track which simulation is being dragged
+
+        // Colors for simulation points
+        const simColors = ['#00d4ff', '#ff6b6b', '#4ecdc4', '#ffe66d', '#95e1d3', '#f38181'];
+
+        // Simulation class
+        class Simulation {
+            constructor(id) {
+                this.id = id;
+                this.gridU = new Float32Array(width * height);
+                this.gridV = new Float32Array(width * height);
+                this.nextU = new Float32Array(width * height);
+                this.nextV = new Float32Array(width * height);
+                this.placingMode = false;
+                this.respawnTimer = null;
+                this.f = f;
+                this.k = k;
+                this.color = simColors[id % simColors.length];
+
+                this.createPanel();
+                this.initGrids();
+            }
+
+            createPanel() {
+                const container = document.getElementById('simContainer');
+
+                this.panel = document.createElement('div');
+                this.panel.className = 'panel sim-panel';
+                this.panel.innerHTML = `
+                    <h2><span class="sim-color-dot" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${this.color};margin-right:8px;"></span>Simulation</h2>
+                    <button class="remove-btn" title="Remove">×</button>
+                    <canvas class="sim-canvas" width="400" height="400"></canvas>
+                    <div class="controls">
+                        <button class="reset-btn">Reset</button>
+                        <button class="pause-btn">Pause</button>
+                        <button class="seed-btn no-hover">Add Seed</button>
+                    </div>
+                `;
+
+                container.appendChild(this.panel);
+
+                this.canvas = this.panel.querySelector('.sim-canvas');
+                this.ctx = this.canvas.getContext('2d');
+
+                // Event listeners
+                this.panel.querySelector('.remove-btn').addEventListener('click', () => this.remove());
+                this.panel.querySelector('.reset-btn').addEventListener('click', () => this.initGrids());
+                this.panel.querySelector('.pause-btn').addEventListener('click', (e) => {
+                    this.paused = !this.paused;
+                    e.target.textContent = this.paused ? 'Resume' : 'Pause';
+                });
+
+                const seedBtn = this.panel.querySelector('.seed-btn');
+                seedBtn.addEventListener('click', () => {
+                    this.placingMode = !this.placingMode;
+                    if (this.placingMode) {
+                        seedBtn.classList.add('active');
+                        this.canvas.style.cursor = 'crosshair';
+                    } else {
+                        seedBtn.classList.remove('active');
+                        this.canvas.style.cursor = 'default';
+                    }
+                });
+
+                this.canvas.addEventListener('click', (e) => {
+                    if (!this.placingMode) return;
+                    const rect = this.canvas.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    const clickY = e.clientY - rect.top;
+                    const gridX = Math.floor((clickX / this.canvas.width) * width);
+                    const gridY = Math.floor((clickY / this.canvas.height) * height);
+                    this.addSeed(gridX, gridY);
+                });
+
+                this.paused = false;
+            }
+
+            remove() {
+                if (simulations.length <= 1) return; // Keep at least one
+                const index = simulations.indexOf(this);
+                if (index > -1) {
+                    simulations.splice(index, 1);
+                    this.panel.remove();
+                    if (this.respawnTimer) clearTimeout(this.respawnTimer);
+                    drawParameterSpace();
+                    updateRemoveButtons();
+                }
+            }
+
+            initGrids() {
+                for (let i = 0; i < width * height; i++) {
+                    this.gridU[i] = 1.0;
+                    this.gridV[i] = 0.0;
+                }
+                this.f = f;
+                this.k = k;
+                this.addSeed(width / 2, height / 2);
+            }
+
+            addSeed(cx, cy) {
+                const radius = 10;
+                for (let y = cy - radius; y < cy + radius; y++) {
+                    for (let x = cx - radius; x < cx + radius; x++) {
+                        if (x >= 0 && x < width && y >= 0 && y < height) {
+                            const dx = x - cx;
+                            const dy = y - cy;
+                            if (dx * dx + dy * dy < radius * radius) {
+                                const idx = y * width + x;
+                                this.gridU[idx] = 0.5;
+                                this.gridV[idx] = 0.25;
+                            }
+                        }
+                    }
+                }
+            }
+
+            laplacian(grid, x, y) {
+                const idx = y * width + x;
+                const left = y * width + ((x - 1 + width) % width);
+                const right = y * width + ((x + 1) % width);
+                const up = ((y - 1 + height) % height) * width + x;
+                const down = ((y + 1) % height) * width + x;
+                return grid[left] + grid[right] + grid[up] + grid[down] - 4 * grid[idx];
+            }
+
+            update() {
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const idx = y * width + x;
+                        const u = this.gridU[idx];
+                        const v = this.gridV[idx];
+                        const uvv = u * v * v;
+                        const lapU = this.laplacian(this.gridU, x, y);
+                        const lapV = this.laplacian(this.gridV, x, y);
+
+                        this.nextU[idx] = u + dt * (Du * lapU - uvv + this.f * (1 - u));
+                        this.nextV[idx] = v + dt * (Dv * lapV + uvv - (this.k + this.f) * v);
+
+                        this.nextU[idx] = Math.max(0, Math.min(1, this.nextU[idx]));
+                        this.nextV[idx] = Math.max(0, Math.min(1, this.nextV[idx]));
+                    }
+                }
+
+                [this.gridU, this.nextU] = [this.nextU, this.gridU];
+                [this.gridV, this.nextV] = [this.nextV, this.gridV];
+            }
+
+            isPatternDead() {
+                for (let i = 0; i < width * height; i++) {
+                    if (this.gridV[i] > 0.001) return false;
+                }
+                return true;
+            }
+
+            draw() {
+                const imageData = this.ctx.createImageData(width, height);
+                const data = imageData.data;
+
+                for (let i = 0; i < width * height; i++) {
+                    const v = this.gridV[i];
+                    const h = hue / 360;
+                    const s = 0.7 + v * 0.3;
+                    const l = 0.1 + v * 0.5;
+
+                    const hueToRgb = (p, q, t) => {
+                        if (t < 0) t += 1;
+                        if (t > 1) t -= 1;
+                        if (t < 1/6) return p + (q - p) * 6 * t;
+                        if (t < 1/2) return q;
+                        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                        return p;
+                    };
+
+                    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                    const p = 2 * l - q;
+                    const r = Math.floor(hueToRgb(p, q, h + 1/3) * 255);
+                    const g = Math.floor(hueToRgb(p, q, h) * 255);
+                    const b = Math.floor(hueToRgb(p, q, h - 1/3) * 255);
+
+                    data[i * 4] = r;
+                    data[i * 4 + 1] = g;
+                    data[i * 4 + 2] = b;
+                    data[i * 4 + 3] = 255;
+                }
+
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = width;
+                tempCanvas.height = height;
+                tempCanvas.getContext('2d').putImageData(imageData, 0, 0);
+
+                this.ctx.imageSmoothingEnabled = false;
+                this.ctx.drawImage(tempCanvas, 0, 0, this.canvas.width, this.canvas.height);
+            }
+
+            tick() {
+                if (!this.paused && !paused) {
+                    for (let i = 0; i < 10; i++) {
+                        this.update();
+                    }
+
+                    if (this.isPatternDead() && !this.respawnTimer) {
+                        this.respawnTimer = setTimeout(() => {
+                            this.addSeed(width / 2, height / 2);
+                            this.respawnTimer = null;
+                        }, 2000);
+                    } else if (!this.isPatternDead() && this.respawnTimer) {
+                        clearTimeout(this.respawnTimer);
+                        this.respawnTimer = null;
+                    }
+                }
+                this.draw();
+            }
+        }
+
+        // Parameter space canvas
+        const paramCanvas = document.getElementById('parameterSpace');
+        const paramCtx = paramCanvas.getContext('2d');
+        const colorSlider = document.getElementById('colorSlider');
+        const colorCtx = colorSlider.getContext('2d');
+        const sliderIndicator = document.getElementById('sliderIndicator');
+
+        function drawColorSlider() {
+            const gradient = colorCtx.createLinearGradient(0, 0, 0, colorSlider.height);
+            for (let i = 0; i <= 360; i += 30) {
+                gradient.addColorStop(i / 360, `hsl(${i}, 80%, 50%)`);
+            }
+            colorCtx.fillStyle = gradient;
+            colorCtx.fillRect(0, 0, colorSlider.width, colorSlider.height);
+            const y = (hue / 360) * colorSlider.height;
+            sliderIndicator.style.top = (y - 3) + 'px';
+        }
+
+        function handleColorSlider(e) {
+            const rect = colorSlider.getBoundingClientRect();
+            const y = Math.max(0, Math.min(colorSlider.height, e.clientY - rect.top));
+            hue = (y / colorSlider.height) * 360;
+            drawColorSlider();
+        }
+
+        colorSlider.addEventListener('mousedown', (e) => {
+            handleColorSlider(e);
+            const onMove = (e) => handleColorSlider(e);
+            const onUp = () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+
+        function drawParameterSpace() {
+            const w = paramCanvas.width;
+            const h = paramCanvas.height;
+            const padding = 40;
+            const graphW = w - padding * 2;
+            const graphH = h - padding * 2;
+
+            paramCtx.fillStyle = '#0f0f23';
+            paramCtx.fillRect(0, 0, w, h);
+
+            const patterns = [
+                { fRange: [0.01, 0.03], kRange: [0.045, 0.055], color: '#e74c3c', label: 'Spots' },
+                { fRange: [0.03, 0.05], kRange: [0.055, 0.065], color: '#3498db', label: 'Stripes' },
+                { fRange: [0.02, 0.04], kRange: [0.05, 0.06], color: '#2ecc71', label: 'Waves' },
+                { fRange: [0.035, 0.045], kRange: [0.06, 0.065], color: '#9b59b6', label: 'Mitosis' },
+                { fRange: [0.05, 0.07], kRange: [0.06, 0.065], color: '#f39c12', label: 'Coral' },
+                { fRange: [0.025, 0.05], kRange: [0.045, 0.055], color: '#1abc9c', label: 'Maze' }
+            ];
+
+            patterns.forEach(pattern => {
+                const centerF = (pattern.fRange[0] + pattern.fRange[1]) / 2;
+                const centerK = (pattern.kRange[0] + pattern.kRange[1]) / 2;
+                const x = padding + ((centerF - fMin) / (fMax - fMin)) * graphW;
+                const y = padding + (1 - (centerK - kMin) / (kMax - kMin)) * graphH;
+
+                paramCtx.beginPath();
+                paramCtx.arc(x, y, 6, 0, Math.PI * 2);
+                paramCtx.fillStyle = pattern.color;
+                paramCtx.fill();
+                paramCtx.strokeStyle = '#fff';
+                paramCtx.lineWidth = 1.5;
+                paramCtx.stroke();
+            });
+
+            paramCtx.strokeStyle = '#333';
+            paramCtx.lineWidth = 0.5;
+            for (let i = 0; i <= 10; i++) {
+                const x = padding + (i / 10) * graphW;
+                const y = padding + (i / 10) * graphH;
+                paramCtx.beginPath();
+                paramCtx.moveTo(x, padding);
+                paramCtx.lineTo(x, h - padding);
+                paramCtx.stroke();
+                paramCtx.beginPath();
+                paramCtx.moveTo(padding, y);
+                paramCtx.lineTo(w - padding, y);
+                paramCtx.stroke();
+            }
+
+            paramCtx.strokeStyle = '#666';
+            paramCtx.lineWidth = 2;
+            paramCtx.beginPath();
+            paramCtx.moveTo(padding, padding);
+            paramCtx.lineTo(padding, h - padding);
+            paramCtx.lineTo(w - padding, h - padding);
+            paramCtx.stroke();
+
+            paramCtx.fillStyle = '#888';
+            paramCtx.font = '12px sans-serif';
+            paramCtx.textAlign = 'center';
+            paramCtx.fillText('Feed Rate (f)', w / 2, h - 5);
+            for (let i = 0; i <= 4; i++) {
+                const val = fMin + (i / 4) * (fMax - fMin);
+                const x = padding + (i / 4) * graphW;
+                paramCtx.fillText(val.toFixed(3), x, h - padding + 15);
+            }
+
+            paramCtx.save();
+            paramCtx.translate(12, h / 2);
+            paramCtx.rotate(-Math.PI / 2);
+            paramCtx.fillText('Kill Rate (k)', 0, 0);
+            paramCtx.restore();
+
+            paramCtx.textAlign = 'right';
+            for (let i = 0; i <= 4; i++) {
+                const val = kMin + (i / 4) * (kMax - kMin);
+                const y = h - padding - (i / 4) * graphH;
+                paramCtx.fillText(val.toFixed(3), padding - 5, y + 4);
+            }
+
+            // Draw a point for each simulation
+            simulations.forEach((sim, index) => {
+                const posX = padding + ((sim.f - fMin) / (fMax - fMin)) * graphW;
+                const posY = h - padding - ((sim.k - kMin) / (kMax - kMin)) * graphH;
+
+                // Draw crosshairs
+                paramCtx.strokeStyle = sim.color + '50'; // 50 = 30% opacity in hex
+                paramCtx.lineWidth = 1;
+                paramCtx.setLineDash([5, 5]);
+                paramCtx.beginPath();
+                paramCtx.moveTo(posX, padding);
+                paramCtx.lineTo(posX, h - padding);
+                paramCtx.moveTo(padding, posY);
+                paramCtx.lineTo(w - padding, posY);
+                paramCtx.stroke();
+                paramCtx.setLineDash([]);
+
+                // Draw point
+                paramCtx.beginPath();
+                paramCtx.arc(posX, posY, 8, 0, Math.PI * 2);
+                paramCtx.fillStyle = sim.color;
+                paramCtx.fill();
+                paramCtx.strokeStyle = '#fff';
+                paramCtx.lineWidth = 2;
+                paramCtx.stroke();
+            });
+        }
+
+        function getSimAtPosition(x, y) {
+            const padding = 40;
+            const graphW = paramCanvas.width - padding * 2;
+            const graphH = paramCanvas.height - padding * 2;
+
+            for (let i = simulations.length - 1; i >= 0; i--) {
+                const sim = simulations[i];
+                const posX = padding + ((sim.f - fMin) / (fMax - fMin)) * graphW;
+                const posY = paramCanvas.height - padding - ((sim.k - kMin) / (kMax - kMin)) * graphH;
+                const dist = Math.sqrt((x - posX) ** 2 + (y - posY) ** 2);
+                if (dist <= 12) return sim; // 12px hit radius
+            }
+            return null;
+        }
+
+        function handleParamDrag(e) {
+            if (!draggedSim) return;
+
+            const rect = paramCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const padding = 40;
+            const graphW = paramCanvas.width - padding * 2;
+            const graphH = paramCanvas.height - padding * 2;
+
+            const normX = (x - padding) / graphW;
+            const normY = 1 - (y - padding) / graphH;
+
+            // Clamp to valid range
+            const clampedNormX = Math.max(0, Math.min(1, normX));
+            const clampedNormY = Math.max(0, Math.min(1, normY));
+
+            draggedSim.f = fMin + clampedNormX * (fMax - fMin);
+            draggedSim.k = kMin + clampedNormY * (kMax - kMin);
+
+            // Update display to show dragged simulation's values
+            document.getElementById('feedValue').textContent = draggedSim.f.toFixed(4);
+            document.getElementById('killValue').textContent = draggedSim.k.toFixed(4);
+
+            document.querySelectorAll('.legend-item').forEach(i => i.classList.remove('active'));
+
+            drawParameterSpace();
+        }
+
+        paramCanvas.addEventListener('mousemove', (e) => {
+            if (draggedSim) return; // Don't change cursor while dragging
+            const rect = paramCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const sim = getSimAtPosition(x, y);
+            paramCanvas.style.cursor = sim ? 'grab' : 'crosshair';
+        });
+
+        paramCanvas.addEventListener('mousedown', (e) => {
+            const rect = paramCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            draggedSim = getSimAtPosition(x, y);
+
+            if (draggedSim) {
+                paramCanvas.style.cursor = 'grabbing';
+                handleParamDrag(e);
+                const onMove = (e) => handleParamDrag(e);
+                const onUp = () => {
+                    draggedSim = null;
+                    paramCanvas.style.cursor = 'crosshair';
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                };
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            }
+        });
+
+        // Update visibility of remove buttons
+        function updateRemoveButtons() {
+            const showRemove = simulations.length > 1;
+            simulations.forEach(sim => {
+                const btn = sim.panel.querySelector('.remove-btn');
+                btn.style.display = showRemove ? 'block' : 'none';
+            });
+        }
+
+        // Add simulation button
+        document.getElementById('addSimBtn').addEventListener('click', () => {
+            const sim = new Simulation(simIdCounter++);
+            simulations.push(sim);
+            drawParameterSpace();
+            updateRemoveButtons();
+        });
+
+        // Legend click handlers
+        const legendItems = document.querySelectorAll('.legend-item');
+        legendItems.forEach(item => {
+            item.addEventListener('click', () => {
+                legendItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+
+                f = parseFloat(item.dataset.f);
+                k = parseFloat(item.dataset.k);
+
+                document.getElementById('feedValue').textContent = f.toFixed(4);
+                document.getElementById('killValue').textContent = k.toFixed(4);
+
+                // Reset all simulations with new parameters
+                simulations.forEach(sim => sim.initGrids());
+                drawParameterSpace();
+            });
+        });
+
+        // Animation loop
+        function animate() {
+            simulations.forEach(sim => sim.tick());
+            requestAnimationFrame(animate);
+        }
+
+        // Initialize
+        const firstSim = new Simulation(simIdCounter++);
+        simulations.push(firstSim);
+        updateRemoveButtons();
+        drawParameterSpace();
+        drawColorSlider();
+        animate();
+    </script>
+</body>
+</html>
