@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confrontation Decision Neuron</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Aldrich&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100vw;
+        }
+
+        body {
+            font-family: 'Aldrich', sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100vw;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+            width: 100vw;
+            max-width: 100vw;
+            overflow-x: hidden;
+        }
+
+        /* Left Panel - Controls */
+        .controls-panel {
+            width: 50vw;
+            min-width: 50vw;
+            max-width: 50vw;
+            flex-shrink: 0;
+            flex-grow: 0;
+            background: #868686;
+            display: flex;
+            flex-direction: column;
+            max-height: 100vh;
+            overflow-y: scroll;
+            scrollbar-gutter: stable;
+        }
+
+        .controls-header {
+            padding: 30px;
+            position: sticky;
+            top: 0;
+            background: #868686;
+            z-index: 10;
+        }
+
+        .controls-header h1 {
+            font-size: 28px;
+            color: #000;
+            margin-bottom: 20px;
+        }
+
+        .definitions {
+            background: rgba(0,0,0,0.1);
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .definitions p {
+            font-size: 13px;
+            color: #000;
+            margin-bottom: 8px;
+        }
+
+        .definitions p:last-child {
+            margin-bottom: 0;
+        }
+
+        .mode-switcher {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            background: #4a4a4a;
+            color: #fff;
+            border: 2px solid transparent;
+            cursor: pointer;
+            font-family: 'Aldrich', sans-serif;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .mode-btn.active {
+            background: #2a2a2a;
+            border-color: #000;
+        }
+
+        .mode-btn:hover {
+            background: #3a3a3a;
+        }
+
+        .emotional-state-section {
+            background: rgba(0,0,0,0.15);
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            border-left: 3px solid #eab308;
+        }
+
+        .emotional-state-section h4 {
+            font-size: 14px;
+            color: #000;
+            margin-bottom: 8px;
+        }
+
+        .emotional-state-section .bias-description {
+            font-size: 11px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .emotional-state-section .slider-group {
+            margin-bottom: 8px;
+        }
+
+        .emotional-state-section .slider-label {
+            font-size: 10px;
+            width: auto;
+        }
+
+        .bias-display {
+            font-size: 12px;
+            color: #000;
+            font-weight: bold;
+        }
+
+        #factors-container,
+        #factors-container-boundary {
+            padding: 0 30px 30px 30px;
+        }
+
+        #predict-controls,
+        #boundary-controls,
+        #train-controls {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .factor-item {
+            background: rgba(0,0,0,0.05);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 3px solid #4a4a4a;
+        }
+
+        .factor-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .factor-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #000;
+        }
+
+        .info-btn {
+            width: 16px;
+            height: 16px;
+            background: #4a4a4a;
+            color: #fff;
+            border-radius: 50%;
+            border: none;
+            cursor: help;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .info-btn:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 25px;
+            top: -5px;
+            background: #1a1a2e;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: normal;
+            z-index: 1000;
+            max-width: 250px;
+            width: max-content;
+        }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        .slider-label {
+            font-size: 11px;
+            color: #1a1a2e;
+            width: 60px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            background: #d0d0d0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #b0b0b0;
+            cursor: pointer;
+            border: none;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #b0b0b0;
+            cursor: pointer;
+            border: none;
+        }
+
+        .value-display {
+            font-size: 11px;
+            font-weight: 600;
+            color: #000;
+            width: 35px;
+            text-align: right;
+        }
+
+        .neuron-weights {
+            background: rgba(0,0,0,0.1);
+            padding: 15px;
+            margin: 0 30px 20px 30px;
+            border-left: 3px solid #4a4a4a;
+        }
+
+        .neuron-weights h4 {
+            font-size: 13px;
+            margin-bottom: 10px;
+            color: #000;
+        }
+
+        .weight-item {
+            font-size: 11px;
+            margin-bottom: 4px;
+            font-family: monospace;
+            color: #1a1a2e;
+        }
+
+        .reset-btn {
+            width: calc(100% - 60px);
+            margin: 0 30px 20px 30px;
+            padding: 12px;
+            background: #4a4a4a;
+            color: #fff;
+            border: none;
+            font-family: 'Aldrich', sans-serif;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .reset-btn:hover {
+            background: #2a2a2a;
+        }
+
+        /* Training Controls */
+        .training-controls {
+            padding: 0 30px 20px 30px;
+            max-width: 730px;
+        }
+
+        .instructions {
+            background: rgba(255, 243, 205, 0.3);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 3px solid #ffc107;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #1a1a2e;
+        }
+
+        .label-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .label-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #4a4a4a;
+            background: #d0d0d0;
+            cursor: pointer;
+            font-family: 'Aldrich', sans-serif;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .label-btn.active.yes {
+            background: #16a34a;
+            color: #fff;
+            border-color: #16a34a;
+        }
+
+        .label-btn.active.no {
+            background: #dc2626;
+            color: #fff;
+            border-color: #dc2626;
+        }
+
+        .training-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .train-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Aldrich', sans-serif;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .train-btn.step {
+            background: #4a4a4a;
+            color: #fff;
+        }
+
+        .train-btn.auto {
+            background: #10b981;
+            color: #fff;
+        }
+
+        .train-btn.reset {
+            background: #dc2626;
+            color: #fff;
+        }
+
+        .train-btn:hover {
+            opacity: 0.8;
+        }
+
+        .training-stats {
+            background: rgba(231, 243, 255, 0.3);
+            padding: 15px;
+            border-left: 3px solid #0066cc;
+            margin-bottom: 15px;
+        }
+
+        .training-stats h4 {
+            font-size: 13px;
+            margin-bottom: 10px;
+            color: #003d7a;
+        }
+
+        .stat-item {
+            font-size: 11px;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            color: #1a1a2e;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        /* Right Panel - Visual Display */
+        .visual-panel {
+            width: 50vw;
+            min-width: 50vw;
+            max-width: 50vw;
+            flex-shrink: 0;
+            flex-grow: 0;
+            background: #868686;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .view-panel {
+            display: none;
+            width: 100%;
+            max-width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .view-panel.active {
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* Home View with Characters */
+        #home-view {
+            background:
+                linear-gradient(to bottom, transparent 0%, transparent 75%, #fff5e7 75%, #fff5e7 100%),
+                repeating-linear-gradient(to right, #afe7be 0px, #afe7be 20px, #80dd99 20px, #80dd99 40px);
+            justify-content: flex-end;
+            align-items: center;
+            padding: 40px;
+        }
+
+        .scene {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 150px;
+            position: relative;
+            width: 100%;
+            padding-bottom: 40px;
+        }
+
+        .figure {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Employee Figure */
+        .employee {
+            height: 250px;
+        }
+
+        .employee .head {
+            width: 69px;
+            height: 69px;
+            background: #d4a574;
+            border-radius: 50%;
+            position: absolute;
+            top: -85px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .employee .body {
+            width: 88px;
+            height: 100px;
+            background: #1a1a2e;
+            margin-top: -5px;
+            clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%);
+        }
+
+        .employee .legs {
+            display: flex;
+            gap: 6px;
+        }
+
+        .employee .leg {
+            width: 28px;
+            height: 150px;
+            background: #374151;
+            clip-path: polygon(0 0, 100% 0, 75% 100%, 25% 100%);
+        }
+
+        /* Superior Figure */
+        .superior {
+            height: 350px;
+        }
+
+        .superior .head {
+            width: 69px;
+            height: 75px;
+            background: #c9a67a;
+            border-radius: 50%;
+            position: relative;
+            transform: translateY(-16px);
+        }
+
+        .superior .body {
+            width: 100px;
+            height: 150px;
+            background: #374151;
+            margin-top: -5px;
+            position: relative;
+            clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%);
+        }
+
+        .superior .body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-top: 75px solid #f5f5f5;
+        }
+
+        .superior .body::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 15px;
+            height: 71px;
+            background: #8b0000;
+            clip-path: polygon(0% 70%, 50% 0%, 100% 70%, 50% 100%);
+        }
+
+        .superior .tie {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 10px solid #8b0000;
+            z-index: 1;
+        }
+
+        .superior .legs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .superior .leg {
+            width: 30px;
+            height: 150px;
+            background: #374151;
+            clip-path: polygon(0 0, 100% 0, 72% 100%, 28% 100%);
+        }
+
+        /* Speech Bubble */
+        .speech-bubble {
+            position: absolute;
+            bottom: calc(100% + 20px);
+            left: 47%;
+            transform: translateX(-50%);
+            background: #16a34a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+            border: none;
+            z-index: 10;
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%) rotate(-45deg);
+            width: 0;
+            height: 0;
+            border: 8px solid transparent;
+            border-right: 44px solid #16a34a;
+            border-left: 0;
+            transition: border-right-color 0.3s ease;
+        }
+
+        .probability-text {
+            font-weight: 700;
+            color: #1a1a2e;
+            transition: font-size 0.3s ease;
+        }
+
+        /* Bubble size classes */
+        .speech-bubble.size-small {
+            width: 105px;
+            height: 105px;
+        }
+        .speech-bubble.size-small .probability-text {
+            font-size: 26px;
+        }
+
+        .speech-bubble.size-medium {
+            width: 145px;
+            height: 145px;
+        }
+        .speech-bubble.size-medium .probability-text {
+            font-size: 37px;
+        }
+
+        .speech-bubble.size-large {
+            width: 184px;
+            height: 184px;
+        }
+        .speech-bubble.size-large .probability-text {
+            font-size: 47px;
+        }
+
+        .speech-bubble.size-xlarge {
+            width: 224px;
+            height: 224px;
+        }
+        .speech-bubble.size-xlarge .probability-text {
+            font-size: 58px;
+        }
+
+        /* Bubble color based on escalation risk */
+        .speech-bubble.risk-low {
+            background: #16a34a;
+        }
+        .speech-bubble.risk-low::after {
+            border-right-color: #16a34a;
+        }
+
+        .speech-bubble.risk-medium {
+            background: #eab308;
+        }
+        .speech-bubble.risk-medium::after {
+            border-right-color: #eab308;
+        }
+
+        .speech-bubble.risk-high {
+            background: #dc2626;
+        }
+        .speech-bubble.risk-high::after {
+            border-right-color: #dc2626;
+        }
+
+        /* Decision Boundary and Training Views */
+        #decision-boundary-view,
+        #training-view {
+            background: #868686;
+            padding: 30px;
+            box-sizing: border-box;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .view-title {
+            font-size: 24px;
+            color: #000;
+            margin-bottom: 20px;
+        }
+
+        .canvas-container {
+            background: rgba(0,0,0,0.05);
+            padding: 20px;
+            border-radius: 4px;
+            box-sizing: border-box;
+            max-width: 100%;
+        }
+
+        .canvas-header {
+            margin-bottom: 15px;
+        }
+
+        .canvas-header h3 {
+            font-size: 16px;
+            color: #000;
+            margin-bottom: 10px;
+        }
+
+        .axis-selectors {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #1a1a2e;
+        }
+
+        .axis-selector label {
+            margin-right: 5px;
+        }
+
+        .axis-selector select {
+            padding: 5px;
+            background: #d0d0d0;
+            border: 1px solid #4a4a4a;
+            font-family: 'Aldrich', sans-serif;
+            font-size: 11px;
+            color: #000;
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 100%;
+            height: 400px;
+            background: white;
+            border: 2px solid #4a4a4a;
+            cursor: crosshair;
+            box-sizing: border-box;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 15px;
+            font-size: 11px;
+            color: #1a1a2e;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid #000;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .controls-panel,
+            .visual-panel {
+                width: 100%;
+            }
+
+            .controls-panel {
+                max-height: none;
+                order: 2;
+            }
+
+            .visual-panel {
+                min-height: 400px;
+                order: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Panel - Controls -->
+        <div class="controls-panel">
+            <div class="controls-header">
+                <h1>Confrontation Decision Neuron</h1>
+                
+                <div class="definitions">
+                    <p><strong>Factor Value:</strong> Factor's current level/intensity</p>
+                    <p><strong>Factor Weight:</strong> Magnitude of factor's influence on the probability</p>
+                </div>
+
+                <div class="mode-switcher">
+                    <button class="mode-btn active" onclick="switchMode('predict')">Prediction Mode</button>
+                    <button class="mode-btn" onclick="switchMode('boundary')">Decision Boundary</button>
+                    <button class="mode-btn" onclick="switchMode('train')">Training Mode</button>
+                </div>
+
+                <div class="emotional-state-section">
+                    <h4>Emotional State (Bias)</h4>
+                    <p class="bias-description">Controls the neuron's bias term. Higher emotional states increase confrontation likelihood.</p>
+                    <div class="slider-group">
+                        <span class="slider-label">Calm</span>
+                        <input type="range" min="0" max="100" value="50" id="emotional-state-slider" oninput="updateEmotionalState(this.value)">
+                        <span class="slider-label">Emotional</span>
+                        <span class="value-display" id="emotional-state-value">0.50</span>
+                    </div>
+                    <div class="bias-display">Bias: <span id="bias-header-value">0.00</span></div>
+                </div>
+            </div>
+
+            <div id="predict-controls">
+                <div id="factors-container"></div>
+                
+                <div class="neuron-weights">
+                    <h4>🧠 Neuron Parameters</h4>
+                    <div id="weights-display"></div>
+                    <div class="weight-item">
+                        <strong>Bias:</strong> <span id="bias-value">0.00</span>
+                    </div>
+                    <div class="weight-item" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.2);">
+                        <strong>Formula:</strong> σ(Σ wᵢxᵢ + b)
+                    </div>
+                </div>
+
+                <button class="reset-btn" onclick="resetWeights()">Reset Weights to Random</button>
+            </div>
+
+            <div id="boundary-controls" style="display: none;">
+                <div id="factors-container-boundary"></div>
+                
+                <div class="neuron-weights">
+                    <h4>🧠 Neuron Parameters</h4>
+                    <div id="weights-display-boundary"></div>
+                    <div class="weight-item">
+                        <strong>Bias:</strong> <span id="bias-value-boundary">0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="train-controls" style="display: none;" class="training-controls">
+                <div class="instructions">
+                    <strong>📚 Training Instructions:</strong><br>
+                    1. Click on the plot to add training examples<br>
+                    2. Choose "Confronted" or "Didn't Confront" label<br>
+                    3. Click "Step" to train one iteration or "Train" for 100 steps<br>
+                    4. Watch the decision boundary line adjust to fit your examples
+                </div>
+
+                <div class="label-selector">
+                    <button class="label-btn yes active" onclick="setLabel('yes')">
+                        ✓ Confronted
+                    </button>
+                    <button class="label-btn no" onclick="setLabel('no')">
+                        ✗ Didn't Confront
+                    </button>
+                </div>
+
+                <div class="training-buttons">
+                    <button class="train-btn step" onclick="trainStep()">Step</button>
+                    <button class="train-btn auto" onclick="trainAuto()">Train (100x)</button>
+                    <button class="train-btn reset" onclick="resetTraining()">Reset</button>
+                </div>
+
+                <div class="training-stats">
+                    <h4>📊 Training Statistics</h4>
+                    <div class="stat-item">
+                        <span>Steps:</span>
+                        <span class="stat-value" id="steps-count">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Accuracy:</span>
+                        <span class="stat-value" id="accuracy-value">N/A</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Training Points:</span>
+                        <span class="stat-value" id="points-count">0</span>
+                    </div>
+                </div>
+
+                <div class="neuron-weights">
+                    <h4>🧠 Current Weights</h4>
+                    <div id="train-weights-display"></div>
+                    <div class="weight-item">
+                        <strong>Bias:</strong> <span id="train-bias-value">0.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Visual Display -->
+        <div class="visual-panel">
+            <!-- Home View with Characters and Speech Bubble -->
+            <div class="view-panel active" id="home-view">
+                <div class="scene">
+                    <div class="speech-bubble size-medium risk-medium" id="speech-bubble">
+                        <span class="probability-text" id="probability-display">50%</span>
+                    </div>
+                    
+                    <!-- Employee Figure -->
+                    <div class="figure employee">
+                        <div class="head"></div>
+                        <div class="body"></div>
+                        <div class="legs">
+                            <div class="leg"></div>
+                            <div class="leg"></div>
+                        </div>
+                    </div>
+
+                    <!-- Superior Figure -->
+                    <div class="figure superior">
+                        <div class="head"></div>
+                        <div class="body">
+                            <div class="tie"></div>
+                        </div>
+                        <div class="legs">
+                            <div class="leg"></div>
+                            <div class="leg"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decision Boundary View -->
+            <div class="view-panel" id="decision-boundary-view">
+                <h2 class="view-title">Decision Boundary Visualization</h2>
+                <div class="canvas-container">
+                    <div class="canvas-header">
+                        <h3>2D Decision Space</h3>
+                        <div class="axis-selectors">
+                            <div class="axis-selector">
+                                <label>X-Axis:</label>
+                                <select id="x-axis-boundary" onchange="redrawBoundaryCanvas()"></select>
+                            </div>
+                            <div class="axis-selector">
+                                <label>Y-Axis:</label>
+                                <select id="y-axis-boundary" onchange="redrawBoundaryCanvas()"></select>
+                            </div>
+                        </div>
+                    </div>
+                    <canvas id="boundary-canvas"></canvas>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: rgba(22, 163, 74, 0.8);"></div>
+                            <span>Confront</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: rgba(220, 38, 38, 0.8);"></div>
+                            <span>Don't Confront</span>
+                        </div>
+                        <div class="legend-item">
+                            <div style="width: 30px; height: 3px; background: #000;"></div>
+                            <span>Decision Boundary</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Training View -->
+            <div class="view-panel" id="training-view">
+                <h2 class="view-title">Training Mode</h2>
+                <div class="canvas-container">
+                    <div class="canvas-header">
+                        <h3>Click to Add Training Examples</h3>
+                        <div class="axis-selectors">
+                            <div class="axis-selector">
+                                <label>X-Axis:</label>
+                                <select id="x-axis-train" onchange="redrawTrainingCanvas()"></select>
+                            </div>
+                            <div class="axis-selector">
+                                <label>Y-Axis:</label>
+                                <select id="y-axis-train" onchange="redrawTrainingCanvas()"></select>
+                            </div>
+                        </div>
+                    </div>
+                    <canvas id="training-canvas"></canvas>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #16a34a;"></div>
+                            <span>Confronted</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #dc2626;"></div>
+                            <span>Didn't Confront</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Factor definitions
+        const factors = [
+            // Personal Factors
+            { id: 'issue_confidence', name: 'Issue Confidence', description: 'How confident you are on the issue', range: 'Low to High', category: 'Personal' },
+            { id: 'social_confidence', name: 'Social Confidence', description: 'How confident you are with interacting with people', range: 'Low to High', category: 'Personal' },
+            { id: 'emotional_state', name: 'Emotional State', description: 'How emotional you are', range: 'Calm to Highly Emotional', category: 'Personal' },
+            { id: 'job_security', name: 'Job Security', description: 'How likely you are to keep your job', range: 'In Jeopardy to Highly Secure', category: 'Personal' },
+            { id: 'issue_importance', name: 'Issue Importance', description: 'How much you care about the issue', range: "Don't Care to Deeply Care", category: 'Personal' },
+            // Superior Factors
+            { id: 'superior_approachability', name: 'Superior Approachability', description: 'How easy it is to talk to your superior', range: 'Extremely Intimidating to Extremely Approachable', category: 'Superior' },
+            { id: 'bias_alignment', name: 'Bias Alignment', description: 'How much your biases on the issue align with your superior', range: 'Strongly Opposing to Strongly in Agreement', category: 'Superior' },
+            { id: 'superior_accountability', name: 'Superior Accountability', description: 'How likely the superior is to implement changes based on your suggestion', range: 'Very Unlikely to Highly Likely', category: 'Superior' },
+            // Outside Factors
+            { id: 'peer_support', name: 'Peer Support', description: 'How much your peers support you on the issue', range: 'No Support to Highly Supported', category: 'Outside' },
+            { id: 'alternative_options', name: 'Alternative Options', description: 'How many other ways there are to approach the issue', range: 'No Alternatives to Many Good Alternatives', category: 'Outside' },
+            { id: 'outside_superior_support', name: 'Outside Superior Support', description: 'Support from other superiors or managers', range: 'No Support to Highly Supportive', category: 'Outside' },
+            { id: 'escalation_probability', name: 'Escalation Probability', description: 'How likely the issue is to escalate', range: 'Very Unlikely to Highly Likely', category: 'Outside' }
+        ];
+
+        // Neuron state
+        let weights = factors.map(() => (Math.random() - 0.5) * 2);
+        let factorValues = factors.map(() => 0.5);
+
+        // Bias is based on emotional state (index 2): maps 0-1 to -1 to 1
+        function calculateBias() {
+            const emotionalStateIndex = factors.findIndex(f => f.id === 'emotional_state');
+            const emotionalState = emotionalStateIndex >= 0 ? factorValues[emotionalStateIndex] : 0.5;
+            return (emotionalState - 0.5) * 2; // Maps 0-1 to -1 to 1
+        }
+        let bias = calculateBias();
+
+        // Training state
+        let currentMode = 'predict';
+        let currentLabel = 'yes';
+        let trainingPoints = [];
+        let stepCount = 0;
+        const learningRate = 0.1;
+
+        // Sigmoid activation function
+        function sigmoid(z) {
+            return 1 / (1 + Math.exp(-z));
+        }
+
+        // Calculate neuron output
+        function calculateOutput(inputs) {
+            let z = bias;
+            for (let i = 0; i < weights.length; i++) {
+                z += weights[i] * inputs[i];
+            }
+            return sigmoid(z);
+        }
+
+        // Initialize the app
+        function init() {
+            createFactorInputs();
+            setupCanvases();
+            // Initialize header bias display
+            document.getElementById('bias-header-value').textContent = bias.toFixed(2);
+            updateDisplay();
+        }
+
+        // Create factor input sliders
+        function createFactorInputs() {
+            const containers = [
+                document.getElementById('factors-container'),
+                document.getElementById('factors-container-boundary')
+            ];
+
+            containers.forEach(container => {
+                if (!container) return;
+                container.innerHTML = '';
+
+                factors.forEach((factor, i) => {
+                    // Skip emotional_state - it has its own section in the header
+                    if (factor.id === 'emotional_state') return;
+
+                    const div = document.createElement('div');
+                    div.className = 'factor-item';
+                    div.innerHTML = `
+                        <div class="factor-header">
+                            <div class="factor-name">${factor.name}</div>
+                            <button class="info-btn" data-tooltip="${factor.description} (${factor.range})">i</button>
+                        </div>
+                        <div class="slider-group">
+                            <span class="slider-label">Value:</span>
+                            <input type="range" min="0" max="100" value="50" class="factor-slider" data-index="${i}" oninput="updateFactorValue(${i}, this.value)">
+                            <span class="value-display" id="value-${i}">0.50</span>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            });
+
+            updateWeightsDisplay();
+        }
+
+        // Update emotional state (bias) from header slider
+        function updateEmotionalState(value) {
+            const emotionalStateIndex = factors.findIndex(f => f.id === 'emotional_state');
+            if (emotionalStateIndex >= 0) {
+                factorValues[emotionalStateIndex] = value / 100;
+                document.getElementById('emotional-state-value').textContent = (value / 100).toFixed(2);
+                bias = calculateBias();
+                document.getElementById('bias-header-value').textContent = bias.toFixed(2);
+                updateWeightsDisplay();
+                updateDisplay();
+            }
+        }
+
+        // Update factor value
+        function updateFactorValue(index, value) {
+            factorValues[index] = value / 100;
+            document.getElementById(`value-${index}`).textContent = (value / 100).toFixed(2);
+
+            // Update bias if emotional state changed
+            const emotionalStateIndex = factors.findIndex(f => f.id === 'emotional_state');
+            if (index === emotionalStateIndex) {
+                bias = calculateBias();
+                updateWeightsDisplay();
+            }
+
+            updateDisplay();
+        }
+
+        // Update all displays
+        function updateDisplay() {
+            const probability = calculateOutput(factorValues);
+            const probPercent = (probability * 100).toFixed(1);
+
+            // Update speech bubble
+            const bubble = document.getElementById('speech-bubble');
+            const probText = document.getElementById('probability-display');
+            probText.textContent = `${probPercent}%`;
+
+            // Update bubble size based on probability
+            bubble.classList.remove('size-small', 'size-medium', 'size-large', 'size-xlarge');
+            if (probability < 0.25) {
+                bubble.classList.add('size-small');
+            } else if (probability < 0.5) {
+                bubble.classList.add('size-medium');
+            } else if (probability < 0.75) {
+                bubble.classList.add('size-large');
+            } else {
+                bubble.classList.add('size-xlarge');
+            }
+
+            // Update bubble color based on escalation probability (last factor, index 11)
+            const escalationIndex = factors.findIndex(f => f.id === 'escalation_probability');
+            const escalation = escalationIndex >= 0 ? factorValues[escalationIndex] : 0.5;
+
+            bubble.classList.remove('risk-low', 'risk-medium', 'risk-high');
+            if (escalation < 0.33) {
+                bubble.classList.add('risk-low');
+            } else if (escalation < 0.66) {
+                bubble.classList.add('risk-medium');
+            } else {
+                bubble.classList.add('risk-high');
+            }
+
+            redrawBoundaryCanvas();
+        }
+
+        // Update weights display
+        function updateWeightsDisplay() {
+            const containers = [
+                document.getElementById('weights-display'),
+                document.getElementById('weights-display-boundary')
+            ];
+
+            containers.forEach(container => {
+                if (!container) return;
+                container.innerHTML = '';
+                factors.forEach((factor, i) => {
+                    // Skip emotional_state - it controls bias, not a weight
+                    if (factor.id === 'emotional_state') return;
+                    const div = document.createElement('div');
+                    div.className = 'weight-item';
+                    div.innerHTML = `<strong>w${i+1}</strong> (${factor.name}): ${weights[i].toFixed(3)}`;
+                    container.appendChild(div);
+                });
+            });
+
+            const biasDisplays = ['bias-value', 'bias-value-boundary', 'bias-header-value'];
+            biasDisplays.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = bias.toFixed(2);
+            });
+
+            // Update training weights display
+            const trainContainer = document.getElementById('train-weights-display');
+            if (trainContainer) {
+                const xIdx = parseInt(document.getElementById('x-axis-train')?.value || 0);
+                const yIdx = parseInt(document.getElementById('y-axis-train')?.value || 1);
+                
+                trainContainer.innerHTML = `
+                    <div class="weight-item"><strong>w${xIdx+1}</strong> (${factors[xIdx].name}): ${weights[xIdx].toFixed(3)}</div>
+                    <div class="weight-item"><strong>w${yIdx+1}</strong> (${factors[yIdx].name}): ${weights[yIdx].toFixed(3)}</div>
+                `;
+                document.getElementById('train-bias-value').textContent = bias.toFixed(3);
+            }
+        }
+
+        // Reset weights
+        function resetWeights() {
+            weights = factors.map(() => (Math.random() - 0.5) * 2);
+            bias = calculateBias(); // Bias based on emotional state
+            updateWeightsDisplay();
+            updateDisplay();
+        }
+
+        // Setup canvases
+        function setupCanvases() {
+            const selectors = [
+                { x: 'x-axis-boundary', y: 'y-axis-boundary' },
+                { x: 'x-axis-train', y: 'y-axis-train' }
+            ];
+
+            selectors.forEach(sel => {
+                const xSelect = document.getElementById(sel.x);
+                const ySelect = document.getElementById(sel.y);
+                
+                if (!xSelect || !ySelect) return;
+
+                xSelect.innerHTML = '';
+                ySelect.innerHTML = '';
+
+                factors.forEach((factor, i) => {
+                    xSelect.innerHTML += `<option value="${i}">${factor.name}</option>`;
+                    ySelect.innerHTML += `<option value="${i}">${factor.name}</option>`;
+                });
+                
+                xSelect.value = 0;
+                ySelect.value = 1;
+            });
+
+            // Add click handler for training canvas
+            const trainCanvas = document.getElementById('training-canvas');
+            if (trainCanvas) {
+                trainCanvas.addEventListener('click', handleCanvasClick);
+            }
+
+            // Add drag handlers for boundary canvas
+            const boundaryCanvas = document.getElementById('boundary-canvas');
+            if (boundaryCanvas) {
+                boundaryCanvas.addEventListener('mousedown', handleBoundaryMouseDown);
+                boundaryCanvas.addEventListener('mousemove', handleBoundaryMouseMove);
+                boundaryCanvas.addEventListener('mouseup', handleBoundaryMouseUp);
+                boundaryCanvas.addEventListener('mouseleave', handleBoundaryMouseUp);
+            }
+
+            redrawBoundaryCanvas();
+            redrawTrainingCanvas();
+        }
+
+        // Boundary canvas drag state
+        let isDraggingBoundary = false;
+
+        function handleBoundaryMouseDown(e) {
+            const canvas = document.getElementById('boundary-canvas');
+            const rect = canvas.getBoundingClientRect();
+            const padding = 40;
+            const w = canvas.width;
+            const h = canvas.height;
+
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const xIdx = parseInt(document.getElementById('x-axis-boundary')?.value || 0);
+            const yIdx = parseInt(document.getElementById('y-axis-boundary')?.value || 1);
+
+            // Check if click is near the dot
+            const dotX = padding + factorValues[xIdx] * (w - 2 * padding);
+            const dotY = padding + (1 - factorValues[yIdx]) * (h - 2 * padding);
+            const distance = Math.sqrt((x - dotX) ** 2 + (y - dotY) ** 2);
+
+            if (distance <= 15) {
+                isDraggingBoundary = true;
+                canvas.style.cursor = 'grabbing';
+            }
+        }
+
+        function handleBoundaryMouseMove(e) {
+            if (!isDraggingBoundary) return;
+
+            const canvas = document.getElementById('boundary-canvas');
+            const rect = canvas.getBoundingClientRect();
+            const padding = 40;
+            const w = canvas.width;
+            const h = canvas.height;
+
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Convert to normalized values
+            let normX = (x - padding) / (w - 2 * padding);
+            let normY = 1 - (y - padding) / (h - 2 * padding);
+
+            // Clamp to 0-1
+            normX = Math.max(0, Math.min(1, normX));
+            normY = Math.max(0, Math.min(1, normY));
+
+            const xIdx = parseInt(document.getElementById('x-axis-boundary')?.value || 0);
+            const yIdx = parseInt(document.getElementById('y-axis-boundary')?.value || 1);
+
+            // Update factor values
+            factorValues[xIdx] = normX;
+            factorValues[yIdx] = normY;
+
+            // Update sliders in all containers
+            document.querySelectorAll(`[data-index="${xIdx}"]`).forEach(slider => {
+                slider.value = Math.round(normX * 100);
+            });
+            document.querySelectorAll(`[data-index="${yIdx}"]`).forEach(slider => {
+                slider.value = Math.round(normY * 100);
+            });
+
+            // Update value displays
+            const xDisplay = document.getElementById(`value-${xIdx}`);
+            const yDisplay = document.getElementById(`value-${yIdx}`);
+            if (xDisplay) xDisplay.textContent = normX.toFixed(2);
+            if (yDisplay) yDisplay.textContent = normY.toFixed(2);
+
+            updateDisplay();
+        }
+
+        function handleBoundaryMouseUp(e) {
+            if (isDraggingBoundary) {
+                isDraggingBoundary = false;
+                const canvas = document.getElementById('boundary-canvas');
+                if (canvas) canvas.style.cursor = 'crosshair';
+            }
+        }
+
+        // Draw boundary canvas
+        // Color interpolation for heatmap: red → white → green
+        function getHeatmapColor(probability) {
+            // Red (Don't Confront): rgb(220, 38, 38)
+            // White: rgb(255, 255, 255)
+            // Green (Confront): rgb(22, 163, 74)
+
+            let r, g, b;
+            if (probability < 0.5) {
+                // Red to white (0 to 0.5)
+                const t = probability * 2;
+                r = Math.round(220 + (255 - 220) * t);
+                g = Math.round(38 + (255 - 38) * t);
+                b = Math.round(38 + (255 - 38) * t);
+            } else {
+                // White to green (0.5 to 1)
+                const t = (probability - 0.5) * 2;
+                r = Math.round(255 + (22 - 255) * t);
+                g = Math.round(255 + (163 - 255) * t);
+                b = Math.round(255 + (74 - 255) * t);
+            }
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function redrawBoundaryCanvas() {
+            const canvas = document.getElementById('boundary-canvas');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            const padding = 40;
+            const w = canvas.width;
+            const h = canvas.height;
+
+            const xIdx = parseInt(document.getElementById('x-axis-boundary')?.value || 0);
+            const yIdx = parseInt(document.getElementById('y-axis-boundary')?.value || 1);
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Draw heatmap with blue → white → magenta gradient
+            const resolution = 4;
+            for (let px = padding; px < w - padding; px += resolution) {
+                for (let py = padding; py < h - padding; py += resolution) {
+                    const normX = (px - padding) / (w - 2 * padding);
+                    const normY = 1 - (py - padding) / (h - 2 * padding);
+
+                    const inputs = [...factorValues];
+                    inputs[xIdx] = normX;
+                    inputs[yIdx] = normY;
+
+                    const output = calculateOutput(inputs);
+                    ctx.fillStyle = getHeatmapColor(output);
+                    ctx.fillRect(px, py, resolution, resolution);
+                }
+            }
+
+            // Draw decision boundary contour at 0.5 threshold
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+
+            const otherSum = weights.reduce((sum, w, i) => {
+                if (i !== xIdx && i !== yIdx) {
+                    return sum + w * factorValues[i];
+                }
+                return sum;
+            }, 0);
+
+            const effectiveBias = bias + otherSum;
+            const wx = weights[xIdx];
+            const wy = weights[yIdx];
+
+            if (Math.abs(wy) > 0.001) {
+                const points = [];
+                for (let x = 0; x <= 1; x += 0.01) {
+                    const y = (-wx * x - effectiveBias) / wy;
+                    if (y >= 0 && y <= 1) {
+                        const px = padding + x * (w - 2 * padding);
+                        const py = padding + (1 - y) * (h - 2 * padding);
+                        points.push([px, py]);
+                    }
+                }
+                if (points.length > 0) {
+                    ctx.moveTo(points[0][0], points[0][1]);
+                    points.forEach(p => ctx.lineTo(p[0], p[1]));
+                }
+            } else if (Math.abs(wx) > 0.001) {
+                const x = -effectiveBias / wx;
+                if (x >= 0 && x <= 1) {
+                    const px = padding + x * (w - 2 * padding);
+                    ctx.moveTo(px, padding);
+                    ctx.lineTo(px, h - padding);
+                }
+            }
+            ctx.stroke();
+
+            // Draw axes
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.moveTo(padding, h - padding);
+            ctx.lineTo(w - padding, h - padding);
+            ctx.moveTo(padding, h - padding);
+            ctx.lineTo(padding, padding);
+            ctx.stroke();
+
+            // Current position
+            const dotX = padding + factorValues[xIdx] * (w - 2 * padding);
+            const dotY = padding + (1 - factorValues[yIdx]) * (h - 2 * padding);
+
+            // Draw crosshair lines
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            // Vertical line
+            ctx.moveTo(dotX, padding);
+            ctx.lineTo(dotX, h - padding);
+            // Horizontal line
+            ctx.moveTo(padding, dotY);
+            ctx.lineTo(w - padding, dotY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw crosshair dot
+            ctx.beginPath();
+            ctx.arc(dotX, dotY, 8, 0, Math.PI * 2);
+            ctx.fillStyle = '#000';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Inner dot
+            ctx.beginPath();
+            ctx.arc(dotX, dotY, 3, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+
+            // Axis labels
+            ctx.fillStyle = '#000';
+            ctx.font = '11px Aldrich';
+            ctx.textAlign = 'center';
+            ctx.fillText(factors[xIdx].name, w / 2, h - 10);
+            ctx.save();
+            ctx.translate(15, h / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(factors[yIdx].name, 0, 0);
+            ctx.restore();
+        }
+
+        // Draw training canvas
+        function redrawTrainingCanvas() {
+            const canvas = document.getElementById('training-canvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            const padding = 40;
+            const w = canvas.width;
+            const h = canvas.height;
+
+            const xIdx = parseInt(document.getElementById('x-axis-train')?.value || 0);
+            const yIdx = parseInt(document.getElementById('y-axis-train')?.value || 1);
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Draw decision regions
+            const resolution = 8;
+            for (let px = padding; px < w - padding; px += resolution) {
+                for (let py = padding; py < h - padding; py += resolution) {
+                    const normX = (px - padding) / (w - 2 * padding);
+                    const normY = 1 - (py - padding) / (h - 2 * padding);
+
+                    const inputs = [...factorValues];
+                    inputs[xIdx] = normX;
+                    inputs[yIdx] = normY;
+
+                    const output = calculateOutput(inputs);
+                    const shouldConfront = output >= 0.5;
+
+                    ctx.fillStyle = shouldConfront ? 
+                        'rgba(22, 163, 74, 0.2)' : 
+                        'rgba(220, 38, 38, 0.2)';
+                    ctx.fillRect(px, py, resolution, resolution);
+                }
+            }
+
+            // Draw decision boundary
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+
+            const otherSum = weights.reduce((sum, w, i) => {
+                if (i !== xIdx && i !== yIdx) {
+                    return sum + w * factorValues[i];
+                }
+                return sum;
+            }, 0);
+
+            const effectiveBias = bias + otherSum;
+            const wx = weights[xIdx];
+            const wy = weights[yIdx];
+
+            if (Math.abs(wy) > 0.001) {
+                const points = [];
+                for (let x = 0; x <= 1; x += 0.01) {
+                    const y = (-wx * x - effectiveBias) / wy;
+                    if (y >= 0 && y <= 1) {
+                        const px = padding + x * (w - 2 * padding);
+                        const py = padding + (1 - y) * (h - 2 * padding);
+                        points.push([px, py]);
+                    }
+                }
+                if (points.length > 0) {
+                    ctx.moveTo(points[0][0], points[0][1]);
+                    points.forEach(p => ctx.lineTo(p[0], p[1]));
+                }
+            } else if (Math.abs(wx) > 0.001) {
+                const x = -effectiveBias / wx;
+                if (x >= 0 && x <= 1) {
+                    const px = padding + x * (w - 2 * padding);
+                    ctx.moveTo(px, padding);
+                    ctx.lineTo(px, h - padding);
+                }
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw training points
+            trainingPoints.forEach(point => {
+                const px = padding + point.x * (w - 2 * padding);
+                const py = padding + (1 - point.y) * (h - 2 * padding);
+
+                ctx.beginPath();
+                ctx.arc(px, py, 6, 0, Math.PI * 2);
+                ctx.fillStyle = point.label === 1 ? '#16a34a' : '#dc2626';
+                ctx.fill();
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+
+            // Draw axes
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, h - padding);
+            ctx.lineTo(w - padding, h - padding);
+            ctx.moveTo(padding, h - padding);
+            ctx.lineTo(padding, padding);
+            ctx.stroke();
+
+            // Axis labels
+            ctx.fillStyle = '#000';
+            ctx.font = '11px Aldrich';
+            ctx.textAlign = 'center';
+            ctx.fillText(factors[xIdx].name, w / 2, h - 10);
+            ctx.save();
+            ctx.translate(15, h / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(factors[yIdx].name, 0, 0);
+            ctx.restore();
+        }
+
+        // Handle canvas click for training
+        function handleCanvasClick(e) {
+            if (currentMode !== 'train') return;
+
+            const canvas = document.getElementById('training-canvas');
+            const rect = canvas.getBoundingClientRect();
+            const padding = 40;
+            const w = canvas.width;
+            const h = canvas.height;
+
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const normX = (x - padding) / (w - 2 * padding);
+            const normY = 1 - (y - padding) / (h - 2 * padding);
+
+            if (normX >= 0 && normX <= 1 && normY >= 0 && normY <= 1) {
+                const xIdx = parseInt(document.getElementById('x-axis-train').value);
+                const yIdx = parseInt(document.getElementById('y-axis-train').value);
+
+                trainingPoints.push({
+                    x: normX,
+                    y: normY,
+                    xIdx: xIdx,
+                    yIdx: yIdx,
+                    label: currentLabel === 'yes' ? 1 : 0
+                });
+
+                document.getElementById('points-count').textContent = trainingPoints.length;
+                redrawTrainingCanvas();
+                updateAccuracy();
+            }
+        }
+
+        // Switch modes
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            // Update buttons
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Hide all controls
+            document.getElementById('predict-controls').style.display = 'none';
+            document.getElementById('boundary-controls').style.display = 'none';
+            document.getElementById('train-controls').style.display = 'none';
+
+            // Hide all views
+            document.querySelectorAll('.view-panel').forEach(panel => panel.classList.remove('active'));
+
+            // Show appropriate content
+            if (mode === 'predict') {
+                document.getElementById('predict-controls').style.display = 'block';
+                document.getElementById('home-view').classList.add('active');
+            } else if (mode === 'boundary') {
+                document.getElementById('boundary-controls').style.display = 'block';
+                document.getElementById('decision-boundary-view').classList.add('active');
+                setTimeout(() => redrawBoundaryCanvas(), 100);
+            } else if (mode === 'train') {
+                document.getElementById('train-controls').style.display = 'block';
+                document.getElementById('training-view').classList.add('active');
+                setTimeout(() => redrawTrainingCanvas(), 100);
+            }
+        }
+
+        // Set training label
+        function setLabel(label) {
+            currentLabel = label;
+            document.querySelectorAll('.label-btn').forEach(btn => btn.classList.remove('active'));
+            if (label === 'yes') {
+                document.querySelector('.label-btn.yes').classList.add('active');
+            } else {
+                document.querySelector('.label-btn.no').classList.add('active');
+            }
+        }
+
+        // Training step
+        function trainStep() {
+            if (trainingPoints.length === 0) return;
+
+            const xIdx = parseInt(document.getElementById('x-axis-train').value);
+            const yIdx = parseInt(document.getElementById('y-axis-train').value);
+
+            // Train on one random point
+            const point = trainingPoints[Math.floor(Math.random() * trainingPoints.length)];
+
+            const inputs = [...factorValues];
+            inputs[xIdx] = point.x;
+            inputs[yIdx] = point.y;
+
+            const output = calculateOutput(inputs);
+            const error = point.label - output;
+
+            // Update weights using gradient descent
+            weights[xIdx] += learningRate * error * output * (1 - output) * point.x;
+            weights[yIdx] += learningRate * error * output * (1 - output) * point.y;
+            bias += learningRate * error * output * (1 - output);
+
+            stepCount++;
+            document.getElementById('steps-count').textContent = stepCount;
+            updateWeightsDisplay();
+            updateAccuracy();
+            redrawTrainingCanvas();
+        }
+
+        // Auto train
+        function trainAuto() {
+            for (let i = 0; i < 100; i++) {
+                trainStep();
+            }
+        }
+
+        // Reset training
+        function resetTraining() {
+            trainingPoints = [];
+            weights = factors.map(() => (Math.random() - 0.5) * 2);
+            bias = calculateBias(); // Bias based on emotional state
+            stepCount = 0;
+            document.getElementById('steps-count').textContent = 0;
+            document.getElementById('points-count').textContent = 0;
+            document.getElementById('accuracy-value').textContent = 'N/A';
+            updateWeightsDisplay();
+            redrawTrainingCanvas();
+        }
+
+        // Update accuracy
+        function updateAccuracy() {
+            if (trainingPoints.length === 0) {
+                document.getElementById('accuracy-value').textContent = 'N/A';
+                return;
+            }
+
+            const xIdx = parseInt(document.getElementById('x-axis-train').value);
+            const yIdx = parseInt(document.getElementById('y-axis-train').value);
+
+            let correct = 0;
+            trainingPoints.forEach(point => {
+                const inputs = [...factorValues];
+                inputs[xIdx] = point.x;
+                inputs[yIdx] = point.y;
+
+                const output = calculateOutput(inputs);
+                const prediction = output >= 0.5 ? 1 : 0;
+
+                if (prediction === point.label) correct++;
+            });
+
+            const accuracy = (correct / trainingPoints.length * 100).toFixed(1);
+            document.getElementById('accuracy-value').textContent = `${accuracy}%`;
+        }
+
+        // Initialize on load
+        window.onload = init;
+    </script>
+</body>
+</html>
