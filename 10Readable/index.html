@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Readable Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+            transition: filter 0.3s ease;
+        }
+
+        body.filter-protanopia { filter: url(#protanopia-filter); }
+        body.filter-deuteranopia { filter: url(#deuteranopia-filter); }
+        body.filter-tritanopia { filter: url(#tritanopia-filter); }
+        body.filter-protanomaly { filter: url(#protanomaly-filter); }
+        body.filter-deuteranomaly { filter: url(#deuteranomaly-filter); }
+        body.filter-tritanomaly { filter: url(#tritanomaly-filter); }
+        body.filter-achromatopsia { filter: url(#achromatopsia-filter); }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .panel h2 {
+            font-size: 1.3rem;
+            margin-bottom: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel h2 span {
+            font-size: 1.5rem;
+        }
+
+        /* Color Selection Area */
+        .color-selection-area {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            align-items: flex-start;
+        }
+
+        .generated-colors {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 0 0 33.333%;
+            max-width: calc(33.333% - 10px);
+        }
+
+        .generated-color-box {
+            height: 60px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .generated-color-box span {
+            font-family: monospace;
+            font-size: 0.8rem;
+            font-weight: bold;
+            background: rgba(0,0,0,0.4);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .generated-color-box.color1-box {
+            border: 2px solid rgba(255,255,255,0.5);
+        }
+
+        .color-box-wrapper {
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .color-box-wrapper.base-color-box,
+        #customColor2Wrapper {
+            flex: 0 0 33.333%;
+            max-width: calc(33.333% - 10px);
+        }
+
+        .color-box-wrapper h4 {
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            color: #ccc;
+        }
+
+        .color-preview-box {
+            width: 100%;
+            height: 80px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .color-preview-box span {
+            font-family: monospace;
+            font-size: 0.9rem;
+            font-weight: bold;
+            background: rgba(0,0,0,0.4);
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+
+        .rgb-sliders {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider-row label {
+            width: 20px;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        .slider-row label.red { color: #ff6b6b; }
+        .slider-row label.green { color: #4ecdc4; }
+        .slider-row label.blue { color: #45b7d1; }
+
+        .slider-row input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .slider-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .slider-row input.red-slider { background: linear-gradient(to right, #000, #f00); }
+        .slider-row input.green-slider { background: linear-gradient(to right, #000, #0f0); }
+        .slider-row input.blue-slider { background: linear-gradient(to right, #000, #00f); }
+
+        .slider-row .value {
+            width: 35px;
+            text-align: right;
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        /* Palette Generator */
+        .palette-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .btn-secondary.active {
+            background: rgba(78, 205, 196, 0.3);
+            border-color: #4ecdc4;
+        }
+
+        .palette-type-select {
+            padding: 10px 15px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            font-size: 1rem;
+        }
+
+        .palette-type-select option {
+            background: #1a1a2e;
+        }
+
+        .accessible-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .badge-aaa {
+            background: #4ecdc4;
+            color: #000;
+        }
+
+        .badge-aa {
+            background: #f9ca24;
+            color: #000;
+        }
+
+        /* Accessible Mode Buttons */
+        .accessible-mode-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .accessible-mode-label {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-icon {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            font-size: 0.65rem;
+            font-style: italic;
+            font-weight: bold;
+            color: #888;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .info-icon:hover {
+            background: rgba(78, 205, 196, 0.3);
+            color: #4ecdc4;
+        }
+
+        .info-tooltip {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: rgba(0,0,0,0.9);
+            color: #fff;
+            font-size: 0.75rem;
+            font-style: normal;
+            font-weight: normal;
+            white-space: nowrap;
+            border-radius: 6px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s, visibility 0.2s;
+            z-index: 100;
+        }
+
+        .info-tooltip a {
+            color: #4ecdc4;
+            text-decoration: underline;
+        }
+
+        .info-tooltip a:hover {
+            color: #6ee7de;
+        }
+
+        .info-icon:hover .info-tooltip,
+        .info-tooltip.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .mode-btn {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #888;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-btn:hover {
+            background: rgba(255,255,255,0.15);
+            color: #ccc;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            border-color: #4ecdc4;
+            color: #fff;
+        }
+
+        /* Contrast Checker */
+        .contrast-controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .color-control-box {
+            flex: 1;
+            min-width: 200px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .color-control-box h4 {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            color: #ccc;
+        }
+
+        .color-preview-small {
+            width: 100%;
+            height: 40px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .rgb-sliders-compact {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .slider-row-compact {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .slider-row-compact label {
+            width: 16px;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .slider-row-compact input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .slider-row-compact input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .rgb-input {
+            width: 50px;
+            padding: 4px 6px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 4px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-family: monospace;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        .rgb-input:focus {
+            outline: none;
+            border-color: #4ecdc4;
+        }
+
+        .luminosity-display {
+            margin-top: 12px;
+            padding: 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #888;
+            text-align: center;
+        }
+
+        .luminosity-display span {
+            color: #4ecdc4;
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        .text-size-box {
+            min-width: 150px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .text-size-box h4 {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            color: #ccc;
+        }
+
+        .text-size-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .text-size-control input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            background: linear-gradient(to right, #4ecdc4, #45b7d1);
+        }
+
+        .text-size-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .size-input {
+            width: 50px;
+            padding: 4px 6px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 4px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-family: monospace;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        .size-input:focus {
+            outline: none;
+            border-color: #4ecdc4;
+        }
+
+        .text-size-control span {
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        .preset-select {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .preset-select:focus {
+            outline: none;
+            border-color: #4ecdc4;
+        }
+
+        .preset-select option,
+        .preset-select optgroup {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .preset-select optgroup {
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+
+        .color-spectrum {
+            width: 100%;
+            height: 30px;
+            border-radius: 6px;
+            background: linear-gradient(to right,
+                #ff0000,
+                #ff8000,
+                #ffff00,
+                #80ff00,
+                #00ff00,
+                #00ff80,
+                #00ffff,
+                #0080ff,
+                #0000ff,
+                #8000ff,
+                #ff00ff,
+                #ff0080,
+                #ff0000
+            );
+            border: 1px solid rgba(255,255,255,0.2);
+            margin-top: 8px;
+        }
+
+        .contrast-layout {
+            display: flex;
+            gap: 20px;
+            align-items: stretch;
+        }
+
+        .contrast-colors {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .contrast-color-picker {
+            text-align: center;
+        }
+
+        .contrast-color-picker label {
+            display: block;
+            margin-bottom: 8px;
+            color: #888;
+        }
+
+        .contrast-color-picker input[type="color"] {
+            width: 80px;
+            height: 50px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .hex-input {
+            width: 100%;
+            padding: 8px 12px;
+            margin-top: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-family: monospace;
+            font-size: 0.9rem;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .hex-input:focus {
+            outline: none;
+            border-color: #4ecdc4;
+        }
+
+        .hex-input.invalid {
+            border-color: #ff6b6b;
+        }
+
+        .select-mode-btns {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .select-mode-btn {
+            flex: 1;
+            padding: 8px;
+            font-size: 0.85rem;
+        }
+
+        .select-mode-btn.active-text {
+            background: rgba(255, 107, 107, 0.3);
+            border-color: #ff6b6b;
+        }
+
+        .select-mode-btn.active-bg {
+            background: rgba(78, 205, 196, 0.3);
+            border-color: #4ecdc4;
+        }
+
+        .contrast-preview {
+            flex: 1;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 150px;
+        }
+
+        .contrast-preview h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .contrast-preview p {
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+
+        .contrast-ratio {
+            font-size: 2rem;
+            font-weight: bold;
+            background: rgba(0,0,0,0.4);
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+
+        .wcag-results {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 140px;
+        }
+
+        .wcag-item {
+            padding: 10px 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .wcag-item.pass {
+            background: #2ecc71;
+            border: 1px solid #27ae60;
+            color: #fff;
+        }
+
+        .wcag-item.fail {
+            background: #e74c3c;
+            border: 1px solid #c0392b;
+            color: #fff;
+        }
+
+        .wcag-item.pending {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .wcag-item .level {
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .wcag-item .status {
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+
+        /* Collapsible Side Panel */
+        .side-panel {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 320px;
+            height: 100vh;
+            background: rgba(26, 26, 46, 0.98);
+            backdrop-filter: blur(10px);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            z-index: 1000;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .side-panel.open {
+            right: 0;
+        }
+
+        .side-panel h2 {
+            margin-bottom: 15px;
+            padding-right: 40px;
+        }
+
+        .side-panel-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            z-index: 1001;
+            transition: background 0.2s;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 12px;
+        }
+
+        .side-panel-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .toggle-label {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .menu-lines {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .side-panel-toggle .menu-line {
+            width: 18px;
+            height: 2px;
+            background: #fff;
+            border-radius: 2px;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+
+        .side-panel-toggle.open {
+            display: none;
+        }
+
+        .side-panel-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .side-panel-close:hover {
+            background: rgba(255, 107, 107, 0.3);
+        }
+
+        /* Color Blindness Simulator */
+        .blindness-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .blindness-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .blindness-option:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .blindness-option.selected {
+            background: rgba(78, 205, 196, 0.15);
+            border-color: #4ecdc4;
+        }
+
+        .blindness-option input[type="radio"] {
+            display: none;
+        }
+
+        .blindness-radio {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .blindness-option.selected .blindness-radio {
+            border-color: #4ecdc4;
+        }
+
+        .blindness-option.selected .blindness-radio::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4ecdc4;
+        }
+
+        .blindness-label {
+            flex: 1;
+        }
+
+        .blindness-label strong {
+            display: block;
+            font-size: 0.95rem;
+            margin-bottom: 2px;
+        }
+
+        .blindness-label span {
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .copy-notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #4ecdc4;
+            color: #000;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .copy-notification.show {
+            opacity: 1;
+        }
+
+        @media (max-width: 600px) {
+            .panel {
+                padding: 16px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .color-selection-area {
+                flex-direction: column;
+            }
+
+            .contrast-layout {
+                flex-direction: column;
+            }
+
+            .contrast-colors {
+                grid-template-columns: 1fr;
+            }
+
+            .wcag-results {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .wcag-item {
+                flex: 1 1 45%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- SVG Filters for Color Blindness Simulation -->
+    <svg style="display: none;">
+        <defs>
+            <filter id="protanopia-filter">
+                <feColorMatrix type="matrix" values="
+                    0.567, 0.433, 0,     0, 0
+                    0.558, 0.442, 0,     0, 0
+                    0,     0.242, 0.758, 0, 0
+                    0,     0,     0,     1, 0"/>
+            </filter>
+            <filter id="deuteranopia-filter">
+                <feColorMatrix type="matrix" values="
+                    0.625, 0.375, 0,   0, 0
+                    0.7,   0.3,   0,   0, 0
+                    0,     0.3,   0.7, 0, 0
+                    0,     0,     0,   1, 0"/>
+            </filter>
+            <filter id="tritanopia-filter">
+                <feColorMatrix type="matrix" values="
+                    0.95, 0.05,  0,     0, 0
+                    0,    0.433, 0.567, 0, 0
+                    0,    0.475, 0.525, 0, 0
+                    0,    0,     0,     1, 0"/>
+            </filter>
+            <filter id="protanomaly-filter">
+                <feColorMatrix type="matrix" values="
+                    0.817, 0.183, 0,     0, 0
+                    0.333, 0.667, 0,     0, 0
+                    0,     0.125, 0.875, 0, 0
+                    0,     0,     0,     1, 0"/>
+            </filter>
+            <filter id="deuteranomaly-filter">
+                <feColorMatrix type="matrix" values="
+                    0.8,   0.2,   0,     0, 0
+                    0.258, 0.742, 0,     0, 0
+                    0,     0.142, 0.858, 0, 0
+                    0,     0,     0,     1, 0"/>
+            </filter>
+            <filter id="tritanomaly-filter">
+                <feColorMatrix type="matrix" values="
+                    0.967, 0.033, 0,     0, 0
+                    0,     0.733, 0.267, 0, 0
+                    0,     0.183, 0.817, 0, 0
+                    0,     0,     0,     1, 0"/>
+            </filter>
+            <filter id="achromatopsia-filter">
+                <feColorMatrix type="matrix" values="
+                    0.299, 0.587, 0.114, 0, 0
+                    0.299, 0.587, 0.114, 0, 0
+                    0.299, 0.587, 0.114, 0, 0
+                    0,     0,     0,     1, 0"/>
+            </filter>
+        </defs>
+    </svg>
+
+    <h1>Readable Explorer</h1>
+    <p class="subtitle">Check contrast ratios and simulate color blindness</p>
+
+    <div class="container">
+        <!-- Contrast Checker Panel -->
+        <div class="panel">
+            <h2>Contrast Checker</h2>
+            <p style="color: #888; margin-bottom: 15px; font-size: 0.9rem;">Learn more about WCAG guidelines <a href="https://www.wcag.com/#:~:text=and%20legal%20requirements.-,Resources,-Developers" target="_blank" style="color: #4ecdc4;">here</a></p>
+
+            <div class="contrast-controls">
+                <!-- Text Color Controls -->
+                <div class="color-control-box">
+                    <h4>Text Color</h4>
+                    <div class="color-preview-small" id="textColorPreview" style="background: #000000;"></div>
+                    <div class="rgb-sliders-compact">
+                        <div class="slider-row-compact">
+                            <label class="red">R</label>
+                            <input type="range" min="0" max="255" value="0" class="red-slider" id="textR" oninput="updateContrastColor('text')">
+                            <input type="number" min="0" max="255" value="0" class="rgb-input" id="textRInput" oninput="updateContrastColorFromInput('text', 'R')">
+                        </div>
+                        <div class="slider-row-compact">
+                            <label class="green">G</label>
+                            <input type="range" min="0" max="255" value="0" class="green-slider" id="textG" oninput="updateContrastColor('text')">
+                            <input type="number" min="0" max="255" value="0" class="rgb-input" id="textGInput" oninput="updateContrastColorFromInput('text', 'G')">
+                        </div>
+                        <div class="slider-row-compact">
+                            <label class="blue">B</label>
+                            <input type="range" min="0" max="255" value="0" class="blue-slider" id="textB" oninput="updateContrastColor('text')">
+                            <input type="number" min="0" max="255" value="0" class="rgb-input" id="textBInput" oninput="updateContrastColorFromInput('text', 'B')">
+                        </div>
+                    </div>
+                    <div class="luminosity-display">Luminosity: <span id="textLuminosity">0.000</span></div>
+                </div>
+
+                <!-- Background Color Controls -->
+                <div class="color-control-box">
+                    <h4>Background Color</h4>
+                    <div class="color-preview-small" id="bgColorPreview" style="background: #FFFFFF;"></div>
+                    <div class="rgb-sliders-compact">
+                        <div class="slider-row-compact">
+                            <label class="red">R</label>
+                            <input type="range" min="0" max="255" value="255" class="red-slider" id="bgR" oninput="updateContrastColor('bg')">
+                            <input type="number" min="0" max="255" value="255" class="rgb-input" id="bgRInput" oninput="updateContrastColorFromInput('bg', 'R')">
+                        </div>
+                        <div class="slider-row-compact">
+                            <label class="green">G</label>
+                            <input type="range" min="0" max="255" value="255" class="green-slider" id="bgG" oninput="updateContrastColor('bg')">
+                            <input type="number" min="0" max="255" value="255" class="rgb-input" id="bgGInput" oninput="updateContrastColorFromInput('bg', 'G')">
+                        </div>
+                        <div class="slider-row-compact">
+                            <label class="blue">B</label>
+                            <input type="range" min="0" max="255" value="255" class="blue-slider" id="bgB" oninput="updateContrastColor('bg')">
+                            <input type="number" min="0" max="255" value="255" class="rgb-input" id="bgBInput" oninput="updateContrastColorFromInput('bg', 'B')">
+                        </div>
+                    </div>
+                    <div class="luminosity-display">Luminosity: <span id="bgLuminosity">1.000</span></div>
+                </div>
+
+                <!-- Text Size & Presets Control -->
+                <div class="text-size-box">
+                    <h4>Text Size</h4>
+                    <div class="text-size-control">
+                        <input type="range" min="12" max="48" value="16" id="textSizeSlider" oninput="updateTextSize()">
+                        <input type="number" min="12" max="48" value="16" class="size-input" id="textSizeInput" oninput="updateTextSizeFromInput()">
+                        <span>px</span>
+                    </div>
+                    <h4 style="margin-top: 15px;">Color Presets</h4>
+                    <select class="preset-select" id="colorPreset" onchange="applyColorPreset()">
+                        <option value="custom">Custom</option>
+                        <optgroup label="Contrast Examples">
+                            <option value="high-contrast">High Contrast</option>
+                            <option value="low-contrast">Low Contrast</option>
+                            <option value="wcag-fail">WCAG Fail Pairing</option>
+                        </optgroup>
+                        <optgroup label="Brand Colors">
+                            <option value="google">Google</option>
+                            <option value="bing">Bing</option>
+                            <option value="yahoo">Yahoo</option>
+                        </optgroup>
+                        <optgroup label="Accessibility">
+                            <option value="aa-colors">AA Colors</option>
+                            <option value="aaa-colors">AAA Colors</option>
+                        </optgroup>
+                    </select>
+                    <h4 style="margin-top: 15px;">Color Blindness Swatch</h4>
+                    <div class="color-spectrum"></div>
+                </div>
+            </div>
+
+            <div class="contrast-layout">
+                <div class="contrast-preview" id="contrastPreview" style="background: #FFFFFF; color: #000000;">
+                    <p>Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere. Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos himenaeos.</p>
+                    <div class="contrast-ratio" id="contrastRatio">21.00:1</div>
+                </div>
+
+                <div class="wcag-results">
+                    <div class="wcag-item pass" id="aaNormal">
+                        <div class="level">AA Normal</div>
+                        <div class="status">PASS</div>
+                    </div>
+                    <div class="wcag-item pass" id="aaLarge">
+                        <div class="level">AA Large</div>
+                        <div class="status">PASS</div>
+                    </div>
+                    <div class="wcag-item pass" id="aaaNormal">
+                        <div class="level">AAA Normal</div>
+                        <div class="status">PASS</div>
+                    </div>
+                    <div class="wcag-item pass" id="aaaLarge">
+                        <div class="level">AAA Large</div>
+                        <div class="status">PASS</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Color Blindness Side Panel Toggle -->
+    <button class="side-panel-toggle" id="sidePanelToggle" onclick="toggleSidePanel()">
+        <span class="toggle-label">Views</span>
+        <span class="menu-lines">
+            <span class="menu-line"></span>
+            <span class="menu-line"></span>
+            <span class="menu-line"></span>
+        </span>
+    </button>
+
+    <!-- Color Blindness Simulator Side Panel -->
+    <div class="side-panel" id="sidePanel">
+        <button class="side-panel-close" onclick="toggleSidePanel()">&times;</button>
+        <h2>Color Blindness Simulator</h2>
+        <p style="color: #888; margin-bottom: 15px; font-size: 0.9rem;">Select a type of color vision deficiency:</p>
+
+        <div class="blindness-options" id="blindnessOptions">
+            <!-- Options will be generated here -->
+        </div>
+    </div>
+
+    <div class="copy-notification" id="copyNotification">Color copied to clipboard!</div>
+
+    <script>
+        // State
+        let customColors = [
+            { r: 255, g: 107, b: 107, hex: '#FF6B6B' },
+            { r: 255, g: 255, b: 255, hex: '#FFFFFF' }
+        ];
+        let currentColor = { r: 255, g: 107, b: 107 };
+        let accessibleMode = 'off';
+        let currentPaletteType = 'custom';
+        let currentPaletteColors = [];
+                let selectedBlindnessType = 'normal';
+
+        // Color blindness types
+        const blindnessTypes = [
+            { key: 'normal', name: 'Normal Vision', desc: 'Full color perception' },
+            { key: 'protanopia', name: 'Protanopia', desc: 'Red-blind, affects ~1% of males' },
+            { key: 'deuteranopia', name: 'Deuteranopia', desc: 'Green-blind, affects ~1% of males' },
+            { key: 'tritanopia', name: 'Tritanopia', desc: 'Blue-blind, very rare condition' },
+            { key: 'protanomaly', name: 'Protanomaly', desc: 'Red-weak, affects ~1% of males' },
+            { key: 'deuteranomaly', name: 'Deuteranomaly', desc: 'Green-weak, affects ~5% of males' },
+            { key: 'tritanomaly', name: 'Tritanomaly', desc: 'Blue-weak, very rare condition' },
+            { key: 'achromatopsia', name: 'Achromatopsia', desc: 'Complete color blindness, monochrome vision' }
+        ];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initContrastChecker();
+            renderBlindnessOptions();
+        });
+
+        function initContrastChecker() {
+            // Initialize with default values (black text on white background)
+            updateContrastColor('text');
+            updateContrastColor('bg');
+            updateContrastRatio();
+        }
+
+        // Custom colors setup
+        function initCustomColors() {
+            updateCustomColorDisplay(0);
+            updateCustomColorDisplay(1);
+        }
+
+        function updateCustomColor(index) {
+            const prefix = `color${index + 1}`;
+            const r = parseInt(document.getElementById(`${prefix}R`).value);
+            const g = parseInt(document.getElementById(`${prefix}G`).value);
+            const b = parseInt(document.getElementById(`${prefix}B`).value);
+
+            // Store old hex to check if contrast colors need updating
+            const oldHex = customColors[index].hex;
+            const newHex = rgbToHex(r, g, b);
+
+            // Update value displays
+            document.getElementById(`${prefix}RVal`).textContent = r;
+            document.getElementById(`${prefix}GVal`).textContent = g;
+            document.getElementById(`${prefix}BVal`).textContent = b;
+
+            // Update color state
+            customColors[index] = {
+                r: r,
+                g: g,
+                b: b,
+                hex: newHex
+            };
+
+            // Update preview box
+            updateCustomColorDisplay(index);
+
+            // Update currentColor for palette generation (use color 1)
+            if (index === 0) {
+                currentColor = { r, g, b };
+                // Regenerate palette if not in custom mode
+                const type = document.getElementById('paletteType').value;
+                if (type !== 'custom') {
+                    generatePalette();
+                }
+            }
+
+        }
+
+        function updateCustomColorDisplay(index) {
+            const color = customColors[index];
+            const box = document.getElementById(`colorBox${index + 1}`);
+            const hexSpan = document.getElementById(`colorBox${index + 1}Hex`);
+            const brightness = (color.r * 299 + color.g * 587 + color.b * 114) / 1000;
+
+            box.style.backgroundColor = color.hex;
+            hexSpan.textContent = color.hex;
+            hexSpan.style.color = brightness > 128 ? '#000' : '#fff';
+        }
+
+        function handlePaletteTypeChange() {
+            const select = document.getElementById('paletteType');
+            const value = select.value;
+            const customColor2Wrapper = document.getElementById('customColor2Wrapper');
+            const generatedColors = document.getElementById('generatedColors');
+            const color1Label = document.getElementById('color1Label');
+
+            // Store current palette type
+            currentPaletteType = value;
+
+            if (value === 'custom') {
+                customColor2Wrapper.style.display = 'block';
+                generatedColors.style.display = 'none';
+                color1Label.textContent = 'Color 1';
+            } else {
+                customColor2Wrapper.style.display = 'none';
+                generatedColors.style.display = 'flex';
+                color1Label.textContent = 'Base Color';
+                generatePalette();
+            }
+        }
+
+        // Side panel toggle
+        function toggleSidePanel() {
+            const panel = document.getElementById('sidePanel');
+            const toggle = document.getElementById('sidePanelToggle');
+            panel.classList.toggle('open');
+            toggle.classList.toggle('open');
+        }
+
+        // Update palette display (no longer highlights for contrast checker)
+        function updatePaletteHighlights() {
+            // Palette highlighting was removed - contrast checker now has its own RGB controls
+        }
+
+        // Color conversion utilities
+        function rgbToHex(r, g, b) {
+            return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('').toUpperCase();
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        function rgbToHsl(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max === min) {
+                h = s = 0;
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                    case g: h = ((b - r) / d + 2) / 6; break;
+                    case b: h = ((r - g) / d + 4) / 6; break;
+                }
+            }
+            return { h: h * 360, s: s * 100, l: l * 100 };
+        }
+
+        function hslToRgb(h, s, l) {
+            h /= 360; s /= 100; l /= 100;
+            let r, g, b;
+
+            if (s === 0) {
+                r = g = b = l;
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1/6) return p + (q - p) * 6 * t;
+                    if (t < 1/2) return q;
+                    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                };
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+            return {
+                r: Math.round(r * 255),
+                g: Math.round(g * 255),
+                b: Math.round(b * 255)
+            };
+        }
+
+        // Palette generation
+        function generatePalette() {
+            const type = document.getElementById('paletteType').value;
+
+            // For non-custom modes, use color 1 as the base
+            const baseColor = customColors[0];
+            const hsl = rgbToHsl(baseColor.r, baseColor.g, baseColor.b);
+            let colors = [];
+
+            switch(type) {
+                case 'custom':
+                    // Custom mode uses the color boxes with sliders, not this function
+                    return;
+                case 'complementary':
+                    colors = [
+                        hsl,
+                        { h: (hsl.h + 180) % 360, s: hsl.s, l: hsl.l }
+                    ];
+                    break;
+                case 'triadic':
+                    colors = [
+                        hsl,
+                        { h: (hsl.h + 120) % 360, s: hsl.s, l: hsl.l },
+                        { h: (hsl.h + 240) % 360, s: hsl.s, l: hsl.l }
+                    ];
+                    break;
+                case 'analogous':
+                    colors = [
+                        hsl,
+                        { h: (hsl.h - 30 + 360) % 360, s: hsl.s, l: hsl.l },
+                        { h: (hsl.h + 30) % 360, s: hsl.s, l: hsl.l }
+                    ];
+                    break;
+                case 'split-complementary':
+                    colors = [
+                        hsl,
+                        { h: (hsl.h + 150) % 360, s: hsl.s, l: hsl.l },
+                        { h: (hsl.h + 210) % 360, s: hsl.s, l: hsl.l }
+                    ];
+                    break;
+                case 'tetradic':
+                    colors = [
+                        hsl,
+                        { h: (hsl.h + 90) % 360, s: hsl.s, l: hsl.l },
+                        { h: (hsl.h + 180) % 360, s: hsl.s, l: hsl.l },
+                        { h: (hsl.h + 270) % 360, s: hsl.s, l: hsl.l }
+                    ];
+                    break;
+                case 'monochromatic':
+                    colors = [
+                        hsl,
+                        { h: hsl.h, s: hsl.s, l: Math.max(20, hsl.l - 30) },
+                        { h: hsl.h, s: hsl.s, l: Math.max(30, hsl.l - 15) },
+                        { h: hsl.h, s: hsl.s, l: Math.min(70, hsl.l + 15) },
+                        { h: hsl.h, s: hsl.s, l: Math.min(85, hsl.l + 30) }
+                    ];
+                    break;
+                case 'accessible-AA':
+                case 'accessible-AAA':
+                    colors = generateAccessibleColors(baseColor.hex, type === 'accessible-AAA' ? 7 : 4.5);
+                    displayAccessibleColors(colors, baseColor);
+                    return;
+            }
+
+            if (accessibleMode !== 'off') {
+                colors = colors.map(c => adjustForAccessibility(c, accessibleMode));
+            }
+
+            displayGeneratedColors(colors);
+        }
+
+        function displayGeneratedColors(colors) {
+            const container = document.getElementById('generatedColors');
+            container.innerHTML = '';
+            currentPaletteColors = [];
+
+            // Add Color 1 as the first item
+            const color1 = customColors[0];
+            const brightness1 = (color1.r * 299 + color1.g * 587 + color1.b * 114) / 1000;
+            currentPaletteColors.push(color1.hex);
+
+            const color1Div = document.createElement('div');
+            color1Div.className = 'generated-color-box color1-box';
+            color1Div.style.backgroundColor = color1.hex;
+            color1Div.innerHTML = `<span style="color: ${brightness1 > 128 ? '#000' : '#fff'}">${color1.hex}</span>`;
+            container.appendChild(color1Div);
+
+            // Add the rest of the generated colors (skip the first one since it's the base color)
+            colors.slice(1).forEach((hslColor, index) => {
+                const rgb = hslToRgb(hslColor.h, hslColor.s, hslColor.l);
+                const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+                const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+
+                currentPaletteColors.push(hex);
+
+                const colorDiv = document.createElement('div');
+                colorDiv.className = 'generated-color-box';
+                colorDiv.style.backgroundColor = hex;
+                colorDiv.innerHTML = `<span style="color: ${brightness > 128 ? '#000' : '#fff'}">${hex}</span>`;
+                container.appendChild(colorDiv);
+            });
+
+            updatePaletteHighlights();
+        }
+
+        function adjustForAccessibility(hslColor, mode) {
+            const requiredRatio = mode === 'AAA' ? 7 : 4.5;
+            let adjustedColor = { ...hslColor };
+
+            const rgb = hslToRgb(hslColor.h, hslColor.s, hslColor.l);
+            const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+
+            const contrastWithWhite = getContrastRatio('#FFFFFF', hex);
+            const contrastWithBlack = getContrastRatio('#000000', hex);
+
+            if (contrastWithWhite < requiredRatio && contrastWithBlack < requiredRatio) {
+                if (hslColor.l > 50) {
+                    while (adjustedColor.l > 5) {
+                        adjustedColor.l -= 5;
+                        const testRgb = hslToRgb(adjustedColor.h, adjustedColor.s, adjustedColor.l);
+                        const testHex = rgbToHex(testRgb.r, testRgb.g, testRgb.b);
+                        if (getContrastRatio('#FFFFFF', testHex) >= requiredRatio) break;
+                    }
+                } else {
+                    while (adjustedColor.l < 95) {
+                        adjustedColor.l += 5;
+                        const testRgb = hslToRgb(adjustedColor.h, adjustedColor.s, adjustedColor.l);
+                        const testHex = rgbToHex(testRgb.r, testRgb.g, testRgb.b);
+                        if (getContrastRatio('#000000', testHex) >= requiredRatio) break;
+                    }
+                }
+            }
+
+            return adjustedColor;
+        }
+
+        function setAccessibleMode(mode) {
+            accessibleMode = mode;
+            // Regenerate palette with new mode
+            if (currentPaletteType !== 'custom') {
+                generatePalette();
+            }
+        }
+
+        // Contrast checker
+        function updateWcagResult(id, passes) {
+            const element = document.getElementById(id);
+            element.classList.remove('pass', 'fail', 'pending');
+            if (passes === null) {
+                element.classList.add('pending');
+                element.querySelector('.status').textContent = '--';
+                return;
+            }
+            element.classList.add(passes ? 'pass' : 'fail');
+            element.querySelector('.status').textContent = passes ? 'PASS' : 'FAIL';
+        }
+
+        function getContrastRatio(color1, color2) {
+            const rgb1 = hexToRgb(color1);
+            const rgb2 = hexToRgb(color2);
+
+            const l1 = getRelativeLuminance(rgb1.r, rgb1.g, rgb1.b);
+            const l2 = getRelativeLuminance(rgb2.r, rgb2.g, rgb2.b);
+
+            const lighter = Math.max(l1, l2);
+            const darker = Math.min(l1, l2);
+
+            return (lighter + 0.05) / (darker + 0.05);
+        }
+
+        function getRelativeLuminance(r, g, b) {
+            const [rs, gs, bs] = [r, g, b].map(c => {
+                c = c / 255;
+                return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+            });
+            return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+        }
+
+        // Color blindness simulation
+        function renderBlindnessOptions() {
+            const container = document.getElementById('blindnessOptions');
+            container.innerHTML = '';
+
+            blindnessTypes.forEach((type) => {
+                const option = document.createElement('div');
+                option.className = `blindness-option${selectedBlindnessType === type.key ? ' selected' : ''}`;
+                option.innerHTML = `
+                    <div class="blindness-radio"></div>
+                    <div class="blindness-label">
+                        <strong>${type.name}</strong>
+                        <span>${type.desc}</span>
+                    </div>
+                `;
+                option.onclick = () => selectBlindnessType(type.key);
+                container.appendChild(option);
+            });
+        }
+
+        function selectBlindnessType(type) {
+            selectedBlindnessType = type;
+
+            document.body.classList.remove(
+                'filter-protanopia', 'filter-deuteranopia', 'filter-tritanopia',
+                'filter-protanomaly', 'filter-deuteranomaly', 'filter-tritanomaly',
+                'filter-achromatopsia'
+            );
+
+            if (type !== 'normal') {
+                document.body.classList.add(`filter-${type}`);
+            }
+
+            renderBlindnessOptions();
+        }
+
+        function toggleInfoTooltip(event) {
+            event.stopPropagation();
+            const tooltip = document.getElementById('infoTooltip');
+            tooltip.classList.toggle('show');
+
+            // Close tooltip when clicking outside
+            if (tooltip.classList.contains('show')) {
+                document.addEventListener('click', closeInfoTooltip);
+            }
+        }
+
+        function closeInfoTooltip(event) {
+            const tooltip = document.getElementById('infoTooltip');
+            const infoIcon = tooltip.parentElement;
+            if (!infoIcon.contains(event.target)) {
+                tooltip.classList.remove('show');
+                document.removeEventListener('click', closeInfoTooltip);
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const notification = document.getElementById('copyNotification');
+                notification.textContent = `${text} copied to clipboard!`;
+                notification.classList.add('show');
+                setTimeout(() => notification.classList.remove('show'), 2000);
+            });
+        }
+
+        function updateTextSize() {
+            const slider = document.getElementById('textSizeSlider');
+            const value = slider.value;
+            document.getElementById('textSizeInput').value = value;
+            document.querySelector('#contrastPreview p').style.fontSize = value + 'px';
+        }
+
+        function updateTextSizeFromInput() {
+            const input = document.getElementById('textSizeInput');
+            let value = parseInt(input.value) || 12;
+            value = Math.max(12, Math.min(48, value));
+            input.value = value;
+            document.getElementById('textSizeSlider').value = value;
+            document.querySelector('#contrastPreview p').style.fontSize = value + 'px';
+        }
+
+        function updateContrastColor(type) {
+            const r = parseInt(document.getElementById(`${type}R`).value);
+            const g = parseInt(document.getElementById(`${type}G`).value);
+            const b = parseInt(document.getElementById(`${type}B`).value);
+
+            // Update input fields
+            document.getElementById(`${type}RInput`).value = r;
+            document.getElementById(`${type}GInput`).value = g;
+            document.getElementById(`${type}BInput`).value = b;
+
+            applyContrastColor(type, r, g, b);
+            resetPresetToCustom();
+        }
+
+        function updateContrastColorFromInput(type, channel) {
+            const input = document.getElementById(`${type}${channel}Input`);
+            let value = parseInt(input.value) || 0;
+            value = Math.max(0, Math.min(255, value));
+            input.value = value;
+
+            // Update slider
+            document.getElementById(`${type}${channel}`).value = value;
+
+            const r = parseInt(document.getElementById(`${type}RInput`).value);
+            const g = parseInt(document.getElementById(`${type}GInput`).value);
+            const b = parseInt(document.getElementById(`${type}BInput`).value);
+
+            applyContrastColor(type, r, g, b);
+            resetPresetToCustom();
+        }
+
+        function applyContrastColor(type, r, g, b) {
+            const hex = rgbToHex(r, g, b);
+            const luminosity = getRelativeLuminance(r, g, b);
+
+            // Update preview
+            document.getElementById(`${type}ColorPreview`).style.background = hex;
+
+            // Update luminosity display
+            document.getElementById(`${type}Luminosity`).textContent = luminosity.toFixed(3);
+
+            // Update contrast preview
+            const preview = document.getElementById('contrastPreview');
+            if (type === 'text') {
+                preview.style.color = hex;
+            } else {
+                preview.style.backgroundColor = hex;
+            }
+
+            // Update contrast ratio
+            updateContrastRatio();
+        }
+
+        function resetPresetToCustom() {
+            document.getElementById('colorPreset').value = 'custom';
+        }
+
+        function applyColorPreset() {
+            const preset = document.getElementById('colorPreset').value;
+
+            const presets = {
+                'custom': null, // No change
+                'high-contrast': { text: { r: 0, g: 0, b: 0 }, bg: { r: 255, g: 255, b: 255 } },
+                'low-contrast': { text: { r: 180, g: 180, b: 180 }, bg: { r: 220, g: 220, b: 220 } },
+                'wcag-fail': { text: { r: 150, g: 150, b: 150 }, bg: { r: 200, g: 200, b: 200 } },
+                'google': { text: { r: 26, g: 13, b: 171 }, bg: { r: 255, g: 255, b: 255 } },
+                'bing': { text: { r: 0, g: 120, b: 215 }, bg: { r: 255, g: 255, b: 255 } },
+                'yahoo': { text: { r: 114, g: 14, b: 158 }, bg: { r: 255, g: 255, b: 255 } },
+                'aa-colors': { text: { r: 89, g: 89, b: 89 }, bg: { r: 255, g: 255, b: 255 } }, // ~4.6:1 ratio
+                'aaa-colors': { text: { r: 59, g: 59, b: 59 }, bg: { r: 255, g: 255, b: 255 } }  // ~7.4:1 ratio
+            };
+
+            if (preset === 'custom' || !presets[preset]) return;
+
+            const colors = presets[preset];
+
+            // Update text color sliders and inputs
+            document.getElementById('textR').value = colors.text.r;
+            document.getElementById('textG').value = colors.text.g;
+            document.getElementById('textB').value = colors.text.b;
+            document.getElementById('textRInput').value = colors.text.r;
+            document.getElementById('textGInput').value = colors.text.g;
+            document.getElementById('textBInput').value = colors.text.b;
+
+            // Update background color sliders and inputs
+            document.getElementById('bgR').value = colors.bg.r;
+            document.getElementById('bgG').value = colors.bg.g;
+            document.getElementById('bgB').value = colors.bg.b;
+            document.getElementById('bgRInput').value = colors.bg.r;
+            document.getElementById('bgGInput').value = colors.bg.g;
+            document.getElementById('bgBInput').value = colors.bg.b;
+
+            // Apply the colors
+            applyContrastColor('text', colors.text.r, colors.text.g, colors.text.b);
+            applyContrastColor('bg', colors.bg.r, colors.bg.g, colors.bg.b);
+        }
+
+        function updateContrastRatio() {
+            const textR = parseInt(document.getElementById('textRInput').value);
+            const textG = parseInt(document.getElementById('textGInput').value);
+            const textB = parseInt(document.getElementById('textBInput').value);
+            const bgR = parseInt(document.getElementById('bgRInput').value);
+            const bgG = parseInt(document.getElementById('bgGInput').value);
+            const bgB = parseInt(document.getElementById('bgBInput').value);
+
+            const textHex = rgbToHex(textR, textG, textB);
+            const bgHex = rgbToHex(bgR, bgG, bgB);
+
+            const ratio = getContrastRatio(textHex, bgHex);
+            document.getElementById('contrastRatio').textContent = ratio.toFixed(2) + ':1';
+
+            // Update WCAG results
+            updateWcagResult('aaNormal', ratio >= 4.5);
+            updateWcagResult('aaLarge', ratio >= 3);
+            updateWcagResult('aaaNormal', ratio >= 7);
+            updateWcagResult('aaaLarge', ratio >= 4.5);
+        }
+
+        // Accessible color generation
+        function generateAccessibleColors(baseHex, requiredRatio) {
+            const baseRgb = hexToRgb(baseHex);
+            const baseHsl = rgbToHsl(baseRgb.r, baseRgb.g, baseRgb.b);
+            const baseLuminance = getRelativeLuminance(baseRgb.r, baseRgb.g, baseRgb.b);
+
+            const accessibleColors = [];
+            const hueOffsets = [0, 180, 120, 60, 240, 300, 30, 330, 90, 270, 150, 210];
+
+            for (let i = 0; accessibleColors.length < 4 && i < hueOffsets.length; i++) {
+                const targetHue = (baseHsl.h + hueOffsets[i]) % 360;
+                const color = findAccessibleColorAtHue(baseHex, targetHue, requiredRatio, baseLuminance);
+
+                if (color) {
+                    // Verify the color actually meets the requirement
+                    const actualContrast = getContrastRatio(baseHex, color);
+                    if (actualContrast >= requiredRatio) {
+                        // Check if sufficiently different from existing colors
+                        const colorRgb = hexToRgb(color);
+                        const isDuplicate = accessibleColors.some(existing => {
+                            const existingRgb = hexToRgb(existing);
+                            return Math.abs(existingRgb.r - colorRgb.r) < 30 &&
+                                   Math.abs(existingRgb.g - colorRgb.g) < 30 &&
+                                   Math.abs(existingRgb.b - colorRgb.b) < 30;
+                        });
+                        if (!isDuplicate) {
+                            accessibleColors.push(color);
+                        }
+                    }
+                }
+            }
+
+            // Fallback: try both dark and light colors
+            const darkFallbacks = ['#000000', '#0A0A0A', '#141414', '#1E1E1E', '#282828', '#323232'];
+            const lightFallbacks = ['#FFFFFF', '#F5F5F5', '#EBEBEB', '#E1E1E1', '#D7D7D7', '#CDCDCD'];
+
+            // Try dark fallbacks first
+            for (const fallback of darkFallbacks) {
+                if (accessibleColors.length >= 4) break;
+                const contrast = getContrastRatio(baseHex, fallback);
+                if (contrast >= requiredRatio && !accessibleColors.includes(fallback)) {
+                    accessibleColors.push(fallback);
+                }
+            }
+
+            // Try light fallbacks
+            for (const fallback of lightFallbacks) {
+                if (accessibleColors.length >= 4) break;
+                const contrast = getContrastRatio(baseHex, fallback);
+                if (contrast >= requiredRatio && !accessibleColors.includes(fallback)) {
+                    accessibleColors.push(fallback);
+                }
+            }
+
+            // Ultimate fallback - generate grayscale shades that meet requirements
+            for (let shade = 0; shade <= 255 && accessibleColors.length < 4; shade += 10) {
+                const hex = rgbToHex(shade, shade, shade);
+                const contrast = getContrastRatio(baseHex, hex);
+                if (contrast >= requiredRatio && !accessibleColors.includes(hex)) {
+                    accessibleColors.push(hex);
+                }
+            }
+
+            return accessibleColors.slice(0, 4);
+        }
+
+        function findAccessibleColorAtHue(baseHex, hue, requiredRatio, baseLuminance) {
+            // Try BOTH light and dark colors - check which direction works
+            const darkLightness = [];
+            const lightLightness = [];
+
+            for (let l = 5; l <= 40; l += 5) {
+                darkLightness.push(l);
+            }
+            for (let l = 95; l >= 60; l -= 5) {
+                lightLightness.push(l);
+            }
+
+            // Try multiple saturation levels
+            const saturationValues = [70, 60, 80, 50, 90, 40, 30, 100, 20, 10, 0];
+
+            // Try dark colors first (usually more reliable for contrast)
+            for (const saturation of saturationValues) {
+                for (const lightness of darkLightness) {
+                    const rgb = hslToRgb(hue, saturation, lightness);
+                    const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+                    const contrast = getContrastRatio(baseHex, hex);
+
+                    if (contrast >= requiredRatio) {
+                        return hex;
+                    }
+                }
+            }
+
+            // Try light colors
+            for (const saturation of saturationValues) {
+                for (const lightness of lightLightness) {
+                    const rgb = hslToRgb(hue, saturation, lightness);
+                    const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+                    const contrast = getContrastRatio(baseHex, hex);
+
+                    if (contrast >= requiredRatio) {
+                        return hex;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        function displayAccessibleColors(colors, baseColor) {
+            const container = document.getElementById('generatedColors');
+            container.innerHTML = '';
+            currentPaletteColors = [];
+
+            // Add Base Color first (same style as other colors)
+            const brightness1 = (baseColor.r * 299 + baseColor.g * 587 + baseColor.b * 114) / 1000;
+            currentPaletteColors.push(baseColor.hex);
+
+            const baseDiv = document.createElement('div');
+            baseDiv.className = 'generated-color-box';
+            baseDiv.style.backgroundColor = baseColor.hex;
+            baseDiv.style.position = 'relative';
+            baseDiv.innerHTML = `<span style="color: ${brightness1 > 128 ? '#000' : '#fff'}">${baseColor.hex}</span>`;
+            container.appendChild(baseDiv);
+
+            // Add the accessible colors
+            colors.forEach(hex => {
+                const rgb = hexToRgb(hex);
+                const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+                const contrast = getContrastRatio(baseColor.hex, hex);
+
+                currentPaletteColors.push(hex);
+
+                const colorDiv = document.createElement('div');
+                colorDiv.className = 'generated-color-box';
+                colorDiv.style.backgroundColor = hex;
+                colorDiv.style.position = 'relative';
+                colorDiv.innerHTML = `
+                    <span style="color: ${brightness > 128 ? '#000' : '#fff'}">${hex}</span>
+                    <span class="accessible-badge badge-${contrast >= 7 ? 'aaa' : 'aa'}">${contrast.toFixed(1)}:1</span>
+                `;
+                container.appendChild(colorDiv);
+            });
+
+            updatePaletteHighlights();
+        }
+    </script>
+</body>
+</html>
