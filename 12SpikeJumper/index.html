@@ -1,0 +1,3944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rhythm Jump</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            overflow: hidden;
+            transition: background-color 0.3s;
+        }
+
+        body.light-mode {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        body.dark-mode {
+            background-color: #121212;
+            color: #ffffff;
+        }
+
+        #gameCanvas {
+            display: block;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        body.light-mode .overlay {
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        body.dark-mode .overlay {
+            background: rgba(18, 18, 18, 0.95);
+        }
+
+        .modal {
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        body.light-mode .modal {
+            background: #ffffff;
+            border: 2px solid #000000;
+        }
+
+        body.dark-mode .modal {
+            background: #1e1e1e;
+            border: 2px solid #ffffff;
+        }
+
+        .modal h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .modal h2 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+
+
+        .modal p {
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            font-size: 1.2em;
+            font-family: 'Georgia', serif;
+            cursor: pointer;
+            border-radius: 8px;
+            margin: 10px 5px;
+            transition: all 0.2s;
+        }
+
+        body.light-mode .btn {
+            background: #000000;
+            color: #ffffff;
+            border: 2px solid #000000;
+        }
+
+        body.light-mode .btn:hover {
+            background: #333333;
+        }
+
+        body.dark-mode .btn {
+            background: #ffffff;
+            color: #121212;
+            border: 2px solid #ffffff;
+        }
+
+        body.dark-mode .btn:hover {
+            background: #cccccc;
+        }
+
+        .btn-secondary {
+            background: transparent !important;
+        }
+
+        body.light-mode .btn-secondary {
+            color: #000000 !important;
+        }
+
+        body.dark-mode .btn-secondary {
+            color: #ffffff !important;
+        }
+
+        .share-modal {
+            max-width: 700px;
+        }
+
+        .score-scroll-container {
+            max-height: 500px; /* Fits approximately 8 lines of music */
+            overflow-y: auto;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .score-scroll-container canvas {
+            display: block;
+            border-radius: 8px;
+        }
+
+        #shareScoreCanvas {
+            cursor: pointer;
+        }
+
+        body.light-mode .score-scroll-container {
+            border: 1px solid #ccc;
+        }
+
+        body.dark-mode .score-scroll-container {
+            border: 1px solid #444;
+        }
+
+        /* Scrollbar styling */
+        .score-scroll-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .score-scroll-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        body.light-mode .score-scroll-container::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 4px;
+        }
+
+        body.dark-mode .score-scroll-container::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        .share-buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .share-btn {
+            padding: 10px 20px;
+            font-size: 1em;
+        }
+
+        .playback-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .back-arrow {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+
+        body.light-mode .back-arrow {
+            color: #000000;
+        }
+
+        body.dark-mode .back-arrow {
+            color: #ffffff;
+        }
+
+        body.light-mode .back-arrow:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark-mode .back-arrow:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .share-modal {
+            position: relative;
+        }
+
+        .bottom-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .play-pause-btn {
+            min-width: 100px;
+        }
+
+        .link-container {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            justify-content: center;
+        }
+
+        .link-container input {
+            flex: 1;
+            max-width: 350px;
+            padding: 10px;
+            font-size: 14px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+
+        body.light-mode .link-container input {
+            background: #f5f5f5;
+            border: 1px solid #ccc;
+            color: #000;
+        }
+
+        body.dark-mode .link-container input {
+            background: #333;
+            border: 1px solid #555;
+            color: #fff;
+        }
+
+        #calibrationOverlay {
+            flex-direction: column;
+        }
+
+        #calibrationOverlay .modal {
+            max-width: 600px;
+        }
+
+        .calibration-visual {
+            width: 100%;
+            height: 100px;
+            margin: 20px 0;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body.light-mode .calibration-visual {
+            background: #f0f0f0;
+            border: 2px solid #000;
+        }
+
+        body.dark-mode .calibration-visual {
+            background: #2a2a2a;
+            border: 2px solid #fff;
+        }
+
+        .calibration-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ff4444;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .offset-display {
+            font-size: 1.5em;
+            margin: 15px 0;
+        }
+
+        #startOverlay {
+            flex-direction: column;
+        }
+
+        .controls-info {
+            margin: 20px 0;
+            text-align: left;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        body.light-mode .controls-info {
+            background: #f5f5f5;
+        }
+
+        body.dark-mode .controls-info {
+            background: #2a2a2a;
+        }
+
+        .controls-info h3 {
+            margin-bottom: 10px;
+        }
+
+        .controls-info p {
+            margin: 5px 0;
+            font-size: 0.95em;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .ghost-score-preview {
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        body.light-mode .ghost-score-preview {
+            background: #f5f5f5;
+            border: 1px solid #ccc;
+        }
+
+        body.dark-mode .ghost-score-preview {
+            background: #2a2a2a;
+            border: 1px solid #444;
+        }
+
+        .ghost-score-preview canvas {
+            width: 100%;
+            height: auto;
+        }
+
+        .toggle-container {
+            margin: 15px 0;
+        }
+
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .toggle-switch {
+            width: 50px;
+            height: 26px;
+            border-radius: 13px;
+            position: relative;
+            transition: background 0.3s;
+        }
+
+        body.light-mode .toggle-switch {
+            background: #ccc;
+        }
+
+        body.dark-mode .toggle-switch {
+            background: #555;
+        }
+
+        .toggle-switch.active {
+            background: #4CAF50;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: white;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(24px);
+        }
+
+        /* Level Editor Styles */
+        .editor-modal {
+            max-width: 800px;
+            width: 95%;
+        }
+
+        .editor-canvas-container {
+            position: relative;
+            margin: 15px 0;
+            border-radius: 8px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            max-width: 100%;
+        }
+
+        #levelEditorCanvas {
+            display: block;
+            cursor: crosshair;
+            min-width: 700px;
+        }
+
+        .editor-canvas-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .editor-canvas-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        body.light-mode .editor-canvas-container::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 4px;
+        }
+
+        body.dark-mode .editor-canvas-container::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        body.light-mode #levelEditorCanvas {
+            border: 2px solid #000;
+        }
+
+        body.dark-mode #levelEditorCanvas {
+            border: 2px solid #fff;
+        }
+
+        .editor-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        .editor-group {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        body.light-mode .editor-group {
+            background: #f0f0f0;
+        }
+
+        body.dark-mode .editor-group {
+            background: #2a2a2a;
+        }
+
+        .editor-group label {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        .duration-btn, .type-btn {
+            padding: 6px 12px;
+            font-size: 0.9em;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        body.light-mode .duration-btn, body.light-mode .type-btn {
+            background: #ddd;
+            color: #000;
+        }
+
+        body.dark-mode .duration-btn, body.dark-mode .type-btn {
+            background: #444;
+            color: #fff;
+        }
+
+        .duration-btn.active, .type-btn.active {
+            border-color: #4a90d9;
+            background: #4a90d9;
+            color: #fff;
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .note-count {
+            font-size: 0.9em;
+            margin: 10px 0;
+        }
+
+        body.light-mode .note-count {
+            color: #666;
+        }
+
+        body.dark-mode .note-count {
+            color: #aaa;
+        }
+    </style>
+</head>
+<body class="light-mode">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Calibration Overlay -->
+    <div id="calibrationOverlay" class="overlay hidden">
+        <div class="modal">
+            <h2>Audio Calibration</h2>
+            <p>Tap SPACE in time with the beat to calibrate audio latency</p>
+            <div class="calibration-visual">
+                <div class="calibration-dot" id="calibrationDot"></div>
+            </div>
+            <div class="offset-display">Offset: <span id="offsetValue">0</span>ms</div>
+            <p id="calibrationStatus">Tap 8 times to calibrate...</p>
+            <button class="btn" id="skipCalibration">Skip</button>
+            <button class="btn btn-secondary" id="resetCalibration">Reset</button>
+        </div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="startOverlay" class="overlay">
+        <div class="modal">
+            <h1>Rhythm Jump</h1>
+            <p>Bounce on musical notes to compose your melody!</p>
+
+            <div class="controls-info">
+                <h3>How to Play</h3>
+                <p><strong>PRESS SPACE</strong> to bounce to the next note</p>
+                <p style="margin-top: 10px; font-style: italic;">Time your bounces to land on each note!</p>
+            </div>
+
+            <div class="toggle-container">
+                <label class="toggle-label">
+                    <span>Dark Mode</span>
+                    <div class="toggle-switch" id="darkModeToggle"></div>
+                </label>
+            </div>
+
+            <button class="btn" id="calibrateBtn">Calibrate Audio</button>
+            <button class="btn" id="startBtn">Start Game</button>
+            <button class="btn btn-secondary" id="levelEditorBtn">Level Editor</button>
+        </div>
+    </div>
+
+
+    <!-- Pause Overlay -->
+    <div id="pauseOverlay" class="overlay hidden">
+        <div class="modal">
+            <h2>Paused</h2>
+            <p>Beats survived: <span id="pauseBeats">0</span></p>
+            <p>Score: <span id="pauseScore">0</span></p>
+            <canvas id="pauseGhostScore" width="400" height="150"></canvas>
+            <br>
+            <button class="btn" id="listenPauseBtn">Listen to Composition</button>
+            <button class="btn" id="resumeBtn">Resume</button>
+        </div>
+    </div>
+
+    <!-- Game Over / Share Overlay -->
+    <div id="gameOverOverlay" class="overlay hidden">
+        <div class="modal">
+            <h2>Run Complete!</h2>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <p>High Score: <span id="finalHighScore">0</span></p>
+            <p id="newHighScore" class="hidden" style="color: #44cc44; font-weight: bold;">🎵 New High Score! 🎵</p>
+            <p>Beats Survived: <span id="finalBeats">0</span></p>
+            <p>Peak Combo: <span id="peakCombo">0</span>x</p>
+
+            <button class="btn" id="shareBtn">Share My Composition</button>
+            <button class="btn" id="newGameBtn">New Composition</button>
+        </div>
+    </div>
+
+    <!-- Level Editor Overlay -->
+    <div id="levelEditorOverlay" class="overlay hidden">
+        <div class="modal editor-modal">
+            <button class="back-arrow" id="editorBackBtn">&larr;</button>
+            <h2>Level Editor</h2>
+            <p>Click on the staff to place notes. Create your own rhythm!</p>
+
+            <div class="editor-controls">
+                <div class="editor-group">
+                    <label>Type:</label>
+                    <button class="type-btn active" data-type="note">Note</button>
+                    <button class="type-btn" data-type="rest">Rest</button>
+                </div>
+                <div class="editor-group">
+                    <label>Duration:</label>
+                    <button class="duration-btn" data-duration="whole">Whole</button>
+                    <button class="duration-btn" data-duration="half">Half</button>
+                    <button class="duration-btn active" data-duration="quarter">Quarter</button>
+                    <button class="duration-btn" data-duration="eighth">Eighth</button>
+                </div>
+            </div>
+
+            <div class="editor-canvas-container">
+                <canvas id="levelEditorCanvas" width="700" height="200"></canvas>
+            </div>
+
+            <p class="note-count">Notes: <span id="editorNoteCount">0</span> | Total beats: <span id="editorBeatCount">0</span></p>
+
+            <div class="editor-actions">
+                <button class="btn" id="editorPlayPreview">Preview</button>
+                <button class="btn" id="editorPlayLevel">Play Level</button>
+                <button class="btn btn-secondary" id="editorUndo">Undo</button>
+                <button class="btn btn-secondary" id="editorClear">Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Screen Overlay -->
+    <div id="shareOverlay" class="overlay hidden">
+        <div class="modal share-modal">
+            <button class="back-arrow" id="shareBackBtn">&larr;</button>
+            <h2>Your Composition</h2>
+            <div class="score-scroll-container">
+                <canvas id="shareScoreCanvas" width="600" height="200"></canvas>
+            </div>
+            <div class="share-buttons">
+                <button class="btn share-btn" id="downloadPNG">Download PNG</button>
+                <button class="btn share-btn" id="downloadXML">Download MusicXML</button>
+                <button class="btn share-btn" id="copyLink">Copy Share Link</button>
+            </div>
+            <div class="bottom-controls">
+                <button class="btn play-pause-btn" id="sharePlayPauseBtn">&#9658; Play</button>
+                <button class="btn" id="shareNewGameBtn">New Composition</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link Preview Overlay -->
+    <div id="linkPreviewOverlay" class="overlay hidden">
+        <div class="modal share-modal">
+            <button class="back-arrow" id="linkPreviewBackBtn">&larr;</button>
+            <h2>Share Link</h2>
+            <div class="score-scroll-container">
+                <canvas id="linkPreviewCanvas" width="600" height="200"></canvas>
+            </div>
+            <div class="link-container">
+                <input type="text" id="shareLinkInput" readonly>
+                <button class="btn" id="copyLinkBtn">Copy</button>
+            </div>
+            <button class="btn play-pause-btn" id="linkPlayPauseBtn">&#9658; Play</button>
+        </div>
+    </div>
+
+
+    <script>
+        // ==================== GAME CONFIGURATION ====================
+        const CONFIG = {
+            staffLineSpacing: 20,
+            staffY: 300,
+            ballRadius: 12,
+            gravity: 0.5,
+            jumpForce: -14,
+            highJumpForce: -20,
+            scrollSpeed: 3,
+            audioOffset: 0,
+            darkMode: false,
+            showControls: true
+        };
+
+        // Pitch to color mapping (chromatic)
+        const PITCH_COLORS = {
+            'C': '#ff4444', // Red
+            'D': '#ff8844', // Orange
+            'E': '#ffdd44', // Yellow
+            'F': '#88ff44', // Yellow-green
+            'G': '#44ff88', // Green
+            'A': '#44ddff', // Cyan
+            'B': '#8844ff'  // Violet
+        };
+
+        // Note positions on staff (in half-steps from bottom line E4)
+        const NOTE_POSITIONS = {
+            'C2': -18, // Death note - very low, needs multiple ledger lines
+            'C4': -4, 'D4': -3, 'E4': -2, 'F4': -1,
+            'G4': 0, 'A4': 1, 'B4': 2,
+            'C5': 3, 'D5': 4, 'E5': 5
+        };
+
+        const NOTE_NAMES = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5', 'D5', 'E5'];
+
+        // Duration widths and beat values
+        // Platform width ~75% of beat spacing to leave gaps for bouncing
+        const BEAT_DISTANCE = 120; // Pixels per beat
+        const DURATIONS = {
+            whole: { width: 240, beats: 4, name: 'whole' },      // 4 beats, 75% coverage
+            half: { width: 120, beats: 2, name: 'half' },        // 2 beats, 75% coverage
+            quarter: { width: 60, beats: 1, name: 'quarter' },   // 1 beat, 75% coverage
+            eighth: { width: 30, beats: 0.5, name: 'eighth' },   // 0.5 beats, 75% coverage
+            sixteenth: { width: 15, beats: 0.25, name: 'sixteenth' } // 0.25 beats, 75% coverage
+        };
+
+        // ==================== PATTERN LIBRARY ====================
+        // Each chunk is an array of {pitch, duration, isRest} objects
+        // Patterns are tested, fair sequences that tile together cleanly
+        const PATTERN_CHUNKS = {
+            early: [
+                // Chunk 1: Simple ascending scale
+                [
+                    { pitch: 'E4', duration: 'quarter' },
+                    { pitch: 'F4', duration: 'quarter' },
+                    { pitch: 'G4', duration: 'quarter' },
+                    { pitch: 'A4', duration: 'quarter' },
+                ],
+                // Chunk 2: Stepwise descent
+                [
+                    { pitch: 'G4', duration: 'half' },
+                    { pitch: 'F4', duration: 'quarter' },
+                    { pitch: 'E4', duration: 'quarter' },
+                ],
+                // Chunk 3: Held note with rest
+                [
+                    { pitch: 'C5', duration: 'half' },
+                    { pitch: 'G4', duration: 'quarter', isRest: true },
+                    { pitch: 'G4', duration: 'quarter' },
+                ],
+                // Chunk 4: Simple two-note alternation
+                [
+                    { pitch: 'G4', duration: 'quarter' },
+                    { pitch: 'E4', duration: 'quarter' },
+                    { pitch: 'G4', duration: 'quarter' },
+                    { pitch: 'E4', duration: 'quarter' },
+                ],
+            ],
+            mid: [
+                // Chunk 5: Eighth-note run up
+                [
+                    { pitch: 'E4', duration: 'eighth' },
+                    { pitch: 'F4', duration: 'eighth' },
+                    { pitch: 'G4', duration: 'eighth' },
+                    { pitch: 'A4', duration: 'eighth' },
+                    { pitch: 'B4', duration: 'half' },
+                ],
+                // Chunk 6: Leap with rest landing
+                [
+                    { pitch: 'C4', duration: 'quarter' },
+                    { pitch: 'G4', duration: 'quarter', isRest: true },
+                    { pitch: 'C5', duration: 'half' },
+                ],
+                // Chunk 7: Syncopated eighth-quarter pattern
+                [
+                    { pitch: 'G4', duration: 'eighth' },
+                    { pitch: 'A4', duration: 'quarter' },
+                    { pitch: 'G4', duration: 'eighth' },
+                    { pitch: 'E4', duration: 'half' },
+                ],
+                // Chunk 8: Descending with whole rest breather
+                [
+                    { pitch: 'E5', duration: 'quarter' },
+                    { pitch: 'D5', duration: 'quarter' },
+                    { pitch: 'C5', duration: 'quarter' },
+                    { pitch: 'B4', duration: 'quarter', isRest: true },
+                ],
+            ],
+            late: [
+                // Chunk 9: Fast sixteenth run
+                [
+                    { pitch: 'C5', duration: 'sixteenth' },
+                    { pitch: 'D5', duration: 'sixteenth' },
+                    { pitch: 'E5', duration: 'sixteenth' },
+                    { pitch: 'D5', duration: 'sixteenth' },
+                    { pitch: 'C5', duration: 'half' },
+                ],
+                // Chunk 10: Leap-heavy challenge
+                [
+                    { pitch: 'C4', duration: 'eighth' },
+                    { pitch: 'E5', duration: 'eighth' },
+                    { pitch: 'C4', duration: 'eighth' },
+                    { pitch: 'E5', duration: 'eighth' },
+                    { pitch: 'G4', duration: 'half' },
+                ],
+                // Chunk 11: Sixteenth zigzag
+                [
+                    { pitch: 'G4', duration: 'sixteenth' },
+                    { pitch: 'B4', duration: 'sixteenth' },
+                    { pitch: 'G4', duration: 'sixteenth' },
+                    { pitch: 'E4', duration: 'sixteenth' },
+                    { pitch: 'A4', duration: 'quarter' },
+                    { pitch: 'G4', duration: 'quarter' },
+                ],
+                // Chunk 12: Rest-heavy syncopation
+                [
+                    { pitch: 'E5', duration: 'eighth' },
+                    { pitch: 'D5', duration: 'eighth', isRest: true },
+                    { pitch: 'C5', duration: 'eighth' },
+                    { pitch: 'B4', duration: 'eighth', isRest: true },
+                    { pitch: 'G4', duration: 'half' },
+                ],
+            ]
+        };
+
+        // Pattern library state
+        let patternState = {
+            currentChunkNotes: [],
+            chunkNoteIndex: 0
+        };
+
+        function getNextPatternNote(lastNote) {
+            // Custom level mode - use predefined notes
+            if (game.customLevel.enabled) {
+                if (game.customLevel.currentIndex < game.customLevel.notes.length) {
+                    const note = game.customLevel.notes[game.customLevel.currentIndex++];
+                    return {
+                        pitch: note.pitch,
+                        duration: note.duration,
+                        isRest: note.isRest
+                    };
+                } else {
+                    // Loop the custom level or end it
+                    game.customLevel.currentIndex = 0;
+                    const note = game.customLevel.notes[game.customLevel.currentIndex++];
+                    return {
+                        pitch: note.pitch,
+                        duration: note.duration,
+                        isRest: note.isRest
+                    };
+                }
+            }
+
+            // If current chunk is exhausted, pick a new random chunk
+            if (patternState.chunkNoteIndex >= patternState.currentChunkNotes.length) {
+                const pool = PATTERN_CHUNKS[game.difficulty] || PATTERN_CHUNKS.early;
+                patternState.currentChunkNotes = pool[Math.floor(Math.random() * pool.length)];
+                patternState.chunkNoteIndex = 0;
+            }
+            const template = patternState.currentChunkNotes[patternState.chunkNoteIndex++];
+            return template;
+        }
+
+        function triggerShake(intensity, duration) {
+            game.shake.intensity = intensity;
+            game.shake.duration = duration;
+        }
+
+        function triggerFreeze(frames) {
+            game.freezeFrames = frames;
+        }
+
+        class AudioSystem {
+            constructor() {
+                this.context = null;
+                this.initialized = false;
+                this.masterGain = null;
+            }
+
+            init() {
+                if (this.initialized) return;
+                this.context = new (window.AudioContext || window.webkitAudioContext)();
+                this.masterGain = this.context.createGain();
+                this.masterGain.connect(this.context.destination);
+                this.masterGain.gain.value = 0.5;
+                this.initialized = true;
+            }
+
+            getFrequency(noteName) {
+                const frequencies = {
+                    'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23,
+                    'G4': 392.00, 'A4': 440.00, 'B4': 493.88,
+                    'C5': 523.25, 'D5': 587.33, 'E5': 659.25,
+                    'C2': 65.41
+                };
+                return frequencies[noteName] || 440;
+            }
+
+            playNote(noteName, duration = 0.5) {
+                if (!this.initialized) this.init();
+
+                const freq = this.getFrequency(noteName);
+                const now = this.context.currentTime;
+
+                // Piano-like sound using multiple harmonics
+                const harmonics = [
+                    { ratio: 1, gain: 0.4 },      // Fundamental
+                    { ratio: 2, gain: 0.2 },      // 2nd harmonic
+                    { ratio: 3, gain: 0.1 },      // 3rd harmonic
+                    { ratio: 4, gain: 0.05 },     // 4th harmonic
+                    { ratio: 5, gain: 0.025 }     // 5th harmonic
+                ];
+
+                // Master gain for this note
+                const masterGain = this.context.createGain();
+                masterGain.connect(this.masterGain);
+
+                harmonics.forEach(h => {
+                    const osc = this.context.createOscillator();
+                    const gain = this.context.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.value = freq * h.ratio;
+
+                    // Piano envelope: fast attack, gradual decay
+                    gain.gain.setValueAtTime(0, now);
+                    gain.gain.linearRampToValueAtTime(h.gain, now + 0.01); // Fast attack
+                    gain.gain.exponentialRampToValueAtTime(h.gain * 0.3, now + 0.1); // Quick initial decay
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + duration); // Sustain decay
+
+                    osc.connect(gain);
+                    gain.connect(masterGain);
+
+                    osc.start(now);
+                    osc.stop(now + duration);
+                });
+
+                // Add subtle "hammer" attack sound
+                const noise = this.context.createOscillator();
+                const noiseGain = this.context.createGain();
+                noise.type = 'square';
+                noise.frequency.value = freq * 8;
+                noiseGain.gain.setValueAtTime(0.03, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+                noise.connect(noiseGain);
+                noiseGain.connect(masterGain);
+                noise.start(now);
+                noise.stop(now + 0.02);
+            }
+
+            playMiss() {
+                if (!this.initialized) this.init();
+
+                const osc = this.context.createOscillator();
+                const gain = this.context.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.value = 100;
+
+                gain.gain.setValueAtTime(0.2, this.context.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 0.15);
+
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+
+                osc.start();
+                osc.stop(this.context.currentTime + 0.15);
+            }
+
+            playDeath() {
+                if (!this.initialized) this.init();
+
+                const osc = this.context.createOscillator();
+                const gain = this.context.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.value = this.getFrequency('C2'); // Low C2 death note
+
+                gain.gain.setValueAtTime(0.5, this.context.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + 3);
+
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+
+                osc.start();
+                osc.stop(this.context.currentTime + 3);
+            }
+
+            playMetronome() {
+                if (!this.initialized) this.init();
+
+                // Resume context if suspended (browser autoplay policy)
+                if (this.context.state === 'suspended') {
+                    this.context.resume();
+                }
+
+                const now = this.context.currentTime;
+
+                // Simple wood block sound
+                const osc = this.context.createOscillator();
+                const gain = this.context.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.value = 800;
+
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+
+                osc.start(now);
+                osc.stop(now + 0.05);
+            }
+        }
+
+        // ==================== GAME STATE ====================
+        const game = {
+            canvas: null,
+            ctx: null,
+            audio: new AudioSystem(),
+            running: false,
+            paused: false,
+            waitingToRespawn: false,
+
+            // Ball state
+            ball: {
+                x: 200,
+                y: 300,
+                vy: 0,
+                onNote: null,
+                squash: 1,
+                stretch: 1,
+                targetY: 300,
+                jumping: false,
+                currentPitch: 'C4',
+                jumpCount: 0,
+                rolling: false,
+                rotation: 0
+            },
+
+            // Game state
+            score: 0,
+            combo: 0,
+            peakCombo: 0,
+            lives: 5,
+            beatsElapsed: 0,
+            bpm: 70,
+            lastBeatTime: 0,
+            beatInterval: 0,
+            highScore: parseInt(localStorage.getItem('rhythmJumpHighScore') || '0'),
+
+            // Notes
+            notes: [],
+            ghostScore: [],
+            nextNoteId: 0,
+
+            // Custom level mode
+            customLevel: {
+                enabled: false,
+                notes: [],
+                currentIndex: 0
+            },
+
+            // Input
+            spacePressed: false,
+            spaceHeld: false,
+            holdStartTime: 0,
+
+            // Difficulty
+            difficulty: 'early',
+
+            // Animation
+            particles: [],
+
+            // Screen shake
+            shake: { x: 0, y: 0, duration: 0, intensity: 0 },
+
+            // Death freeze
+            freezeFrames: 0,
+
+            // Timing
+            perfectStreak: 0
+        };
+
+        // ==================== INITIALIZATION ====================
+        function init() {
+            game.canvas = document.getElementById('gameCanvas');
+            game.ctx = game.canvas.getContext('2d');
+
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            setupEventListeners();
+            setupUIListeners();
+
+            // Check for saved dark mode preference
+            if (localStorage.getItem('darkMode') === 'true') {
+                toggleDarkMode(true);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function resizeCanvas() {
+            game.canvas.width = window.innerWidth;
+            game.canvas.height = window.innerHeight;
+            CONFIG.staffY = game.canvas.height / 2;
+        }
+
+        function setupEventListeners() {
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    if (!game.spacePressed) {
+                        game.spacePressed = true;
+                        game.holdStartTime = Date.now();
+                        // Ball bounces when space is pressed
+                        handleJump();
+                    }
+                    game.spaceHeld = true;
+                }
+                if (e.code === 'Escape') {
+                    togglePause();
+                }
+            });
+
+            document.addEventListener('keyup', (e) => {
+                if (e.code === 'Space') {
+                    game.spacePressed = false;
+                    game.spaceHeld = false;
+                }
+            });
+
+            game.canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (e.touches.length === 2) {
+                    togglePause();
+                } else {
+                    game.spacePressed = true;
+                    game.holdStartTime = Date.now();
+                    // Ball bounces when screen is touched
+                    handleJump();
+                }
+            });
+
+            game.canvas.addEventListener('touchend', (e) => {
+                game.spacePressed = false;
+                game.spaceHeld = false;
+            });
+        }
+
+        function setupUIListeners() {
+            // Start screen
+            document.getElementById('startBtn').addEventListener('click', startNormalGame);
+            document.getElementById('calibrateBtn').addEventListener('click', showCalibration);
+            document.getElementById('levelEditorBtn').addEventListener('click', showLevelEditor);
+            document.getElementById('darkModeToggle').addEventListener('click', () => toggleDarkMode());
+
+            // Level Editor
+            document.getElementById('editorBackBtn').addEventListener('click', hideLevelEditor);
+            document.getElementById('editorPlayPreview').addEventListener('click', previewCustomLevel);
+            document.getElementById('editorPlayLevel').addEventListener('click', playCustomLevel);
+            document.getElementById('editorUndo').addEventListener('click', undoLastNote);
+            document.getElementById('editorClear').addEventListener('click', clearCustomLevel);
+            document.getElementById('levelEditorCanvas').addEventListener('click', handleEditorCanvasClick);
+            setupEditorControls();
+
+            // Calibration
+            document.getElementById('skipCalibration').addEventListener('click', hideCalibration);
+            document.getElementById('resetCalibration').addEventListener('click', resetCalibration);
+
+            // Pause
+            document.getElementById('resumeBtn').addEventListener('click', togglePause);
+            document.getElementById('listenPauseBtn').addEventListener('click', () => playComposition(game.ghostScore));
+
+            // Game Over
+            document.getElementById('newGameBtn').addEventListener('click', startNormalGame);
+            document.getElementById('shareBtn').addEventListener('click', showShareScreen);
+
+            // Share Screen
+            document.getElementById('downloadPNG').addEventListener('click', downloadPNG);
+            document.getElementById('downloadXML').addEventListener('click', downloadMusicXML);
+            document.getElementById('copyLink').addEventListener('click', showLinkPreview);
+            document.getElementById('sharePlayPauseBtn').addEventListener('click', toggleSharePlayback);
+            document.getElementById('shareBackBtn').addEventListener('click', hideShareScreen);
+            document.getElementById('shareNewGameBtn').addEventListener('click', startNormalGame);
+            document.getElementById('shareScoreCanvas').addEventListener('click', handleScoreCanvasClick);
+
+            // Link Preview Screen
+            document.getElementById('linkPreviewBackBtn').addEventListener('click', hideLinkPreview);
+            document.getElementById('copyLinkBtn').addEventListener('click', copyShareLink);
+            document.getElementById('linkPlayPauseBtn').addEventListener('click', toggleLinkPlayback);
+        }
+
+        // ==================== GAME LOOP ====================
+        function gameLoop(timestamp) {
+            // Always update shake effect (even when paused or waiting to respawn)
+            updateShake();
+
+            if (game.running && !game.paused && !game.waitingToRespawn) {
+                // Freeze frame: skip update for dramatic effect
+                if (game.freezeFrames > 0) {
+                    game.freezeFrames--;
+                } else {
+                    update(timestamp);
+                }
+            }
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update(timestamp) {
+            updateBPM();
+            updateBeat(timestamp);
+            updateBall();
+            updateNotes();
+            updateParticles();
+            updateShake();
+            checkCollisions();
+            generateNotes();
+        }
+
+        function updateShake() {
+            if (game.shake.duration > 0) {
+                game.shake.duration--;
+                game.shake.x = (Math.random() - 0.5) * game.shake.intensity * 2;
+                game.shake.y = (Math.random() - 0.5) * game.shake.intensity * 2;
+            } else {
+                game.shake.x = 0;
+                game.shake.y = 0;
+            }
+        }
+
+        function updateBPM() {
+            // Scale BPM based on beats elapsed
+            if (game.beatsElapsed < 64) {
+                game.bpm = 80 + (game.beatsElapsed / 64) * 20; // 80-100
+                game.difficulty = 'early';
+            } else if (game.beatsElapsed < 256) {
+                game.bpm = 100 + ((game.beatsElapsed - 64) / 192) * 40; // 100-140
+                game.difficulty = 'mid';
+            } else {
+                game.bpm = 140 + Math.min(60, (game.beatsElapsed - 256) / 200 * 60); // 140-200
+                game.difficulty = 'late';
+            }
+            game.beatInterval = 60000 / game.bpm;
+        }
+
+        function updateBeat(timestamp) {
+            if (timestamp - game.lastBeatTime >= game.beatInterval) {
+                game.lastBeatTime = timestamp;
+                game.beatsElapsed++;
+            }
+        }
+
+        function updateBall() {
+            // Check if ball is rolling on a platform
+            if (game.ball.onNote && !game.ball.jumping) {
+                const note = game.ball.onNote;
+                const noteY = getNoteY(note.pitch) + note.dip;
+                const platformTop = note.isRest ? CONFIG.staffY + 15 : noteY + 12;
+
+                // Keep ball on platform
+                game.ball.y = platformTop - CONFIG.ballRadius;
+                game.ball.vy = 0;
+
+                // Check if ball has rolled past the end of the platform
+                if (game.ball.x > note.x + note.width) {
+                    // Fall off the platform
+                    game.ball.onNote = null;
+                    game.ball.vy = 1; // Start falling
+                }
+
+                // Ball rotation while rolling (visual only tracked in render)
+                game.ball.rolling = true;
+            } else {
+                // Apply gravity when not on platform
+                game.ball.vy += CONFIG.gravity;
+                game.ball.y += game.ball.vy;
+                game.ball.rolling = false;
+            }
+
+            // Squash and stretch animation
+            if (game.ball.squash !== 1) {
+                game.ball.squash += (1 - game.ball.squash) * 0.15;
+            }
+            if (game.ball.stretch !== 1) {
+                game.ball.stretch += (1 - game.ball.stretch) * 0.15;
+            }
+
+            // At peak of jump, stretch
+            if (game.ball.vy > -1 && game.ball.vy < 1 && game.ball.jumping) {
+                game.ball.stretch = 1.3;
+                game.ball.squash = 0.7;
+            }
+
+            // Check if ball fell off screen
+            if (game.ball.y > game.canvas.height + 50) {
+                loseLife();
+            }
+        }
+
+        function updateNotes() {
+            // Scroll notes left at BPM-synced speed
+            // BEAT_DISTANCE pixels = 1 quarter note beat (defined globally)
+            const framesPerBeat = 3600 / game.bpm; // At 60fps
+            const speed = BEAT_DISTANCE / framesPerBeat;
+            const barLineX = game.ball.x;
+
+            for (let i = game.notes.length - 1; i >= 0; i--) {
+                const note = game.notes[i];
+                note.x -= speed;
+
+                // Animate note dip
+                if (note.dip > 0) {
+                    note.dip *= 0.85;
+                }
+
+                // Remove notes that have scrolled off
+                if (note.x + note.width < -50) {
+                    // Check if ball was supposed to be on this note
+                    if (!note.hit && !note.missed) {
+                        note.missed = true;
+                        missNote();
+                    }
+                    game.notes.splice(i, 1);
+                }
+            }
+        }
+
+        function updateParticles() {
+            for (let i = game.particles.length - 1; i >= 0; i--) {
+                const p = game.particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.1;
+                p.life -= 0.02;
+                p.size *= 0.98;
+
+                if (p.life <= 0) {
+                    game.particles.splice(i, 1);
+                }
+            }
+        }
+
+        function checkCollisions() {
+            if (game.ball.vy < 0) return; // Only check when falling
+
+            for (const note of game.notes) {
+                const noteY = getNoteY(note.pitch) + note.dip;
+                // Platform position differs for rests vs notes
+                const platformTop = note.isRest ? CONFIG.staffY + 15 : noteY + 12;
+                const ballBottom = game.ball.y + CONFIG.ballRadius;
+                const ballLeft = game.ball.x - CONFIG.ballRadius;
+                const ballRight = game.ball.x + CONFIG.ballRadius;
+
+                // Check if ball is landing on platform
+                if (ballBottom >= platformTop - 5 &&
+                    ballBottom <= platformTop + 12 &&
+                    ballRight >= note.x &&
+                    ballLeft <= note.x + note.width &&
+                    game.ball.vy > 0) {
+
+                    // If note already hit, just land on it without scoring again
+                    if (note.hit) {
+                        game.ball.y = platformTop - CONFIG.ballRadius;
+                        game.ball.vy = 0;
+                        game.ball.jumping = false;
+                        game.ball.jumpCount = 0;
+                        game.ball.onNote = note;
+                        game.ball.rolling = true;
+                        game.ball.squash = 1.2;
+                        game.ball.stretch = 0.8;
+                    } else {
+                        landOnNote(note);
+                    }
+                    break;
+                }
+            }
+        }
+
+        function generateNotes() {
+            // Generate notes with consistent spacing from the last note
+            const lastNote = game.notes[game.notes.length - 1];
+
+            if (!lastNote) {
+                // First note starts on screen
+                const newNote = createNote(400, null);
+                game.notes.push(newNote);
+                return;
+            }
+
+            // Spawn new note when last note is on screen
+            if (lastNote.x < game.canvas.width + 50) {
+                const newNote = createNote(null, lastNote);
+                game.notes.push(newNote);
+            }
+        }
+
+        function createNote(x, lastNote) {
+            // Pull next note from the pattern library
+            const template = getNextPatternNote(lastNote);
+            const durationKey = template.duration;
+            const duration = DURATIONS[durationKey];
+            const pitch = template.pitch;
+            const isRest = !!template.isRest;
+
+            // Spacing between notes
+            const minSpacing = BEAT_DISTANCE * 0.75;
+            const maxSpacing = BEAT_DISTANCE * 1.25;
+            const spacing = minSpacing + Math.random() * (maxSpacing - minSpacing);
+
+            // Calculate x position
+            const noteX = lastNote ? lastNote.x + lastNote.width + spacing : x;
+
+            return {
+                id: game.nextNoteId++,
+                x: noteX,
+                width: duration.width,
+                beats: duration.beats,
+                duration: durationKey,
+                pitch: pitch,
+                isRest: isRest,
+                hit: false,
+                missed: false,
+                dip: 0
+            };
+        }
+
+        // ==================== PLAYER ACTIONS ====================
+        function handleJump() {
+            if (!game.running || game.paused) return;
+
+            // Resume from respawn freeze (only after tremor finishes)
+            if (game.waitingToRespawn) {
+                if (game.shake.duration > 0) return; // Wait for tremor to finish
+                game.waitingToRespawn = false;
+                game.lastBeatTime = performance.now(); // Reset beat timing
+                return; // Don't jump on the resume press
+            }
+
+            // Limit to double jump (max 2 jumps before landing)
+            if (game.ball.jumpCount >= 2) return;
+
+            game.audio.init();
+
+            // Find next note to jump to
+            const nextNote = findNextNote();
+            if (!nextNote) return;
+
+            // Consistent jump duration - always 1 beat
+            const framesPerBeat = 3600 / game.bpm;
+
+            // Jump force so arc takes exactly 1 beat
+            const jumpForce = -(framesPerBeat * CONFIG.gravity) / 2;
+
+            // Add vertical adjustment for pitch changes
+            const targetY = getNoteY(nextNote.pitch);
+            const currentY = game.ball.y;
+            const heightDiff = currentY - targetY;
+            const verticalBoost = heightDiff > 0 ? Math.min(heightDiff * 0.1, 5) : 0;
+
+            game.ball.vy = jumpForce - verticalBoost;
+            game.ball.jumping = true;
+            game.ball.jumpCount++;
+            game.ball.onNote = null; // Leave the platform
+            game.ball.rolling = false;
+            game.ball.stretch = 1.3;
+            game.ball.squash = 0.7;
+        }
+
+        function findNextNote() {
+            // Find the next note ahead of the ball
+            for (const note of game.notes) {
+                if (!note.hit && note.x > game.ball.x - 50) {
+                    return note;
+                }
+            }
+            return null;
+        }
+
+        function landOnNote(note) {
+            const noteY = getNoteY(note.pitch);
+
+            // Snap to platform (position differs for rests vs notes)
+            const platformTop = note.isRest ? CONFIG.staffY + 15 : noteY + 12;
+            game.ball.y = platformTop - CONFIG.ballRadius;
+            game.ball.vy = 0;
+            game.ball.jumping = false;
+            game.ball.jumpCount = 0;
+            game.ball.onNote = note;
+            game.ball.currentPitch = note.pitch;
+
+            // Squash on landing
+            game.ball.squash = 1.4;
+            game.ball.stretch = 0.6;
+
+            // Note dip
+            note.dip = 8;
+
+            // Mark as hit
+            note.hit = true;
+
+            // Calculate timing judgment
+            const judgment = getJudgment(note);
+
+            // Score and combo
+            let multiplier = 1;
+            if (judgment === 'perfect') {
+                multiplier = 2;
+                game.perfectStreak++;
+                createPerfectParticles(note);
+
+                // Restore half a life after 3 perfects
+                if (game.perfectStreak >= 3 && game.lives < 5) {
+                    game.lives = Math.min(5, game.lives + 0.5);
+                    game.perfectStreak = 0;
+                }
+            } else if (judgment === 'good') {
+                multiplier = 1;
+                game.perfectStreak = 0;
+            } else {
+                multiplier = 0.5;
+                game.perfectStreak = 0;
+            }
+
+            game.combo++;
+            game.peakCombo = Math.max(game.peakCombo, game.combo);
+
+            const comboMultiplier = Math.min(4, 1 + game.combo * 0.1);
+            const points = Math.floor(10 * multiplier * comboMultiplier);
+            game.score += points;
+
+            // Play sound for the duration of the note
+            if (!note.isRest) {
+                const noteDuration = (note.beats * 60) / game.bpm; // Duration in seconds
+                game.audio.playNote(note.pitch, noteDuration);
+            }
+
+            // Add to ghost score
+            game.ghostScore.push({
+                pitch: note.pitch,
+                duration: note.duration,
+                isRest: note.isRest,
+                beatNumber: game.beatsElapsed
+            });
+        }
+
+        function getJudgment(note) {
+            // Simplified timing - always good or perfect based on position
+            const centerX = note.x + note.width / 2;
+            const distance = Math.abs(game.ball.x - centerX);
+
+            if (distance < 20) return 'perfect';
+            if (distance < 50) return 'good';
+            return 'early';
+        }
+
+        function missNote() {
+            game.combo = 0;
+            game.perfectStreak = 0;
+            game.audio.playMiss();
+        }
+
+        function loseLife() {
+            game.lives--;
+            game.combo = 0;
+            game.perfectStreak = 0;
+
+            if (game.lives <= 0) {
+                // Final death - dramatic tremor coinciding with low C2
+                triggerFreeze(12);
+                triggerShake(15, 60);
+                gameOver();
+            } else {
+                // Regular life loss - smaller shake
+                triggerFreeze(8);
+                triggerShake(10, 20);
+                resetBallPosition();
+                game.audio.playMiss();
+            }
+        }
+
+        function resetBallPosition() {
+            // Create a respawn platform at the bar line
+            const respawnPlatform = {
+                id: game.nextNoteId++,
+                x: 200, // At bar line
+                width: BEAT_DISTANCE * 2, // 2 beats to get ready
+                beats: 2,
+                duration: 'half',
+                pitch: 'G4',
+                isRest: false,
+                hit: true, // Already on it
+                missed: false,
+                dip: 0
+            };
+
+            // Remove any notes that have passed the ball
+            game.notes = game.notes.filter(n => n.x + n.width > 150 || n.hit);
+
+            // Add respawn platform at the beginning
+            game.notes.unshift(respawnPlatform);
+
+            // Find the first unhit note after the respawn platform
+            const firstNote = game.notes.find(n => !n.hit);
+
+            if (firstNote) {
+                // Position first note at a comfortable distance (2 beats ahead of respawn platform end)
+                const respawnEnd = respawnPlatform.x + respawnPlatform.width;
+                const idealX = respawnEnd + BEAT_DISTANCE; // 1 beat gap after respawn platform
+
+                if (firstNote.x < idealX) {
+                    const shiftAmount = idealX - firstNote.x;
+                    for (const note of game.notes) {
+                        if (!note.hit) {
+                            note.x += shiftAmount;
+                        }
+                    }
+                }
+            }
+
+            // Place ball on the respawn platform
+            const platformTop = getNoteY('G4') + 12;
+            game.ball.y = platformTop - CONFIG.ballRadius;
+            game.ball.vy = 0;
+            game.ball.currentPitch = 'G4';
+            game.ball.onNote = respawnPlatform;
+            game.ball.jumping = false;
+            game.ball.jumpCount = 0;
+            game.ball.rolling = true;
+
+            // Freeze until player presses space
+            game.waitingToRespawn = true;
+        }
+
+        function createPerfectParticles(note) {
+            const color = PITCH_COLORS[note.pitch[0]];
+            const noteY = getNoteY(note.pitch);
+
+            for (let i = 0; i < 15; i++) {
+                game.particles.push({
+                    x: note.x + note.width / 2,
+                    y: noteY,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8 - 3,
+                    size: Math.random() * 6 + 3,
+                    color: color,
+                    life: 1
+                });
+            }
+        }
+
+        // ==================== RENDERING ====================
+        function render() {
+            const ctx = game.ctx;
+            const isDark = CONFIG.darkMode;
+
+            // Clear
+            ctx.fillStyle = isDark ? '#121212' : '#ffffff';
+            ctx.fillRect(0, 0, game.canvas.width, game.canvas.height);
+
+            if (!game.running) {
+                renderStaffPreview();
+                return;
+            }
+
+            // Apply screen shake
+            ctx.save();
+            ctx.translate(game.shake.x, game.shake.y);
+
+            // Render ghost score (background)
+            renderGhostScoreBackground();
+
+            // Render staff
+            renderStaff();
+
+            // Render notes
+            renderNotes();
+
+            // Render particles
+            renderParticles();
+
+            // Render ball
+            renderBall();
+
+            ctx.restore();
+
+            // Render HUD (outside shake so it stays stable)
+            renderHUD();
+        }
+
+        function renderStaffPreview() {
+            const ctx = game.ctx;
+            renderStaff();
+        }
+
+        function renderStaff() {
+            const ctx = game.ctx;
+            const isDark = CONFIG.darkMode;
+            const lineColor = isDark ? '#555555' : '#000000';
+
+            ctx.strokeStyle = lineColor;
+            ctx.lineWidth = 1;
+
+            // Draw 5 staff lines
+            for (let i = 0; i < 5; i++) {
+                const y = CONFIG.staffY + (i - 2) * CONFIG.staffLineSpacing;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(game.canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Draw bar line at ball position
+            const barLineX = game.ball.x;
+            const topLine = CONFIG.staffY - 2 * CONFIG.staffLineSpacing;
+            const bottomLine = CONFIG.staffY + 2 * CONFIG.staffLineSpacing;
+            ctx.strokeStyle = isDark ? '#888888' : '#000000';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(barLineX, topLine);
+            ctx.lineTo(barLineX, bottomLine);
+            ctx.stroke();
+            ctx.lineWidth = 1;
+
+            // Draw treble clef
+            ctx.font = '80px Georgia';
+            ctx.fillStyle = lineColor;
+            ctx.fillText('\u{1D11E}', 20, CONFIG.staffY + 25);
+        }
+
+        function renderNotes() {
+            const ctx = game.ctx;
+            const isDark = CONFIG.darkMode;
+
+            for (const note of game.notes) {
+                const y = getNoteY(note.pitch) + note.dip;
+                const noteColor = note.hit ? (isDark ? '#666666' : '#cccccc') : (isDark ? '#ffffff' : '#000000');
+                const noteX = note.x + note.width / 2;
+
+                if (note.isRest) {
+                    // Draw proper rest symbols
+                    ctx.fillStyle = noteColor;
+                    const restY = CONFIG.staffY;
+
+                    if (note.duration === 'whole') {
+                        // Whole rest: rectangle hanging below line
+                        ctx.fillRect(noteX - 12, restY - CONFIG.staffLineSpacing + 2, 24, 8);
+                    } else if (note.duration === 'half') {
+                        // Half rest: rectangle sitting on line
+                        ctx.fillRect(noteX - 12, restY - 8, 24, 8);
+                    } else if (note.duration === 'quarter') {
+                        // Quarter rest: zigzag shape
+                        ctx.beginPath();
+                        ctx.moveTo(noteX + 6, restY - 20);
+                        ctx.lineTo(noteX - 6, restY - 8);
+                        ctx.lineTo(noteX + 4, restY);
+                        ctx.lineTo(noteX - 8, restY + 12);
+                        ctx.quadraticCurveTo(noteX + 2, restY + 8, noteX + 6, restY + 18);
+                        ctx.lineWidth = 3;
+                        ctx.strokeStyle = noteColor;
+                        ctx.stroke();
+                    } else if (note.duration === 'eighth') {
+                        // Eighth rest: dot with curved tail
+                        ctx.beginPath();
+                        ctx.arc(noteX, restY - 8, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.moveTo(noteX, restY - 8);
+                        ctx.quadraticCurveTo(noteX + 8, restY, noteX - 4, restY + 15);
+                        ctx.lineWidth = 2.5;
+                        ctx.strokeStyle = noteColor;
+                        ctx.stroke();
+                    } else if (note.duration === 'sixteenth') {
+                        // Sixteenth rest: two dots with curved tail
+                        ctx.beginPath();
+                        ctx.arc(noteX, restY - 14, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(noteX, restY - 4, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.moveTo(noteX, restY - 4);
+                        ctx.quadraticCurveTo(noteX + 8, restY + 6, noteX - 4, restY + 18);
+                        ctx.lineWidth = 2.5;
+                        ctx.strokeStyle = noteColor;
+                        ctx.stroke();
+                    }
+                } else {
+                    // Stem direction: up if below B4 (position 2), down if above
+                    const stemUp = NOTE_POSITIONS[note.pitch] < 2;
+                    const stemX = stemUp ? noteX + 10 : noteX - 10;
+                    const stemLength = 40;
+
+                    // Draw note head based on duration
+                    if (note.duration === 'whole') {
+                        // Whole note: hollow ring, no stem - staff lines visible through center
+                        ctx.strokeStyle = noteColor;
+                        ctx.lineWidth = 2.5;
+                        ctx.beginPath();
+                        ctx.ellipse(noteX, y, 12, 8, -0.3, 0, Math.PI * 2);
+                        ctx.stroke();
+                    } else if (note.duration === 'half') {
+                        // Half note: hollow ring with stem - staff lines visible through center
+                        ctx.strokeStyle = noteColor;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.ellipse(noteX, y, 10, 7, -0.3, 0, Math.PI * 2);
+                        ctx.stroke();
+                        // Stem
+                        ctx.lineWidth = 2.5;
+                        ctx.beginPath();
+                        ctx.moveTo(stemX, y);
+                        ctx.lineTo(stemX, stemUp ? y - stemLength : y + stemLength);
+                        ctx.stroke();
+                    } else {
+                        // Quarter, eighth, sixteenth: filled oval with stem
+                        ctx.fillStyle = noteColor;
+                        ctx.beginPath();
+                        ctx.ellipse(noteX, y, 12, 9, -0.3, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // Stem
+                        ctx.strokeStyle = noteColor;
+                        ctx.lineWidth = 2.5;
+                        ctx.beginPath();
+                        ctx.moveTo(stemX, y);
+                        ctx.lineTo(stemX, stemUp ? y - stemLength : y + stemLength);
+                        ctx.stroke();
+
+                        // Flags for eighth and sixteenth
+                        if (note.duration === 'eighth' || note.duration === 'sixteenth') {
+                            const flagY = stemUp ? y - stemLength : y + stemLength;
+                            const flagDir = stemUp ? 1 : -1;
+
+                            ctx.fillStyle = noteColor;
+                            ctx.beginPath();
+                            if (stemUp) {
+                                ctx.moveTo(stemX, flagY);
+                                ctx.quadraticCurveTo(stemX + 15, flagY + 10, stemX + 5, flagY + 20);
+                                ctx.lineTo(stemX, flagY + 15);
+                            } else {
+                                ctx.moveTo(stemX, flagY);
+                                ctx.quadraticCurveTo(stemX - 15, flagY - 10, stemX - 5, flagY - 20);
+                                ctx.lineTo(stemX, flagY - 15);
+                            }
+                            ctx.fill();
+
+                            // Second flag for sixteenth
+                            if (note.duration === 'sixteenth') {
+                                ctx.beginPath();
+                                if (stemUp) {
+                                    ctx.moveTo(stemX, flagY + 10);
+                                    ctx.quadraticCurveTo(stemX + 15, flagY + 20, stemX + 5, flagY + 30);
+                                    ctx.lineTo(stemX, flagY + 25);
+                                } else {
+                                    ctx.moveTo(stemX, flagY - 10);
+                                    ctx.quadraticCurveTo(stemX - 15, flagY - 20, stemX - 5, flagY - 30);
+                                    ctx.lineTo(stemX, flagY - 25);
+                                }
+                                ctx.fill();
+                            }
+                        }
+                    }
+
+                    // Draw ledger lines if needed
+                    drawLedgerLines(ctx, note, y, isDark);
+                }
+
+                // Draw platform that extends for the note's duration
+                const platformY = note.isRest ? CONFIG.staffY + 15 : y + 12;
+                const platformColor = note.hit ? (isDark ? '#444444' : '#dddddd') : (isDark ? '#888888' : '#333333');
+                ctx.fillStyle = platformColor;
+                ctx.fillRect(note.x, platformY, note.width, 3);
+
+                // Platform edge highlights
+                ctx.fillStyle = isDark ? '#aaaaaa' : '#555555';
+                ctx.fillRect(note.x, platformY, note.width, 1);
+            }
+        }
+
+        function drawLedgerLines(ctx, note, y, isDark) {
+            const pos = NOTE_POSITIONS[note.pitch];
+            ctx.strokeStyle = isDark ? '#555555' : '#000000';
+            ctx.lineWidth = 1;
+
+            if (pos <= -4) { // C4 needs ledger line
+                const ledgerY = CONFIG.staffY + 2 * CONFIG.staffLineSpacing + CONFIG.staffLineSpacing;
+                ctx.beginPath();
+                ctx.moveTo(note.x + note.width / 2 - 18, ledgerY);
+                ctx.lineTo(note.x + note.width / 2 + 18, ledgerY);
+                ctx.stroke();
+            }
+        }
+
+        function renderBall() {
+            const ctx = game.ctx;
+            const ball = game.ball;
+            const color = PITCH_COLORS[ball.currentPitch[0]];
+
+            // Update rotation when rolling
+            if (ball.rolling) {
+                const speed = Math.min(5, CONFIG.scrollSpeed * (game.bpm / 70));
+                ball.rotation += speed * 0.08;
+            }
+
+            ctx.save();
+            ctx.translate(ball.x, ball.y);
+            ctx.scale(ball.squash, ball.stretch);
+            ctx.rotate(ball.rotation);
+
+            // Glow effect
+            if (CONFIG.darkMode) {
+                // Glow for dark mode
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, CONFIG.ballRadius * 2);
+                gradient.addColorStop(0, color);
+                gradient.addColorStop(0.5, color + '88');
+                gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(0, 0, CONFIG.ballRadius * 2, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // Colored glow for light mode using shadow blur
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 15;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+            }
+
+            // Main ball
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(0, 0, CONFIG.ballRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Highlight (shows rotation)
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.beginPath();
+            ctx.arc(-4, -4, CONFIG.ballRadius * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Small marker to show rotation
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            ctx.beginPath();
+            ctx.arc(CONFIG.ballRadius * 0.5, 0, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Reset shadow
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+
+            ctx.restore();
+        }
+
+        function renderParticles() {
+            const ctx = game.ctx;
+
+            for (const p of game.particles) {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        // Helper: convert beats to duration name
+        function beatsToDuration(beats) {
+            if (beats >= 4) return 'whole';
+            if (beats >= 2) return 'half';
+            if (beats >= 1) return 'quarter';
+            if (beats >= 0.5) return 'eighth';
+            return 'sixteenth';
+        }
+
+        // Helper: draw a single note head with stem/flags
+        function drawGhostNote(ctx, x, y, duration, noteColor, staffLineSpacing, yOffset, pos) {
+            const stemUp = pos < 2;
+            const stemX = stemUp ? x + 5 : x - 5;
+            const stemLength = 20;
+
+            if (duration === 'whole') {
+                ctx.strokeStyle = noteColor;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.ellipse(x, y, 6, 4, -0.3, 0, Math.PI * 2);
+                ctx.stroke();
+            } else if (duration === 'half') {
+                ctx.strokeStyle = noteColor;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.ellipse(x, y, 5, 3.5, -0.3, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(stemX, y);
+                ctx.lineTo(stemX, stemUp ? y - stemLength : y + stemLength);
+                ctx.stroke();
+            } else {
+                ctx.fillStyle = noteColor;
+                ctx.beginPath();
+                ctx.ellipse(x, y, 5, 3.5, -0.3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = noteColor;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(stemX, y);
+                ctx.lineTo(stemX, stemUp ? y - stemLength : y + stemLength);
+                ctx.stroke();
+
+                if (duration === 'eighth' || duration === 'sixteenth') {
+                    const flagY = stemUp ? y - stemLength : y + stemLength;
+                    ctx.fillStyle = noteColor;
+                    ctx.beginPath();
+                    if (stemUp) {
+                        ctx.moveTo(stemX, flagY);
+                        ctx.quadraticCurveTo(stemX + 8, flagY + 5, stemX + 3, flagY + 10);
+                        ctx.lineTo(stemX, flagY + 7);
+                    } else {
+                        ctx.moveTo(stemX, flagY);
+                        ctx.quadraticCurveTo(stemX - 8, flagY - 5, stemX - 3, flagY - 10);
+                        ctx.lineTo(stemX, flagY - 7);
+                    }
+                    ctx.fill();
+
+                    if (duration === 'sixteenth') {
+                        ctx.beginPath();
+                        if (stemUp) {
+                            ctx.moveTo(stemX, flagY + 5);
+                            ctx.quadraticCurveTo(stemX + 8, flagY + 10, stemX + 3, flagY + 15);
+                            ctx.lineTo(stemX, flagY + 12);
+                        } else {
+                            ctx.moveTo(stemX, flagY - 5);
+                            ctx.quadraticCurveTo(stemX - 8, flagY - 10, stemX - 3, flagY - 15);
+                            ctx.lineTo(stemX, flagY - 12);
+                        }
+                        ctx.fill();
+                    }
+                }
+            }
+
+            // Draw ledger line for C4
+            if (pos <= -4) {
+                ctx.strokeStyle = noteColor;
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.moveTo(x - 8, yOffset + 5 * staffLineSpacing);
+                ctx.lineTo(x + 8, yOffset + 5 * staffLineSpacing);
+                ctx.stroke();
+            }
+        }
+
+        // Helper: draw a tie curve between two x positions
+        function drawTie(ctx, x1, x2, y, noteColor, curveDown) {
+            ctx.strokeStyle = noteColor;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            const midX = (x1 + x2) / 2;
+            const curveHeight = curveDown ? 8 : -8;
+            ctx.moveTo(x1 + 5, y);
+            ctx.quadraticCurveTo(midX, y + curveHeight, x2 - 5, y);
+            ctx.stroke();
+        }
+
+        function renderGhostScoreBackground() {
+            const ctx = game.ctx;
+            const isDark = CONFIG.darkMode;
+
+            if (game.ghostScore.length === 0) return;
+
+            ctx.globalAlpha = isDark ? 0.5 : 0.4;
+            const noteColor = isDark ? '#aaaaaa' : '#444444';
+            const lineColor = isDark ? '#666666' : '#999999';
+
+            // Layout settings
+            const startX = 80;
+            const startY = 60;
+            const noteSpacing = 30;
+            const lineHeight = 70;
+            const staffLineSpacing = 8;
+            const maxX = game.canvas.width - 80;
+            const clefWidth = 30;
+            const timeSignatureWidth = 20;
+
+            let xOffset = startX;
+            let yOffset = startY;
+            let currentLine = 0;
+            let beatsInMeasure = 0; // Beats in current measure (0-4)
+
+            for (let noteIndex = 0; noteIndex < game.ghostScore.length; noteIndex++) {
+                const note = game.ghostScore[noteIndex];
+                const noteBeats = DURATIONS[note.duration]?.beats || 1;
+
+                // Calculate y position on mini staff
+                const pos = NOTE_POSITIONS[note.pitch] || 0;
+                const noteY = yOffset + 2 * staffLineSpacing - (pos * staffLineSpacing / 2);
+
+                // Check if note crosses measure boundary
+                const beatsRemaining = 4 - beatsInMeasure;
+                const crossesMeasure = !note.isRest && noteBeats > beatsRemaining && beatsInMeasure > 0;
+
+                if (crossesMeasure) {
+                    // Split the note into two tied notes
+                    const firstPartBeats = beatsRemaining;
+                    const secondPartBeats = noteBeats - firstPartBeats;
+                    const firstDuration = beatsToDuration(firstPartBeats);
+                    const secondDuration = beatsToDuration(secondPartBeats);
+
+                    // Check if we need to wrap to new line before first part
+                    if (xOffset > maxX) {
+                        xOffset = startX;
+                        yOffset += lineHeight;
+                        currentLine++;
+                        if (yOffset > CONFIG.staffY - 100) break;
+                    }
+
+                    // Draw staff if at start of line
+                    if (xOffset === startX) {
+                        ctx.strokeStyle = lineColor;
+                        ctx.lineWidth = 0.5;
+                        for (let i = 0; i < 5; i++) {
+                            ctx.beginPath();
+                            ctx.moveTo(startX - 20, yOffset + i * staffLineSpacing);
+                            ctx.lineTo(maxX + 20, yOffset + i * staffLineSpacing);
+                            ctx.stroke();
+                        }
+                        ctx.fillStyle = noteColor;
+                        ctx.font = '32px Georgia';
+                        ctx.fillText('𝄞', startX - 15, yOffset + 3.5 * staffLineSpacing);
+                        if (currentLine === 0) {
+                            ctx.font = 'bold 14px Georgia';
+                            ctx.fillText('4', startX + clefWidth, yOffset + 1.5 * staffLineSpacing);
+                            ctx.fillText('4', startX + clefWidth, yOffset + 3.5 * staffLineSpacing);
+                            xOffset = startX + clefWidth + timeSignatureWidth + 10;
+                        } else {
+                            xOffset = startX + clefWidth + 5;
+                        }
+                    }
+
+                    // Draw first part of tied note
+                    const firstX = xOffset;
+                    const firstNoteY = yOffset + 2 * staffLineSpacing - (pos * staffLineSpacing / 2);
+                    drawGhostNote(ctx, firstX, firstNoteY, firstDuration, noteColor, staffLineSpacing, yOffset, pos);
+                    xOffset += noteSpacing;
+
+                    // Draw bar line
+                    ctx.strokeStyle = noteColor;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(xOffset - 5, yOffset);
+                    ctx.lineTo(xOffset - 5, yOffset + 4 * staffLineSpacing);
+                    ctx.stroke();
+                    xOffset += 5;
+                    beatsInMeasure = 0;
+
+                    // Check if we need to wrap to new line before second part
+                    if (xOffset > maxX) {
+                        xOffset = startX;
+                        yOffset += lineHeight;
+                        currentLine++;
+                        if (yOffset > CONFIG.staffY - 100) break;
+
+                        // Draw staff for new line
+                        ctx.strokeStyle = lineColor;
+                        ctx.lineWidth = 0.5;
+                        for (let i = 0; i < 5; i++) {
+                            ctx.beginPath();
+                            ctx.moveTo(startX - 20, yOffset + i * staffLineSpacing);
+                            ctx.lineTo(maxX + 20, yOffset + i * staffLineSpacing);
+                            ctx.stroke();
+                        }
+                        ctx.fillStyle = noteColor;
+                        ctx.font = '32px Georgia';
+                        ctx.fillText('𝄞', startX - 15, yOffset + 3.5 * staffLineSpacing);
+                        xOffset = startX + clefWidth + 5;
+                    }
+
+                    // Draw second part of tied note
+                    const secondX = xOffset;
+                    const secondNoteY = yOffset + 2 * staffLineSpacing - (pos * staffLineSpacing / 2);
+                    drawGhostNote(ctx, secondX, secondNoteY, secondDuration, noteColor, staffLineSpacing, yOffset, pos);
+
+                    // Draw tie between the two notes (curve down if stem up, curve up if stem down)
+                    const curveDown = pos < 2;
+                    drawTie(ctx, firstX, secondX, curveDown ? firstNoteY + 5 : firstNoteY - 5, noteColor, curveDown);
+
+                    beatsInMeasure = secondPartBeats % 4;
+                    if (beatsInMeasure === 0 && secondPartBeats > 0) {
+                        // Second part completed another measure
+                        ctx.strokeStyle = noteColor;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(xOffset + noteSpacing - 5, yOffset);
+                        ctx.lineTo(xOffset + noteSpacing - 5, yOffset + 4 * staffLineSpacing);
+                        ctx.stroke();
+                    }
+                    xOffset += noteSpacing;
+                } else {
+                    // Note fits in current measure - draw normally
+
+                    // Check if we need to wrap to new line
+                    if (xOffset > maxX) {
+                        xOffset = startX;
+                        yOffset += lineHeight;
+                        currentLine++;
+                        if (yOffset > CONFIG.staffY - 100) break;
+                    }
+
+                    // Draw staff lines, clef, and time signature at start of each line
+                    if (xOffset === startX) {
+                        ctx.strokeStyle = lineColor;
+                        ctx.lineWidth = 0.5;
+                        for (let i = 0; i < 5; i++) {
+                            ctx.beginPath();
+                            ctx.moveTo(startX - 20, yOffset + i * staffLineSpacing);
+                            ctx.lineTo(maxX + 20, yOffset + i * staffLineSpacing);
+                            ctx.stroke();
+                        }
+                        ctx.fillStyle = noteColor;
+                        ctx.font = '32px Georgia';
+                        ctx.fillText('𝄞', startX - 15, yOffset + 3.5 * staffLineSpacing);
+                        if (currentLine === 0) {
+                            ctx.font = 'bold 14px Georgia';
+                            ctx.fillText('4', startX + clefWidth, yOffset + 1.5 * staffLineSpacing);
+                            ctx.fillText('4', startX + clefWidth, yOffset + 3.5 * staffLineSpacing);
+                            xOffset = startX + clefWidth + timeSignatureWidth + 10;
+                        } else {
+                            xOffset = startX + clefWidth + 5;
+                        }
+                    }
+
+                    // Draw bar line if at measure boundary
+                    if (beatsInMeasure === 0 && noteIndex > 0) {
+                        ctx.strokeStyle = noteColor;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(xOffset - 5, yOffset);
+                        ctx.lineTo(xOffset - 5, yOffset + 4 * staffLineSpacing);
+                        ctx.stroke();
+                        xOffset += 5;
+                    }
+
+                    if (note.isRest) {
+                        ctx.fillStyle = noteColor;
+                        if (note.duration === 'whole' || note.duration === 'half') {
+                            ctx.fillRect(xOffset - 5, yOffset + staffLineSpacing - 2, 10, 4);
+                        } else {
+                            ctx.beginPath();
+                            ctx.arc(xOffset, yOffset + 1.5 * staffLineSpacing, 3, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    } else {
+                        drawGhostNote(ctx, xOffset, noteY, note.duration, noteColor, staffLineSpacing, yOffset, pos);
+                    }
+
+                    beatsInMeasure = (beatsInMeasure + noteBeats) % 4;
+                    xOffset += noteSpacing;
+                }
+            }
+
+            ctx.globalAlpha = 1;
+        }
+
+        function renderHUD() {
+            const ctx = game.ctx;
+            const isDark = CONFIG.darkMode;
+            const textColor = isDark ? '#ffffff' : '#000000';
+
+            // Top left: Score and combo
+            ctx.fillStyle = textColor;
+            ctx.font = 'bold 24px Georgia';
+            ctx.fillText(`Score: ${game.score}`, 20, 40);
+            ctx.font = '20px Georgia';
+            ctx.fillText(`Combo: ${game.combo}x`, 20, 70);
+            ctx.font = '14px Georgia';
+            ctx.fillStyle = isDark ? '#888888' : '#999999';
+            ctx.fillText(`Best: ${game.highScore}`, 20, 93);
+
+            // Top right: Lives, beats, controls
+            ctx.textAlign = 'right';
+            ctx.font = 'bold 20px Georgia';
+
+            // Lives as quarter notes (remaining) and quarter rests (lost)
+            const maxLives = 5;
+            const currentLives = Math.floor(game.lives);
+            const hasPartialLife = game.lives % 1 !== 0;
+
+            // Calculate total width needed and draw from right
+            const symbolSpacing = 22;
+            const labelWidth = ctx.measureText('Lives: ').width;
+            const startX = game.canvas.width - 20 - (maxLives * symbolSpacing);
+
+            // Draw "Lives:" label
+            ctx.fillText('Lives:', startX - labelWidth - 5, 40);
+
+            // Draw each life slot - quarter note if alive, quarter rest if lost
+            for (let i = 0; i < maxLives; i++) {
+                const xPos = startX + (i * symbolSpacing);
+
+                if (i < currentLives) {
+                    // Full life - draw quarter note
+                    ctx.fillText('\u{2669}', xPos, 40);
+                } else if (i === currentLives && hasPartialLife) {
+                    // Partial life - draw half symbol
+                    ctx.fillText('\u{00BD}', xPos, 40);
+                } else {
+                    // Lost life - draw quarter rest (zigzag shape)
+                    const restX = xPos + 6;
+                    const restY = 34;
+                    ctx.beginPath();
+                    ctx.moveTo(restX + 2.5, restY - 8);
+                    ctx.lineTo(restX - 2.5, restY - 2);
+                    ctx.lineTo(restX + 2, restY + 2);
+                    ctx.lineTo(restX - 3, restY + 7);
+                    ctx.quadraticCurveTo(restX + 0.5, restY + 5, restX + 2.5, restY + 10);
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeStyle = textColor;
+                    ctx.stroke();
+                }
+            }
+            ctx.fillText(`Beats: ${game.beatsElapsed}`, game.canvas.width - 20, 70);
+            ctx.font = '14px Georgia';
+            ctx.fillText(`BPM: ${Math.round(game.bpm)}`, game.canvas.width - 20, 95);
+
+            // Controls reference
+            if (CONFIG.showControls) {
+                ctx.globalAlpha = 0.6;
+                ctx.fillStyle = isDark ? '#333333' : '#eeeeee';
+                ctx.fillRect(game.canvas.width - 200, 110, 180, 60);
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = textColor;
+                ctx.font = '12px Georgia';
+                ctx.fillText('Space: Jump | Hold: Star Trail', game.canvas.width - 30, 135);
+                ctx.fillText('Esc: Pause', game.canvas.width - 30, 155);
+            }
+
+            ctx.textAlign = 'left';
+
+            // Show respawn message when waiting (only after tremor finishes)
+            if (game.waitingToRespawn && game.shake.duration <= 0) {
+                ctx.fillStyle = isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)';
+                ctx.fillRect(0, game.canvas.height / 2 - 50, game.canvas.width, 100);
+
+                ctx.fillStyle = textColor;
+                ctx.font = 'bold 32px Georgia';
+                ctx.textAlign = 'center';
+                ctx.fillText('Press SPACE to continue', game.canvas.width / 2, game.canvas.height / 2 + 10);
+                ctx.textAlign = 'left';
+            }
+        }
+
+        function renderPreview() {
+            const ctx = game.ctx;
+            const isDark = CONFIG.darkMode;
+            const previewY = game.canvas.height - 50;
+
+            // Background bar
+            ctx.fillStyle = isDark ? 'rgba(50,50,50,0.8)' : 'rgba(240,240,240,0.9)';
+            ctx.fillRect(0, previewY - 20, game.canvas.width, 50);
+
+            // Mini staff lines
+            ctx.strokeStyle = isDark ? '#555555' : '#cccccc';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                ctx.moveTo(20, previewY - 5 + i * 8);
+                ctx.lineTo(game.canvas.width - 20, previewY - 5 + i * 8);
+                ctx.stroke();
+            }
+
+            // Preview upcoming notes
+            let xPos = 50;
+            for (const note of game.notes.slice(0, 8)) {
+                if (note.x > game.ball.x) {
+                    const miniY = previewY - 5 + (8 - NOTE_POSITIONS[note.pitch]) * 2;
+                    ctx.fillStyle = PITCH_COLORS[note.pitch[0]];
+                    ctx.beginPath();
+                    ctx.arc(xPos, miniY, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    xPos += 40;
+                }
+            }
+        }
+
+        function getNoteY(pitch) {
+            const pos = NOTE_POSITIONS[pitch];
+            // Position 0 = G4 on second line (middle of staff)
+            // Each position is half a staff line spacing
+            return CONFIG.staffY - (pos * CONFIG.staffLineSpacing / 2);
+        }
+
+        // ==================== GAME STATES ====================
+        function startNormalGame() {
+            // Reset custom level mode for normal games
+            game.customLevel = {
+                enabled: false,
+                notes: [],
+                currentIndex: 0
+            };
+            startGame();
+        }
+
+        function startGame() {
+            document.getElementById('startOverlay').classList.add('hidden');
+            document.getElementById('gameOverOverlay').classList.add('hidden');
+            document.getElementById('shareOverlay').classList.add('hidden');
+            document.getElementById('linkPreviewOverlay').classList.add('hidden');
+            stopSharePlayback();
+
+            game.audio.init();
+
+            // Reset game state
+            game.running = true;
+            game.paused = false;
+            game.score = 0;
+            game.combo = 0;
+            game.peakCombo = 0;
+            game.lives = 5;
+            game.beatsElapsed = 0;
+            game.bpm = 80;
+            game.lastBeatTime = performance.now();
+            game.notes = [];
+            game.ghostScore = [];
+            game.particles = [];
+            game.perfectStreak = 0;
+            game.nextNoteId = 0;
+
+            // Reset pattern library state
+            patternState.currentChunkNotes = [];
+            patternState.chunkNoteIndex = 0;
+
+            // Reset custom level state if not explicitly set (normal game start)
+            if (!game.customLevel.enabled) {
+                game.customLevel = {
+                    enabled: false,
+                    notes: [],
+                    currentIndex: 0
+                };
+            }
+
+            // Create starting platform - ball starts at bar line (x=200)
+            const startingPlatform = {
+                id: game.nextNoteId++,
+                x: 200, // Start at bar line
+                width: BEAT_DISTANCE * 2, // 2 beats to get ready
+                beats: 2,
+                duration: 'half',
+                pitch: 'G4',
+                isRest: false,
+                hit: true, // Already landed on
+                missed: false,
+                dip: 0
+            };
+            game.notes.push(startingPlatform);
+
+            // Reset ball to start on the platform at bar line
+            const startY = getNoteY('G4') + 12; // Platform top position
+            game.ball.x = 200;
+            game.ball.y = startY - CONFIG.ballRadius;
+            game.ball.vy = 0;
+            game.ball.currentPitch = 'G4';
+            game.ball.squash = 1;
+            game.ball.stretch = 1;
+            game.ball.jumpCount = 0;
+            game.ball.rolling = true;
+            game.ball.rotation = 0;
+            game.ball.onNote = startingPlatform;
+
+            // Generate initial notes after the starting platform
+            let lastNote = startingPlatform;
+            for (let i = 0; i < 5; i++) {
+                const note = createNote(null, lastNote);
+                game.notes.push(note);
+                lastNote = note;
+            }
+        }
+
+        function gameOver() {
+            game.running = false;
+            game.audio.playDeath();
+
+            // Save high score
+            if (game.score > game.highScore) {
+                game.highScore = game.score;
+                localStorage.setItem('rhythmJumpHighScore', game.highScore);
+            }
+
+            // Add low C2 death note to the ghost score
+            game.ghostScore.push({
+                pitch: 'C2',
+                duration: 'whole',
+                isRest: false
+            });
+
+            // Update game over screen
+            document.getElementById('finalScore').textContent = game.score;
+            document.getElementById('finalBeats').textContent = game.beatsElapsed;
+            document.getElementById('peakCombo').textContent = game.peakCombo;
+            document.getElementById('finalHighScore').textContent = game.highScore;
+            const newHighEl = document.getElementById('newHighScore');
+            if (newHighEl) newHighEl.classList.toggle('hidden', game.score < game.highScore || game.score === 0);
+
+            document.getElementById('gameOverOverlay').classList.remove('hidden');
+        }
+
+        function togglePause() {
+            if (!game.running) return;
+
+            game.paused = !game.paused;
+
+            if (game.paused) {
+                document.getElementById('pauseBeats').textContent = game.beatsElapsed;
+                document.getElementById('pauseScore').textContent = game.score;
+                renderPauseGhostScore();
+                document.getElementById('pauseOverlay').classList.remove('hidden');
+            } else {
+                document.getElementById('pauseOverlay').classList.add('hidden');
+                game.lastBeatTime = performance.now();
+            }
+        }
+
+        // ==================== CALIBRATION ====================
+        let calibrationTaps = [];
+        let calibrationInterval;
+        let calibrationBeat = 0;
+
+        function showCalibration() {
+            document.getElementById('startOverlay').classList.add('hidden');
+            document.getElementById('calibrationOverlay').classList.remove('hidden');
+
+            calibrationTaps = [];
+            calibrationBeat = 0;
+
+            game.audio.init();
+
+            // Start calibration beat
+            calibrationInterval = setInterval(() => {
+                calibrationBeat++;
+                game.audio.playMetronome();
+                animateCalibrationDot();
+            }, 500);
+
+            document.addEventListener('keydown', calibrationTap);
+        }
+
+        function animateCalibrationDot() {
+            const dot = document.getElementById('calibrationDot');
+            dot.style.transition = 'none';
+            dot.style.left = '0%';
+            setTimeout(() => {
+                dot.style.transition = 'left 0.5s linear';
+                dot.style.left = '100%';
+            }, 10);
+        }
+
+        function calibrationTap(e) {
+            if (e.code !== 'Space') return;
+            e.preventDefault();
+
+            const expectedTime = calibrationBeat * 500;
+            const actualTime = (Date.now() % 500);
+            const offset = actualTime > 250 ? actualTime - 500 : actualTime;
+
+            calibrationTaps.push(offset);
+            document.getElementById('calibrationStatus').textContent =
+                `Taps: ${calibrationTaps.length}/8`;
+
+            if (calibrationTaps.length >= 8) {
+                finishCalibration();
+            }
+
+            updateOffsetDisplay();
+        }
+
+        function updateOffsetDisplay() {
+            const avg = calibrationTaps.reduce((a, b) => a + b, 0) / calibrationTaps.length;
+            document.getElementById('offsetValue').textContent = Math.round(avg);
+            CONFIG.audioOffset = Math.round(avg);
+        }
+
+        function finishCalibration() {
+            clearInterval(calibrationInterval);
+            document.removeEventListener('keydown', calibrationTap);
+            document.getElementById('calibrationStatus').textContent = 'Calibration complete!';
+
+            setTimeout(hideCalibration, 1000);
+        }
+
+        function hideCalibration() {
+            clearInterval(calibrationInterval);
+            document.removeEventListener('keydown', calibrationTap);
+            document.getElementById('calibrationOverlay').classList.add('hidden');
+            document.getElementById('startOverlay').classList.remove('hidden');
+        }
+
+        function resetCalibration() {
+            calibrationTaps = [];
+            document.getElementById('offsetValue').textContent = '0';
+            document.getElementById('calibrationStatus').textContent = 'Tap 8 times to calibrate...';
+        }
+
+        // ==================== DARK MODE ====================
+        function toggleDarkMode(force) {
+            CONFIG.darkMode = force !== undefined ? force : !CONFIG.darkMode;
+
+            document.body.classList.toggle('dark-mode', CONFIG.darkMode);
+            document.body.classList.toggle('light-mode', !CONFIG.darkMode);
+
+            document.getElementById('darkModeToggle').classList.toggle('active', CONFIG.darkMode);
+
+            localStorage.setItem('darkMode', CONFIG.darkMode);
+        }
+
+        // ==================== LEVEL EDITOR ====================
+        let editorState = {
+            notes: [],
+            selectedType: 'note',
+            selectedDuration: 'quarter',
+            previewPlaying: false,
+            previewTimeoutId: null,
+            currentNoteIndex: -1
+        };
+
+        const EDITOR_PITCHES = ['E5', 'D5', 'C5', 'B4', 'A4', 'G4', 'F4', 'E4', 'D4', 'C4'];
+
+        function showLevelEditor() {
+            document.getElementById('startOverlay').classList.add('hidden');
+            document.getElementById('levelEditorOverlay').classList.remove('hidden');
+            editorState.notes = [];
+            editorState.previewPlaying = false;
+            updateEditorCounts();
+            renderLevelEditorCanvas();
+        }
+
+        function hideLevelEditor() {
+            stopEditorPreview();
+            document.getElementById('levelEditorOverlay').classList.add('hidden');
+            document.getElementById('startOverlay').classList.remove('hidden');
+        }
+
+        function setupEditorControls() {
+            // Duration buttons
+            document.querySelectorAll('.duration-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    editorState.selectedDuration = btn.dataset.duration;
+                });
+            });
+
+            // Type buttons
+            document.querySelectorAll('.type-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    editorState.selectedType = btn.dataset.type;
+                });
+            });
+        }
+
+        function handleEditorCanvasClick(event) {
+            const canvas = document.getElementById('levelEditorCanvas');
+            const container = canvas.parentElement;
+            const rect = canvas.getBoundingClientRect();
+
+            // Account for scroll position and any scaling
+            const clickX = event.clientX - rect.left + container.scrollLeft;
+            const clickY = event.clientY - rect.top;
+
+            // Calculate pitch from Y position
+            const staffTop = 40;
+            const lineSpacing = 15;
+            const staffHeight = 4 * lineSpacing;
+
+            // Map click Y to pitch index
+            const relativeY = clickY - staffTop + lineSpacing;
+            let pitchIndex = Math.round(relativeY / (lineSpacing / 2));
+            pitchIndex = Math.max(0, Math.min(EDITOR_PITCHES.length - 1, pitchIndex));
+
+            const pitch = EDITOR_PITCHES[pitchIndex];
+            const duration = editorState.selectedDuration;
+            const isRest = editorState.selectedType === 'rest';
+
+            editorState.notes.push({
+                pitch: pitch,
+                duration: duration,
+                isRest: isRest
+            });
+
+            // Play the note sound for feedback
+            if (!isRest) {
+                game.audio.init();
+                game.audio.playNote(pitch, 0.3);
+            }
+
+            updateEditorCounts();
+            renderLevelEditorCanvas();
+        }
+
+        function updateEditorCounts() {
+            const noteCount = editorState.notes.length;
+            const beatCount = editorState.notes.reduce((sum, n) => sum + (DURATIONS[n.duration]?.beats || 1), 0);
+            document.getElementById('editorNoteCount').textContent = noteCount;
+            document.getElementById('editorBeatCount').textContent = beatCount;
+        }
+
+        function renderLevelEditorCanvas(highlightIndex = -1) {
+            const canvas = document.getElementById('levelEditorCanvas');
+            const ctx = canvas.getContext('2d');
+            const isDark = CONFIG.darkMode;
+
+            const staffTop = 40;
+            const lineSpacing = 15;
+            const staffColor = isDark ? '#555555' : '#999999';
+            const noteColor = isDark ? '#ffffff' : '#000000';
+            const highlightColor = '#ff6b6b';
+            const startX = 100;
+
+            // Calculate required canvas width based on notes
+            let totalWidth = startX + 50; // Base width
+            let tempBeats = 0;
+            for (const note of editorState.notes) {
+                const noteBeats = DURATIONS[note.duration]?.beats || 1;
+                const noteWidth = noteBeats * 30;
+                // Add bar line space
+                if (tempBeats > 0 && tempBeats % 4 === 0) {
+                    totalWidth += 10;
+                }
+                totalWidth += noteWidth + 15;
+                tempBeats += noteBeats;
+            }
+
+            // Minimum width of 700, expand as needed
+            canvas.width = Math.max(700, totalWidth);
+
+            // Background
+            ctx.fillStyle = isDark ? '#1e1e1e' : '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw staff lines
+            ctx.strokeStyle = staffColor;
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.moveTo(30, staffTop + i * lineSpacing);
+                ctx.lineTo(canvas.width - 30, staffTop + i * lineSpacing);
+                ctx.stroke();
+            }
+
+            // Draw treble clef
+            ctx.fillStyle = noteColor;
+            ctx.font = '50px Georgia';
+            ctx.fillText('\u{1D11E}', 35, staffTop + 3.8 * lineSpacing);
+
+            // Draw pitch labels on the left
+            ctx.font = '10px Georgia';
+            ctx.fillStyle = isDark ? '#888' : '#666';
+            const pitchLabels = ['E5', 'D5', 'C5', 'B4', 'A4', 'G4', 'F4', 'E4', 'D4', 'C4'];
+            for (let i = 0; i < pitchLabels.length; i++) {
+                const y = staffTop - lineSpacing / 2 + (i * lineSpacing / 2);
+                ctx.fillText(pitchLabels[i], 5, y + 4);
+            }
+
+            // Draw notes
+            let xPos = startX;
+            let cumulativeBeats = 0;
+
+            for (let i = 0; i < editorState.notes.length; i++) {
+                const note = editorState.notes[i];
+                const noteBeats = DURATIONS[note.duration]?.beats || 1;
+                const noteWidth = noteBeats * 30;
+
+                // Check if we need bar line
+                const beatsBeforeNote = cumulativeBeats % 4;
+                if (beatsBeforeNote === 0 && cumulativeBeats > 0) {
+                    ctx.strokeStyle = noteColor;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(xPos - 5, staffTop);
+                    ctx.lineTo(xPos - 5, staffTop + 4 * lineSpacing);
+                    ctx.stroke();
+                    xPos += 10;
+                }
+
+                const pos = NOTE_POSITIONS[note.pitch] || 0;
+                const yPos = staffTop + 2 * lineSpacing - (pos * lineSpacing / 2);
+                const isHighlighted = i === highlightIndex;
+                const currentColor = isHighlighted ? highlightColor : noteColor;
+
+                if (note.isRest) {
+                    // Draw rest
+                    ctx.fillStyle = currentColor;
+                    if (note.duration === 'whole' || note.duration === 'half') {
+                        ctx.fillRect(xPos - 6, staffTop + lineSpacing - 3, 12, 6);
+                    } else {
+                        ctx.beginPath();
+                        ctx.arc(xPos, staffTop + 1.5 * lineSpacing, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                } else {
+                    // Draw ledger lines if needed
+                    if (pos <= -4) {
+                        ctx.strokeStyle = currentColor;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(xPos - 10, staffTop + 4.5 * lineSpacing);
+                        ctx.lineTo(xPos + 10, staffTop + 4.5 * lineSpacing);
+                        ctx.stroke();
+                    }
+
+                    // Draw note head
+                    ctx.fillStyle = currentColor;
+                    const isFilled = note.duration !== 'whole' && note.duration !== 'half';
+                    ctx.beginPath();
+                    ctx.ellipse(xPos, yPos, 8, 6, -0.2, 0, Math.PI * 2);
+                    if (isFilled) {
+                        ctx.fill();
+                    } else {
+                        ctx.strokeStyle = currentColor;
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+
+                    // Draw stem (except for whole notes)
+                    if (note.duration !== 'whole') {
+                        const stemUp = pos < 2;
+                        ctx.strokeStyle = currentColor;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        if (stemUp) {
+                            ctx.moveTo(xPos + 7, yPos);
+                            ctx.lineTo(xPos + 7, yPos - 35);
+                        } else {
+                            ctx.moveTo(xPos - 7, yPos);
+                            ctx.lineTo(xPos - 7, yPos + 35);
+                        }
+                        ctx.stroke();
+
+                        // Draw flag for eighth notes
+                        if (note.duration === 'eighth') {
+                            ctx.beginPath();
+                            if (stemUp) {
+                                ctx.moveTo(xPos + 7, yPos - 35);
+                                ctx.quadraticCurveTo(xPos + 20, yPos - 25, xPos + 10, yPos - 15);
+                            } else {
+                                ctx.moveTo(xPos - 7, yPos + 35);
+                                ctx.quadraticCurveTo(xPos - 20, yPos + 25, xPos - 10, yPos + 15);
+                            }
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                xPos += noteWidth + 15;
+                cumulativeBeats += noteBeats;
+            }
+
+            // Draw helper text if empty
+            if (editorState.notes.length === 0) {
+                ctx.fillStyle = isDark ? '#666' : '#999';
+                ctx.font = '16px Georgia';
+                ctx.textAlign = 'center';
+                ctx.fillText('Click anywhere on the staff to place notes', canvas.width / 2, staffTop + 2 * lineSpacing);
+                ctx.textAlign = 'left';
+            }
+
+            // Auto-scroll to show the latest note or highlighted note during playback
+            if (editorState.notes.length > 0) {
+                const container = canvas.parentElement;
+                if (highlightIndex >= 0) {
+                    // During playback, scroll to show the highlighted note
+                    const noteX = calculateNoteX(highlightIndex);
+                    const containerWidth = container.clientWidth;
+                    const targetScroll = Math.max(0, noteX - containerWidth / 2);
+                    container.scrollLeft = targetScroll;
+                } else {
+                    // When adding notes, scroll to show the end
+                    container.scrollLeft = container.scrollWidth;
+                }
+            }
+        }
+
+        function calculateNoteX(noteIndex) {
+            const startX = 100;
+            let xPos = startX;
+            let cumulativeBeats = 0;
+
+            for (let i = 0; i <= noteIndex && i < editorState.notes.length; i++) {
+                const note = editorState.notes[i];
+                const noteBeats = DURATIONS[note.duration]?.beats || 1;
+                const noteWidth = noteBeats * 30;
+
+                if (cumulativeBeats > 0 && cumulativeBeats % 4 === 0) {
+                    xPos += 10;
+                }
+
+                if (i < noteIndex) {
+                    xPos += noteWidth + 15;
+                }
+                cumulativeBeats += noteBeats;
+            }
+
+            return xPos;
+        }
+
+        function previewCustomLevel() {
+            if (editorState.notes.length === 0) return;
+            if (editorState.previewPlaying) {
+                stopEditorPreview();
+                return;
+            }
+
+            game.audio.init();
+            editorState.previewPlaying = true;
+            editorState.currentNoteIndex = 0;
+            document.getElementById('editorPlayPreview').textContent = 'Stop';
+
+            const playbackBPM = 90;
+
+            function playNext() {
+                if (!editorState.previewPlaying) return;
+                if (editorState.currentNoteIndex >= editorState.notes.length) {
+                    stopEditorPreview();
+                    return;
+                }
+
+                const note = editorState.notes[editorState.currentNoteIndex];
+                const beats = DURATIONS[note.duration]?.beats || 1;
+                const noteDuration = (beats * 60) / playbackBPM;
+
+                renderLevelEditorCanvas(editorState.currentNoteIndex);
+
+                if (!note.isRest) {
+                    game.audio.playNote(note.pitch, noteDuration);
+                }
+
+                editorState.currentNoteIndex++;
+                editorState.previewTimeoutId = setTimeout(playNext, noteDuration * 1000);
+            }
+
+            playNext();
+        }
+
+        function stopEditorPreview() {
+            editorState.previewPlaying = false;
+            if (editorState.previewTimeoutId) {
+                clearTimeout(editorState.previewTimeoutId);
+                editorState.previewTimeoutId = null;
+            }
+            editorState.currentNoteIndex = -1;
+            document.getElementById('editorPlayPreview').textContent = 'Preview';
+            renderLevelEditorCanvas(-1);
+        }
+
+        function playCustomLevel() {
+            if (editorState.notes.length === 0) return;
+
+            stopEditorPreview();
+            document.getElementById('levelEditorOverlay').classList.add('hidden');
+
+            // Set up custom level mode
+            game.customLevel = {
+                enabled: true,
+                notes: [...editorState.notes],
+                currentIndex: 0
+            };
+
+            // Start the game
+            startGame();
+        }
+
+        function undoLastNote() {
+            if (editorState.notes.length > 0) {
+                editorState.notes.pop();
+                updateEditorCounts();
+                renderLevelEditorCanvas();
+            }
+        }
+
+        function clearCustomLevel() {
+            editorState.notes = [];
+            updateEditorCounts();
+            renderLevelEditorCanvas();
+        }
+
+        // ==================== SHARE FEATURES ====================
+        let sharePlaybackState = {
+            playing: false,
+            currentNoteIndex: -1,
+            timeoutId: null,
+            selectedNoteIndex: -1,
+            notePositions: [] // Stores {x, y, width, height, originalIndex} for click detection
+        };
+
+        function showShareScreen() {
+            document.getElementById('gameOverOverlay').classList.add('hidden');
+            document.getElementById('shareOverlay').classList.remove('hidden');
+            stopSharePlayback();
+            sharePlaybackState.selectedNoteIndex = -1; // Reset selection
+            renderShareScoreCanvas();
+        }
+
+        function hideShareScreen() {
+            stopSharePlayback();
+            document.getElementById('shareOverlay').classList.add('hidden');
+            document.getElementById('gameOverOverlay').classList.remove('hidden');
+        }
+
+        function toggleSharePlayback() {
+            if (sharePlaybackState.playing) {
+                stopSharePlayback();
+            } else {
+                startSharePlayback();
+            }
+        }
+
+        function startSharePlayback() {
+            if (sharePlaybackState.playing) return;
+            if (game.ghostScore.length === 0) return;
+
+            game.audio.init();
+            sharePlaybackState.playing = true;
+            // Start from selected note, or from the beginning if none selected
+            const startIndex = sharePlaybackState.selectedNoteIndex >= 0 ? sharePlaybackState.selectedNoteIndex : 0;
+            sharePlaybackState.currentNoteIndex = startIndex;
+            document.getElementById('sharePlayPauseBtn').innerHTML = '&#10074;&#10074; Pause';
+
+            const playbackBPM = 90;
+            const notes = game.ghostScore;
+
+            function playNext() {
+                if (!sharePlaybackState.playing) return;
+                if (sharePlaybackState.currentNoteIndex >= notes.length) {
+                    stopSharePlayback();
+                    return;
+                }
+
+                const note = notes[sharePlaybackState.currentNoteIndex];
+                const beats = DURATIONS[note.duration]?.beats || 1;
+                const noteDuration = (beats * 60) / playbackBPM;
+
+                renderShareScoreCanvas(sharePlaybackState.currentNoteIndex);
+
+                if (!note.isRest) {
+                    game.audio.playNote(note.pitch, noteDuration);
+                }
+
+                sharePlaybackState.currentNoteIndex++;
+                sharePlaybackState.timeoutId = setTimeout(playNext, noteDuration * 1000);
+            }
+
+            playNext();
+        }
+
+        function stopSharePlayback() {
+            sharePlaybackState.playing = false;
+            if (sharePlaybackState.timeoutId) {
+                clearTimeout(sharePlaybackState.timeoutId);
+                sharePlaybackState.timeoutId = null;
+            }
+            sharePlaybackState.currentNoteIndex = -1;
+            document.getElementById('sharePlayPauseBtn').innerHTML = '&#9658; Play';
+            if (!document.getElementById('shareOverlay').classList.contains('hidden')) {
+                renderShareScoreCanvas(-1);
+            }
+        }
+
+        function handleScoreCanvasClick(event) {
+            const canvas = document.getElementById('shareScoreCanvas');
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            // Account for scroll position in the container
+            const container = canvas.parentElement;
+            const scrollTop = container.scrollTop;
+
+            const clickX = (event.clientX - rect.left) * scaleX;
+            const clickY = (event.clientY - rect.top) * scaleY + scrollTop;
+
+            // Find if we clicked on a note
+            let clickedIndex = -1;
+            for (const notePos of sharePlaybackState.notePositions) {
+                if (clickX >= notePos.x && clickX <= notePos.x + notePos.width &&
+                    clickY >= notePos.y && clickY <= notePos.y + notePos.height) {
+                    clickedIndex = notePos.originalIndex;
+                    break;
+                }
+            }
+
+            // Toggle selection: click same note to deselect
+            if (clickedIndex === sharePlaybackState.selectedNoteIndex) {
+                sharePlaybackState.selectedNoteIndex = -1;
+            } else {
+                sharePlaybackState.selectedNoteIndex = clickedIndex;
+            }
+
+            // Re-render to show selection
+            if (!sharePlaybackState.playing) {
+                renderShareScoreCanvas(-1);
+            }
+        }
+
+        // Link Preview functions
+        function showLinkPreview() {
+            document.getElementById('shareOverlay').classList.add('hidden');
+            document.getElementById('linkPreviewOverlay').classList.remove('hidden');
+            renderLinkPreviewCanvas();
+            generateShareLink();
+        }
+
+        function hideLinkPreview() {
+            stopLinkPlayback();
+            document.getElementById('linkPreviewOverlay').classList.add('hidden');
+            document.getElementById('shareOverlay').classList.remove('hidden');
+        }
+
+        let linkPlaybackState = {
+            playing: false,
+            currentNoteIndex: -1,
+            timeoutId: null
+        };
+
+        function toggleLinkPlayback() {
+            if (linkPlaybackState.playing) {
+                stopLinkPlayback();
+            } else {
+                startLinkPlayback();
+            }
+        }
+
+        function startLinkPlayback() {
+            if (linkPlaybackState.playing) return;
+            if (game.ghostScore.length === 0) return;
+
+            game.audio.init();
+            linkPlaybackState.playing = true;
+            linkPlaybackState.currentNoteIndex = 0;
+            document.getElementById('linkPlayPauseBtn').innerHTML = '&#10074;&#10074; Pause';
+
+            const playbackBPM = 90;
+            const notes = game.ghostScore;
+
+            function playNext() {
+                if (!linkPlaybackState.playing) return;
+                if (linkPlaybackState.currentNoteIndex >= notes.length) {
+                    stopLinkPlayback();
+                    return;
+                }
+
+                const note = notes[linkPlaybackState.currentNoteIndex];
+                const beats = DURATIONS[note.duration]?.beats || 1;
+                const noteDuration = (beats * 60) / playbackBPM;
+
+                renderLinkPreviewCanvas(linkPlaybackState.currentNoteIndex);
+
+                if (!note.isRest) {
+                    game.audio.playNote(note.pitch, noteDuration);
+                }
+
+                linkPlaybackState.currentNoteIndex++;
+                linkPlaybackState.timeoutId = setTimeout(playNext, noteDuration * 1000);
+            }
+
+            playNext();
+        }
+
+        function stopLinkPlayback() {
+            linkPlaybackState.playing = false;
+            if (linkPlaybackState.timeoutId) {
+                clearTimeout(linkPlaybackState.timeoutId);
+                linkPlaybackState.timeoutId = null;
+            }
+            linkPlaybackState.currentNoteIndex = -1;
+            document.getElementById('linkPlayPauseBtn').innerHTML = '&#9658; Play';
+            if (!document.getElementById('linkPreviewOverlay').classList.contains('hidden')) {
+                renderLinkPreviewCanvas(-1);
+            }
+        }
+
+        function generateShareLink() {
+            const encoded = game.ghostScore.map(n => {
+                const durCode = { 'whole': 'w', 'half': 'h', 'quarter': 'q', 'eighth': 'e', 'sixteenth': 's' }[n.duration] || 'q';
+                if (n.isRest) return 'R' + durCode;
+                return n.pitch + durCode;
+            }).join('-');
+            const link = `${window.location.origin}${window.location.pathname}?c=${encoded}`;
+            document.getElementById('shareLinkInput').value = link;
+        }
+
+        function renderLinkPreviewCanvas(highlightIndex = -1) {
+            const canvas = document.getElementById('linkPreviewCanvas');
+            renderScoreToCanvas(canvas, highlightIndex);
+        }
+
+        // Helper for drawing notes on share canvas
+        function drawShareNote(ctx, x, y, duration, noteColor, pos, staffTop, lineSpacing) {
+            const stemUp = pos < 2;
+            const stemX = stemUp ? x + 5 : x - 5;
+            const stemLength = 25;
+
+            // Draw ledger lines if needed
+            if (pos <= -2) {
+                ctx.strokeStyle = noteColor;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(x - 8, staffTop + 5 * lineSpacing);
+                ctx.lineTo(x + 8, staffTop + 5 * lineSpacing);
+                ctx.stroke();
+            }
+
+            if (duration === 'whole') {
+                ctx.strokeStyle = noteColor;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.ellipse(x, y, 7, 5, -0.3, 0, Math.PI * 2);
+                ctx.stroke();
+            } else if (duration === 'half') {
+                ctx.strokeStyle = noteColor;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.ellipse(x, y, 5, 4, -0.3, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(stemX, y);
+                ctx.lineTo(stemX, stemUp ? y - stemLength : y + stemLength);
+                ctx.stroke();
+            } else {
+                ctx.fillStyle = noteColor;
+                ctx.beginPath();
+                ctx.ellipse(x, y, 5, 4, -0.3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = noteColor;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(stemX, y);
+                ctx.lineTo(stemX, stemUp ? y - stemLength : y + stemLength);
+                ctx.stroke();
+
+                if (duration === 'eighth' || duration === 'sixteenth') {
+                    const flagY = stemUp ? y - stemLength : y + stemLength;
+                    ctx.fillStyle = noteColor;
+                    ctx.beginPath();
+                    if (stemUp) {
+                        ctx.moveTo(stemX, flagY);
+                        ctx.quadraticCurveTo(stemX + 8, flagY + 6, stemX + 3, flagY + 10);
+                        ctx.lineTo(stemX, flagY + 7);
+                    } else {
+                        ctx.moveTo(stemX, flagY);
+                        ctx.quadraticCurveTo(stemX - 8, flagY - 6, stemX - 3, flagY - 10);
+                        ctx.lineTo(stemX, flagY - 7);
+                    }
+                    ctx.fill();
+
+                    if (duration === 'sixteenth') {
+                        ctx.beginPath();
+                        if (stemUp) {
+                            ctx.moveTo(stemX, flagY + 6);
+                            ctx.quadraticCurveTo(stemX + 8, flagY + 12, stemX + 3, flagY + 16);
+                            ctx.lineTo(stemX, flagY + 13);
+                        } else {
+                            ctx.moveTo(stemX, flagY - 6);
+                            ctx.quadraticCurveTo(stemX - 8, flagY - 12, stemX - 3, flagY - 16);
+                            ctx.lineTo(stemX, flagY - 13);
+                        }
+                        ctx.fill();
+                    }
+                }
+            }
+        }
+
+        function renderScoreToCanvas(canvas, highlightIndex = -1, selectedIndex = -1, storePositions = false) {
+            const ctx = canvas.getContext('2d');
+            const isDark = CONFIG.darkMode;
+
+            // Clear stored positions if we're storing them
+            if (storePositions) {
+                sharePlaybackState.notePositions = [];
+            }
+
+            if (game.ghostScore.length === 0) {
+                canvas.height = 200;
+                ctx.fillStyle = isDark ? '#1e1e1e' : '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = isDark ? '#888888' : '#666666';
+                ctx.font = '18px Georgia';
+                ctx.textAlign = 'center';
+                ctx.fillText('No notes recorded', canvas.width / 2, canvas.height / 2);
+                ctx.textAlign = 'left';
+                return;
+            }
+
+            // Calculate total measures and lines needed
+            const totalBeats = game.ghostScore.reduce((sum, n) => sum + (DURATIONS[n.duration]?.beats || 1), 0);
+            const totalMeasures = Math.ceil(totalBeats / 4);
+            const measuresPerLine = 6;
+            const numLines = Math.max(1, Math.ceil(totalMeasures / measuresPerLine));
+
+            // Layout constants
+            const lineSpacing = 12;
+            const staffHeight = 4 * lineSpacing;
+            const lineGap = 50;
+            const topMargin = 30;
+            const bottomMargin = 30;
+
+            // Resize canvas to fit all lines
+            canvas.height = topMargin + numLines * (staffHeight + lineGap) + bottomMargin;
+            canvas.width = 600;
+
+            // Background
+            ctx.fillStyle = isDark ? '#1e1e1e' : '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const noteColor = isDark ? '#ffffff' : '#000000';
+            const highlightColor = '#ff6b6b';
+            const staffColor = isDark ? '#555555' : '#999999';
+            const clefWidth = 35;
+            const timeSignatureWidth = 20;
+            const startX = 30;
+            const endX = canvas.width - 30;
+            const measureWidth = (endX - startX - clefWidth - timeSignatureWidth) / measuresPerLine;
+
+            // Pre-process: build a list of notes with their measure positions
+            let processedNotes = [];
+            let beatCounter = 0;
+            let originalIndex = 0;
+            for (let idx = 0; idx < game.ghostScore.length; idx++) {
+                const note = game.ghostScore[idx];
+                const noteBeats = DURATIONS[note.duration]?.beats || 1;
+                const measureStart = Math.floor(beatCounter / 4);
+                const beatsInMeasure = beatCounter % 4;
+                const beatsRemaining = 4 - beatsInMeasure;
+
+                if (!note.isRest && noteBeats > beatsRemaining && beatsInMeasure > 0) {
+                    processedNotes.push({
+                        ...note,
+                        duration: beatsToDuration(beatsRemaining),
+                        measure: measureStart,
+                        beatInMeasure: beatsInMeasure,
+                        isTiedStart: true,
+                        originalIndex: idx
+                    });
+                    processedNotes.push({
+                        ...note,
+                        duration: beatsToDuration(noteBeats - beatsRemaining),
+                        measure: measureStart + 1,
+                        beatInMeasure: 0,
+                        isTiedEnd: true,
+                        originalIndex: idx
+                    });
+                } else {
+                    processedNotes.push({
+                        ...note,
+                        measure: measureStart,
+                        beatInMeasure: beatsInMeasure,
+                        originalIndex: idx
+                    });
+                }
+                beatCounter += noteBeats;
+            }
+
+            // Draw each line
+            for (let line = 0; line < numLines; line++) {
+                const staffTop = topMargin + line * (staffHeight + lineGap);
+                const firstMeasure = line * measuresPerLine;
+                const lastMeasure = Math.min(firstMeasure + measuresPerLine - 1, totalMeasures - 1);
+
+                // Draw staff lines
+                ctx.strokeStyle = staffColor;
+                ctx.lineWidth = 1;
+                for (let i = 0; i < 5; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(startX, staffTop + i * lineSpacing);
+                    ctx.lineTo(endX, staffTop + i * lineSpacing);
+                    ctx.stroke();
+                }
+
+                // Draw treble clef
+                ctx.fillStyle = noteColor;
+                ctx.font = '40px Georgia';
+                ctx.fillText('\u{1D11E}', startX + 5, staffTop + 3.5 * lineSpacing);
+
+                // Draw time signature (only on first line)
+                if (line === 0) {
+                    ctx.font = 'bold 16px Georgia';
+                    ctx.fillText('4', startX + clefWidth, staffTop + 1.3 * lineSpacing);
+                    ctx.fillText('4', startX + clefWidth, staffTop + 3.3 * lineSpacing);
+                }
+
+                const contentStartX = startX + clefWidth + (line === 0 ? timeSignatureWidth : 5);
+
+                // Draw bar lines for this line
+                for (let m = firstMeasure; m <= lastMeasure + 1; m++) {
+                    const localMeasure = m - firstMeasure;
+                    const barX = contentStartX + localMeasure * measureWidth;
+                    if (barX <= endX) {
+                        ctx.strokeStyle = noteColor;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(barX, staffTop);
+                        ctx.lineTo(barX, staffTop + staffHeight);
+                        ctx.stroke();
+                    }
+                }
+
+                // Draw notes for this line
+                const lineNotes = processedNotes.filter(n => n.measure >= firstMeasure && n.measure <= lastMeasure);
+
+                for (let i = 0; i < lineNotes.length; i++) {
+                    const note = lineNotes[i];
+                    const localMeasure = note.measure - firstMeasure;
+
+                    const measureStartX = contentStartX + localMeasure * measureWidth;
+                    const beatOffset = (note.beatInMeasure / 4) * measureWidth;
+                    const xPos = measureStartX + beatOffset + measureWidth * 0.15;
+
+                    const pos = NOTE_POSITIONS[note.pitch] || 0;
+                    const yPos = staffTop + 2 * lineSpacing - (pos * lineSpacing / 2);
+
+                    // Store note position for click detection (only for non-tied-end notes)
+                    if (storePositions && !note.isTiedEnd) {
+                        sharePlaybackState.notePositions.push({
+                            x: xPos - 10,
+                            y: yPos - 15,
+                            width: 20,
+                            height: 30,
+                            originalIndex: note.originalIndex
+                        });
+                    }
+
+                    // Check if this note should be highlighted (playing) or selected
+                    const isHighlighted = note.originalIndex === highlightIndex;
+                    const isSelected = note.originalIndex === selectedIndex && !isHighlighted;
+                    const currentNoteColor = isHighlighted ? highlightColor : noteColor;
+
+                    // Draw selection indicator (blue box) around selected note
+                    if (isSelected) {
+                        ctx.strokeStyle = '#4a90d9';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(xPos - 12, yPos - 18, 24, 36);
+                    }
+
+                    if (note.isRest) {
+                        ctx.fillStyle = currentNoteColor;
+                        if (note.duration === 'whole' || note.duration === 'half') {
+                            ctx.fillRect(xPos - 4, staffTop + lineSpacing - 2, 8, 4);
+                        } else {
+                            ctx.beginPath();
+                            ctx.arc(xPos, staffTop + 1.5 * lineSpacing, 2.5, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    } else {
+                        drawShareNote(ctx, xPos, yPos, note.duration, currentNoteColor, pos, staffTop, lineSpacing);
+
+                        // Draw tie if this is a tied note
+                        if (note.isTiedStart) {
+                            const nextNote = lineNotes[i + 1];
+                            if (nextNote && nextNote.isTiedEnd) {
+                                const nextLocalMeasure = nextNote.measure - firstMeasure;
+                                const nextMeasureStartX = contentStartX + nextLocalMeasure * measureWidth;
+                                const nextBeatOffset = (nextNote.beatInMeasure / 4) * measureWidth;
+                                const nextX = nextMeasureStartX + nextBeatOffset + measureWidth * 0.15;
+
+                                const curveDown = pos < 2;
+                                ctx.strokeStyle = currentNoteColor;
+                                ctx.lineWidth = 1;
+                                ctx.beginPath();
+                                const tieY = curveDown ? yPos + 5 : yPos - 5;
+                                ctx.moveTo(xPos + 4, tieY);
+                                ctx.quadraticCurveTo((xPos + nextX) / 2, tieY + (curveDown ? 6 : -6), nextX - 4, tieY);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Watermark
+            ctx.fillStyle = isDark ? '#555555' : '#aaaaaa';
+            ctx.font = '12px Georgia';
+            ctx.textAlign = 'right';
+            ctx.fillText('Composed in Rhythm Jump', canvas.width - 35, canvas.height - 10);
+            ctx.textAlign = 'left';
+        }
+
+        function renderShareScoreCanvas(highlightIndex = -1) {
+            const canvas = document.getElementById('shareScoreCanvas');
+            const selectedIndex = sharePlaybackState.selectedNoteIndex;
+            renderScoreToCanvas(canvas, highlightIndex, selectedIndex, true);
+        }
+
+        function renderGhostScorePreview() {
+            const canvas = document.getElementById('ghostScorePreview');
+            const ctx = canvas.getContext('2d');
+            const isDark = CONFIG.darkMode;
+
+            ctx.fillStyle = isDark ? '#1e1e1e' : '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw mini staff
+            const staffTop = 25;
+            const lineSpacing = 12;
+            ctx.strokeStyle = isDark ? '#555555' : '#999999';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.moveTo(10, staffTop + i * lineSpacing);
+                ctx.lineTo(canvas.width - 10, staffTop + i * lineSpacing);
+                ctx.stroke();
+            }
+
+            // Draw notes with proper notation (smaller to avoid overlap) and bar lines
+            let xPos = 20;
+            const totalBeats = game.ghostScore.reduce((sum, n) => sum + (DURATIONS[n.duration]?.beats || 1), 0);
+            const numBarLines = Math.floor(totalBeats / 4);
+            const noteSpacing = Math.min(15, (canvas.width - 40 - numBarLines * 6) / Math.max(1, game.ghostScore.length));
+            const noteColor = isDark ? '#ffffff' : '#000000';
+            let cumulativeBeats = 0;
+            let needsBarLine = false;
+
+            for (const note of game.ghostScore) {
+                // Draw bar line if needed
+                if (needsBarLine) {
+                    ctx.strokeStyle = noteColor;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(xPos - 3, staffTop);
+                    ctx.lineTo(xPos - 3, staffTop + 4 * lineSpacing);
+                    ctx.stroke();
+                    xPos += 5;
+                    needsBarLine = false;
+                }
+
+                // Calculate y position on mini staff
+                const pos = NOTE_POSITIONS[note.pitch] || 0;
+                const yPos = staffTop + 2 * lineSpacing - (pos * lineSpacing / 2);
+
+                if (note.isRest) {
+                    // Draw rest symbol
+                    ctx.fillStyle = noteColor;
+                    if (note.duration === 'whole' || note.duration === 'half') {
+                        ctx.fillRect(xPos - 3, staffTop + lineSpacing - 2, 6, 3);
+                    } else {
+                        // Quarter/eighth rest - small dot
+                        ctx.beginPath();
+                        ctx.arc(xPos, staffTop + 1.5 * lineSpacing, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                } else {
+                    const stemUp = pos < 2;
+                    const stemX = stemUp ? xPos + 3 : xPos - 3;
+                    const stemLength = 15;
+
+                    if (note.duration === 'whole') {
+                        // Whole note: hollow oval, no stem
+                        ctx.strokeStyle = noteColor;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.ellipse(xPos, yPos, 4, 3, -0.3, 0, Math.PI * 2);
+                        ctx.stroke();
+                    } else if (note.duration === 'half') {
+                        // Half note: hollow oval with stem
+                        ctx.strokeStyle = noteColor;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.ellipse(xPos, yPos, 3, 2.5, -0.3, 0, Math.PI * 2);
+                        ctx.stroke();
+                        // Stem
+                        ctx.beginPath();
+                        ctx.moveTo(stemX, yPos);
+                        ctx.lineTo(stemX, stemUp ? yPos - stemLength : yPos + stemLength);
+                        ctx.stroke();
+                    } else {
+                        // Quarter, eighth, sixteenth: filled oval with stem
+                        ctx.fillStyle = noteColor;
+                        ctx.beginPath();
+                        ctx.ellipse(xPos, yPos, 3, 2.5, -0.3, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // Stem
+                        ctx.strokeStyle = noteColor;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(stemX, yPos);
+                        ctx.lineTo(stemX, stemUp ? yPos - stemLength : yPos + stemLength);
+                        ctx.stroke();
+
+                        // Flags for eighth and sixteenth
+                        if (note.duration === 'eighth' || note.duration === 'sixteenth') {
+                            const flagY = stemUp ? yPos - stemLength : yPos + stemLength;
+                            ctx.fillStyle = noteColor;
+                            ctx.beginPath();
+                            if (stemUp) {
+                                ctx.moveTo(stemX, flagY);
+                                ctx.quadraticCurveTo(stemX + 5, flagY + 4, stemX + 2, flagY + 7);
+                                ctx.lineTo(stemX, flagY + 5);
+                            } else {
+                                ctx.moveTo(stemX, flagY);
+                                ctx.quadraticCurveTo(stemX - 5, flagY - 4, stemX - 2, flagY - 7);
+                                ctx.lineTo(stemX, flagY - 5);
+                            }
+                            ctx.fill();
+
+                            // Second flag for sixteenth
+                            if (note.duration === 'sixteenth') {
+                                ctx.beginPath();
+                                if (stemUp) {
+                                    ctx.moveTo(stemX, flagY + 4);
+                                    ctx.quadraticCurveTo(stemX + 5, flagY + 8, stemX + 2, flagY + 11);
+                                    ctx.lineTo(stemX, flagY + 9);
+                                } else {
+                                    ctx.moveTo(stemX, flagY - 4);
+                                    ctx.quadraticCurveTo(stemX - 5, flagY - 8, stemX - 2, flagY - 11);
+                                    ctx.lineTo(stemX, flagY - 9);
+                                }
+                                ctx.fill();
+                            }
+                        }
+                    }
+
+                    // Draw ledger line for C4
+                    if (pos <= -4) {
+                        ctx.strokeStyle = noteColor;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(xPos - 5, staffTop + 5 * lineSpacing);
+                        ctx.lineTo(xPos + 5, staffTop + 5 * lineSpacing);
+                        ctx.stroke();
+                    }
+                }
+
+                // Update beat counter
+                const noteBeats = DURATIONS[note.duration]?.beats || 1;
+                cumulativeBeats += noteBeats;
+                if (cumulativeBeats % 4 === 0) {
+                    needsBarLine = true;
+                }
+
+                xPos += noteSpacing;
+            }
+        }
+
+        function renderPauseGhostScore() {
+            const canvas = document.getElementById('pauseGhostScore');
+            const ctx = canvas.getContext('2d');
+            const isDark = CONFIG.darkMode;
+
+            ctx.fillStyle = isDark ? '#2a2a2a' : '#f5f5f5';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const staffTop = 30;
+            const lineSpacing = 18;
+            ctx.strokeStyle = isDark ? '#555555' : '#cccccc';
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.moveTo(10, staffTop + i * lineSpacing);
+                ctx.lineTo(canvas.width - 10, staffTop + i * lineSpacing);
+                ctx.stroke();
+            }
+
+            let xPos = 30;
+            const totalBeats = game.ghostScore.reduce((sum, n) => sum + (DURATIONS[n.duration]?.beats || 1), 0);
+            const numBarLines = Math.floor(totalBeats / 4);
+            const noteSpacing = Math.min(25, (canvas.width - 60 - numBarLines * 8) / Math.max(1, game.ghostScore.length));
+            let cumulativeBeats = 0;
+            let needsBarLine = false;
+            const noteColor = isDark ? '#aaaaaa' : '#444444';
+
+            for (const note of game.ghostScore) {
+                // Draw bar line if needed
+                if (needsBarLine) {
+                    ctx.strokeStyle = noteColor;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(xPos - 4, staffTop);
+                    ctx.lineTo(xPos - 4, staffTop + 4 * lineSpacing);
+                    ctx.stroke();
+                    xPos += 6;
+                    needsBarLine = false;
+                }
+
+                if (!note.isRest) {
+                    const yPos = staffTop + 2 * lineSpacing - (NOTE_POSITIONS[note.pitch] * lineSpacing / 2);
+                    ctx.fillStyle = PITCH_COLORS[note.pitch[0]];
+                    ctx.beginPath();
+                    ctx.ellipse(xPos, yPos, 7, 5, -0.2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Update beat counter
+                const noteBeats = DURATIONS[note.duration]?.beats || 1;
+                cumulativeBeats += noteBeats;
+                if (cumulativeBeats % 4 === 0) {
+                    needsBarLine = true;
+                }
+
+                xPos += noteSpacing;
+            }
+        }
+
+        function playComposition(notes) {
+            game.audio.init();
+
+            const playbackBPM = 90; // Fixed BPM for playback
+            let index = 0;
+            let timeOffset = 0;
+
+            function playNextNote() {
+                if (index >= notes.length) return;
+
+                const note = notes[index];
+                const beats = DURATIONS[note.duration]?.beats || 1;
+                const noteDuration = (beats * 60) / playbackBPM;
+
+                if (!note.isRest) {
+                    game.audio.playNote(note.pitch, noteDuration);
+                }
+
+                index++;
+                // Schedule next note after this note's duration
+                if (index < notes.length) {
+                    setTimeout(playNextNote, noteDuration * 1000);
+                }
+            }
+
+            playNextNote();
+        }
+
+        function downloadPNG() {
+            // Create a temporary canvas and render the score to it
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 800;
+            renderScoreToCanvas(tempCanvas, -1);
+
+            // Create final canvas with title
+            const canvas = document.createElement('canvas');
+            canvas.width = 800;
+            canvas.height = tempCanvas.height + 60;
+            const ctx = canvas.getContext('2d');
+            const isDark = CONFIG.darkMode;
+
+            // Background
+            ctx.fillStyle = isDark ? '#121212' : '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Title
+            ctx.fillStyle = isDark ? '#ffffff' : '#000000';
+            ctx.font = 'bold 20px Georgia';
+            ctx.fillText('Rhythm Jump Composition', 20, 30);
+            ctx.font = '14px Georgia';
+            ctx.fillText(`Score: ${game.score} | Peak Combo: ${game.peakCombo}x | Beats: ${game.beatsElapsed}`, 20, 50);
+
+            // Draw the score canvas
+            ctx.drawImage(tempCanvas, 0, 60);
+
+            // Download
+            const link = document.createElement('a');
+            link.download = 'rhythm-jump-composition.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        function downloadMusicXML() {
+            let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="3.1">
+  <work>
+    <work-title>Rhythm Jump Composition</work-title>
+  </work>
+  <identification>
+    <creator type="composer">Player</creator>
+    <encoding>
+      <software>Rhythm Jump</software>
+    </encoding>
+  </identification>
+  <part-list>
+    <score-part id="P1">
+      <part-name>Piano</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+    <measure number="1">
+      <attributes>
+        <divisions>4</divisions>
+        <key><fifths>0</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+`;
+
+            const durationMap = {
+                'whole': 16, 'half': 8, 'quarter': 4, 'eighth': 2, 'sixteenth': 1
+            };
+            const typeMap = {
+                'whole': 'whole', 'half': 'half', 'quarter': 'quarter',
+                'eighth': 'eighth', 'sixteenth': '16th'
+            };
+
+            let measureBeats = 0;
+            let measureNum = 1;
+
+            for (const note of game.ghostScore) {
+                const dur = durationMap[note.duration] || 4;
+
+                if (measureBeats + dur / 4 > 4) {
+                    xml += `    </measure>\n    <measure number="${++measureNum}">\n`;
+                    measureBeats = 0;
+                }
+
+                if (note.isRest) {
+                    xml += `      <note>
+        <rest/>
+        <duration>${dur}</duration>
+        <type>${typeMap[note.duration]}</type>
+      </note>\n`;
+                } else {
+                    const step = note.pitch[0];
+                    const octave = note.pitch[1];
+                    xml += `      <note>
+        <pitch>
+          <step>${step}</step>
+          <octave>${octave}</octave>
+        </pitch>
+        <duration>${dur}</duration>
+        <type>${typeMap[note.duration]}</type>
+      </note>\n`;
+                }
+
+                measureBeats += dur / 4;
+            }
+
+            xml += `    </measure>
+  </part>
+</score-partwise>`;
+
+            const blob = new Blob([xml], { type: 'application/xml' });
+            const link = document.createElement('a');
+            link.download = 'rhythm-jump-composition.musicxml';
+            link.href = URL.createObjectURL(blob);
+            link.click();
+        }
+
+        function copyShareLink() {
+            const link = document.getElementById('shareLinkInput').value;
+            navigator.clipboard.writeText(link).then(() => {
+                document.getElementById('copyLinkBtn').textContent = 'Copied!';
+                setTimeout(() => {
+                    document.getElementById('copyLinkBtn').textContent = 'Copy';
+                }, 2000);
+            });
+        }
+
+        // Check for shared composition in URL
+        function checkSharedComposition() {
+            const params = new URLSearchParams(window.location.search);
+            const data = params.get('c');
+
+            if (data) {
+                try {
+                    const decoded = atob(data);
+                    const notes = decoded.split('-').map(n => {
+                        if (n.startsWith('R')) {
+                            return { isRest: true, duration: getDurationFromChar(n[1]) };
+                        }
+                        return {
+                            pitch: n.substring(0, 2),
+                            duration: getDurationFromChar(n[2]),
+                            isRest: false
+                        };
+                    });
+
+                    // Show composition viewer
+                    game.ghostScore = notes;
+                    showSharedComposition();
+                } catch (e) {
+                    console.error('Invalid share link');
+                }
+            }
+        }
+
+        function getDurationFromChar(c) {
+            const map = { 'W': 'whole', 'H': 'half', 'Q': 'quarter', 'E': 'eighth', 'S': 'sixteenth' };
+            return map[c] || 'quarter';
+        }
+
+        function showSharedComposition() {
+            const modal = document.getElementById('startOverlay').querySelector('.modal');
+            modal.innerHTML = `
+                <h1>Shared Composition</h1>
+                <canvas id="sharedScoreCanvas" width="400" height="120"></canvas>
+                <br>
+                <button class="btn" onclick="playComposition(game.ghostScore)">Play</button>
+                <button class="btn" onclick="location.href=location.pathname">Play Game</button>
+            `;
+
+            setTimeout(() => {
+                const canvas = document.getElementById('sharedScoreCanvas');
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.strokeStyle = '#cccccc';
+                    for (let i = 0; i < 5; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(10, 30 + i * 15);
+                        ctx.lineTo(canvas.width - 10, 30 + i * 15);
+                        ctx.stroke();
+                    }
+
+                    let xPos = 30;
+                    const noteSpacing = Math.min(20, (canvas.width - 60) / game.ghostScore.length);
+
+                    for (const note of game.ghostScore) {
+                        if (!note.isRest) {
+                            const yPos = 60 - (NOTE_POSITIONS[note.pitch] * 7.5);
+                            ctx.fillStyle = PITCH_COLORS[note.pitch[0]];
+                            ctx.beginPath();
+                            ctx.ellipse(xPos, yPos, 6, 4.5, -0.2, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                        xPos += noteSpacing;
+                    }
+                }
+            }, 100);
+        }
+
+        // Initialize
+        window.onload = () => {
+            init();
+            checkSharedComposition();
+        };
+    </script>
+</body>
+</html>
