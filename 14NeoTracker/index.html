@@ -1,0 +1,1999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEO Tracker - Near-Earth Object Surveillance Dashboard</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-void: #000000;
+            --bg-deep: #08090d;
+            --bg-card: #0d0f14;
+            --border-subtle: #1a1d26;
+            --text-primary: #e4e4e7;
+            --text-muted: #71717a;
+            --accent-teal: #2dd4bf;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-blue: #93c5fd;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-void);
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        .font-display {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Star field background */
+        .starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* Scanline effect */
+        .scanlines::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.1) 2px,
+                rgba(0, 0, 0, 0.1) 4px
+            );
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Pulse animation for hazardous asteroids */
+        @keyframes pulse-amber {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            50% { box-shadow: 0 0 20px 5px rgba(245, 158, 11, 0.2); }
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+        }
+
+        @keyframes radar-ping {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .animate-pulse-amber {
+            animation: pulse-amber 2s ease-in-out infinite;
+        }
+
+        .animate-radar-ping {
+            animation: radar-ping 2s ease-out infinite;
+        }
+
+        /* Globe styles */
+        .globe-container {
+            background: var(--bg-void);
+        }
+
+        .globe-container svg {
+            display: block;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-deep);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-subtle);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2a2d36;
+        }
+
+        /* Tab glow effect */
+        .tab-active {
+            position: relative;
+        }
+
+        .tab-active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-teal);
+            box-shadow: 0 0 10px var(--accent-teal);
+        }
+
+        /* Card glow for selected */
+        .card-selected {
+            box-shadow: 0 0 0 2px var(--accent-teal), 0 0 20px rgba(45, 212, 191, 0.3);
+        }
+
+        /* Proximity bar */
+        .proximity-bar {
+            height: 4px;
+            background: linear-gradient(to right,
+                var(--accent-red) 0%,
+                var(--accent-amber) 20%,
+                var(--accent-teal) 100%
+            );
+            border-radius: 2px;
+        }
+
+        /* Loading skeleton */
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg,
+                var(--bg-card) 0%,
+                var(--border-subtle) 50%,
+                var(--bg-card) 100%
+            );
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s ease-in-out infinite;
+        }
+
+        /* Radar sweep */
+        @keyframes radar-sweep {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .radar-sweep {
+            animation: radar-sweep 2s linear infinite;
+        }
+
+        /* Count up animation */
+        @keyframes count-glow {
+            0% { text-shadow: 0 0 10px var(--accent-amber); }
+            100% { text-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+        // API Configuration
+        const NASA_API_KEY = 'ev30OnlMrEFb7SBFVDzxgUu2ON3rIYLX43RNuXkf';
+        const NEOWS_BASE = 'https://api.nasa.gov/neo/rest/v1/feed';
+        const SBDB_BASE = 'https://ssd-api.jpl.nasa.gov/cad.api';
+        const SENTRY_BASE = 'https://ssd-api.jpl.nasa.gov/sentry.api';
+
+        // CORS proxy for JPL APIs (which don't support CORS)
+        const fetchWithProxy = async (url) => {
+            // Try multiple CORS proxies with fallbacks
+            const proxies = [
+                {
+                    name: 'allorigins-get',
+                    makeUrl: (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
+                    parseResponse: async (r) => {
+                        const wrapper = await r.json();
+                        return JSON.parse(wrapper.contents);
+                    }
+                },
+                {
+                    name: 'corsproxy.org',
+                    makeUrl: (u) => `https://corsproxy.org/?${encodeURIComponent(u)}`,
+                    parseResponse: (r) => r.json()
+                },
+                {
+                    name: 'thingproxy',
+                    makeUrl: (u) => `https://thingproxy.freeboard.io/fetch/${u}`,
+                    parseResponse: (r) => r.json()
+                },
+                {
+                    name: 'codetabs',
+                    makeUrl: (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+                    parseResponse: (r) => r.json()
+                },
+                {
+                    name: 'direct',
+                    makeUrl: (u) => u,
+                    parseResponse: (r) => r.json()
+                }
+            ];
+
+            for (const proxy of proxies) {
+                try {
+                    const proxyUrl = proxy.makeUrl(url);
+                    console.log(`Trying ${proxy.name}:`, proxyUrl);
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000);
+                    const response = await fetch(proxyUrl, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    console.log(`${proxy.name} response status:`, response.status);
+                    if (response.ok) {
+                        const json = await proxy.parseResponse(response);
+                        console.log(`${proxy.name} success, data count:`, json?.data?.length || 'N/A');
+                        return json;
+                    } else {
+                        console.log(`${proxy.name} returned status:`, response.status);
+                    }
+                } catch (err) {
+                    console.log(`${proxy.name} failed:`, err.message);
+                }
+            }
+            throw new Error('All fetch attempts failed - check browser console for details');
+        };
+
+        // Utility Functions
+        const formatDate = (date) => {
+            const d = new Date(date);
+            return d.toISOString().split('T')[0];
+        };
+
+        const formatNumber = (num, decimals = 0) => {
+            return Number(num).toLocaleString(undefined, {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            });
+        };
+
+        const normalizeDesignation = (raw) => {
+            if (!raw) return '';
+            return raw.replace(/[()]/g, '').trim().toLowerCase().replace(/\s+/g, ' ');
+        };
+
+        const hashString = (str) => {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return Math.abs(hash);
+        };
+
+        // Star Field Component
+        const StarField = () => {
+            const stars = useMemo(() => {
+                return Array.from({ length: 100 }, (_, i) => ({
+                    id: i,
+                    left: Math.random() * 100,
+                    top: Math.random() * 100,
+                    size: Math.random() * 2 + 1,
+                    delay: Math.random() * 3
+                }));
+            }, []);
+
+            return (
+                <div className="starfield">
+                    {stars.map(star => (
+                        <div
+                            key={star.id}
+                            className="star"
+                            style={{
+                                left: `${star.left}%`,
+                                top: `${star.top}%`,
+                                width: `${star.size}px`,
+                                height: `${star.size}px`,
+                                animationDelay: `${star.delay}s`
+                            }}
+                        />
+                    ))}
+                </div>
+            );
+        };
+
+        // Globe Component - Interactive Earth Globe per spec.md
+        const Globe = ({ neoData, selectedNEO, onSelectNEO, isExpanded }) => {
+            const svgRef = useRef(null);
+            const [rotation, setRotation] = useState([0, -20, 0]);
+            const [scale, setScale] = useState(1);
+            const [isDragging, setIsDragging] = useState(false);
+            const [worldData, setWorldData] = useState(null);
+            const [dimensions, setDimensions] = useState({
+                width: window.innerWidth * 0.7,
+                height: window.innerHeight - 100
+            });
+            const animationRef = useRef(null);
+            const lastInteractionRef = useRef(0);
+            const [hoveredNEO, setHoveredNEO] = useState(null);
+
+            // Load world GeoJSON data
+            useEffect(() => {
+                fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json')
+                    .then(res => res.json())
+                    .then(data => {
+                        setWorldData(topojson.feature(data, data.objects.land));
+                    })
+                    .catch(console.error);
+            }, []);
+
+            // Update dimensions on resize
+            useEffect(() => {
+                const updateDimensions = () => {
+                    if (svgRef.current) {
+                        const container = svgRef.current.parentElement;
+                        const width = container.clientWidth || window.innerWidth * 0.7;
+                        const height = container.clientHeight || window.innerHeight - 100;
+                        setDimensions({ width, height });
+                    }
+                };
+
+                updateDimensions();
+                const timer = setTimeout(updateDimensions, 100);
+
+                window.addEventListener('resize', updateDimensions);
+                return () => {
+                    window.removeEventListener('resize', updateDimensions);
+                    clearTimeout(timer);
+                };
+            }, [isExpanded]);
+
+            // Auto-rotation at ~0.1°/frame, pauses on interaction, resumes after 3s
+            useEffect(() => {
+                const animate = () => {
+                    const now = Date.now();
+                    if (!isDragging && now - lastInteractionRef.current > 3000) {
+                        setRotation(prev => [(prev[0] + 0.1) % 360, prev[1], prev[2]]);
+                    }
+                    animationRef.current = requestAnimationFrame(animate);
+                };
+
+                animationRef.current = requestAnimationFrame(animate);
+                return () => {
+                    if (animationRef.current) {
+                        cancelAnimationFrame(animationRef.current);
+                    }
+                };
+            }, [isDragging]);
+
+            // Non-linear scale: compress large distances to keep close NEOs visible
+            const distanceToRadius = useCallback((distanceLD, maxRadius, earthRadius) => {
+                const maxLD = 60;
+                const normalized = Math.min(distanceLD / maxLD, 1);
+                // Start from Earth's edge, not center
+                return earthRadius + (maxRadius - earthRadius) * Math.pow(normalized, 0.4);
+            }, []);
+
+            // Get 3D spherical position for NEO based on hash (lon, lat in degrees)
+            const getNEOPosition = useCallback((neo) => {
+                const hash = hashString(neo.id || neo.name);
+                const lon = (hash % 360) - 180; // -180 to 180
+                const lat = ((hash >> 8) % 180) - 90; // -90 to 90
+                return [lon, Math.max(-80, Math.min(80, lat))];
+            }, []);
+
+            // Render globe with lunar distance rings
+            useEffect(() => {
+                if (!svgRef.current || !worldData) return;
+
+                const svg = d3.select(svgRef.current);
+                svg.selectAll('*').remove();
+
+                const { width, height } = dimensions;
+                const centerX = width / 2;
+                const centerY = height / 2;
+                const maxRadius = Math.min(width, height) * 0.46 * scale;
+                const earthRadius = maxRadius * 0.18; // Earth globe size
+
+                const projection = d3.geoOrthographic()
+                    .scale(earthRadius)
+                    .translate([centerX, centerY])
+                    .rotate(rotation)
+                    .clipAngle(90);
+
+                const path = d3.geoPath().projection(projection);
+
+                // Background
+                svg.append('rect')
+                    .attr('width', width)
+                    .attr('height', height)
+                    .attr('fill', '#000000');
+
+                // Distance rings with labels
+                const distanceRings = [2, 5, 10, 20, 50];
+                const ringGroup = svg.append('g').attr('class', 'distance-rings');
+
+                distanceRings.forEach(ld => {
+                    const radius = distanceToRadius(ld, maxRadius, earthRadius);
+
+                    ringGroup.append('circle')
+                        .attr('cx', centerX)
+                        .attr('cy', centerY)
+                        .attr('r', radius)
+                        .attr('fill', 'none')
+                        .attr('stroke', '#555')
+                        .attr('stroke-width', 0.5)
+                        .attr('stroke-dasharray', '2,4');
+
+                    ringGroup.append('text')
+                        .attr('x', centerX + radius + 5)
+                        .attr('y', centerY - 3)
+                        .attr('fill', '#888')
+                        .attr('font-size', '9px')
+                        .attr('font-family', 'JetBrains Mono')
+                        .text(`${ld} LD`);
+                });
+
+                // Earth globe sphere (dark fill per spec)
+                svg.append('circle')
+                    .attr('cx', centerX)
+                    .attr('cy', centerY)
+                    .attr('r', earthRadius)
+                    .attr('fill', '#0a0a0a')
+                    .attr('stroke', '#1a1a1a')
+                    .attr('stroke-width', 1);
+
+                // Graticule on Earth (30° grid lines)
+                const graticule = d3.geoGraticule().step([30, 30]);
+                svg.append('path')
+                    .datum(graticule())
+                    .attr('d', path)
+                    .attr('fill', 'none')
+                    .attr('stroke', '#ffffff')
+                    .attr('stroke-width', 0.3)
+                    .attr('opacity', 0.3);
+
+                // Continents (subtle outlines)
+                svg.append('path')
+                    .datum(worldData)
+                    .attr('d', path)
+                    .attr('fill', 'none')
+                    .attr('stroke', '#555')
+                    .attr('stroke-width', 1);
+
+                // 3D projection helper: convert spherical (lon, lat, radius) to screen coords
+                // Returns { x, y, z, visible } where z is depth and visible is front-facing
+                const projectPoint = (lon, lat, radius) => {
+                    const lambda = lon * Math.PI / 180;
+                    const phi = lat * Math.PI / 180;
+                    const gamma = rotation[0] * Math.PI / 180;
+                    const delta = -rotation[1] * Math.PI / 180;
+
+                    // Convert to 3D Cartesian
+                    let x = radius * Math.cos(phi) * Math.cos(lambda);
+                    let y = radius * Math.cos(phi) * Math.sin(lambda);
+                    let z = radius * Math.sin(phi);
+
+                    // Rotate around Y axis (longitude rotation)
+                    const x1 = x * Math.cos(gamma) - y * Math.sin(gamma);
+                    const y1 = x * Math.sin(gamma) + y * Math.cos(gamma);
+                    const z1 = z;
+
+                    // Rotate around X axis (latitude rotation)
+                    const x2 = x1;
+                    const y2 = y1 * Math.cos(delta) - z1 * Math.sin(delta);
+                    const z2 = y1 * Math.sin(delta) + z1 * Math.cos(delta);
+
+                    return {
+                        x: centerX + x2,
+                        y: centerY - z2,
+                        z: y2,
+                        visible: y2 > -radius * 0.3 // Show dots slightly behind center too
+                    };
+                };
+
+                // Moon at 1 LD (in 3D space)
+                const moonRadiusDist = distanceToRadius(1, maxRadius, earthRadius);
+                const moonPos = projectPoint(45, 20, moonRadiusDist);
+
+                if (moonPos.visible) {
+                    const moonGroup = svg.append('g').attr('class', 'moon');
+                    const moonScale = 0.7 + 0.3 * (moonPos.z / moonRadiusDist + 1) / 2;
+
+                    moonGroup.append('circle')
+                        .attr('cx', moonPos.x)
+                        .attr('cy', moonPos.y)
+                        .attr('r', 6 * moonScale)
+                        .attr('fill', '#6b7280')
+                        .attr('stroke', '#9ca3af')
+                        .attr('stroke-width', 1)
+                        .attr('opacity', 0.5 + 0.5 * moonScale);
+
+                    moonGroup.append('text')
+                        .attr('x', moonPos.x)
+                        .attr('y', moonPos.y - 10 * moonScale)
+                        .attr('text-anchor', 'middle')
+                        .attr('fill', '#9ca3af')
+                        .attr('font-size', `${9 * moonScale}px`)
+                        .attr('font-family', 'JetBrains Mono')
+                        .attr('opacity', 0.5 + 0.5 * moonScale)
+                        .text('Moon');
+                }
+
+                // NEO dots in 3D space at lunar distances
+                if (neoData && neoData.length > 0) {
+                    // Collect all NEOs with their projected positions for depth sorting
+                    const neoPositions = [];
+
+                    neoData.forEach(neo => {
+                        const missDistanceLD = parseFloat(neo.close_approach_data?.[0]?.miss_distance?.lunar || 0);
+                        const missDistanceKm = parseFloat(neo.close_approach_data?.[0]?.miss_distance?.kilometers || 0);
+
+                        if (missDistanceLD <= 0) return;
+
+                        const radius = distanceToRadius(missDistanceLD, maxRadius, earthRadius);
+                        const [lon, lat] = getNEOPosition(neo);
+                        const pos = projectPoint(lon, lat, radius);
+
+                        if (!pos.visible) return;
+
+                        neoPositions.push({
+                            neo,
+                            pos,
+                            radius,
+                            missDistanceLD,
+                            missDistanceKm
+                        });
+                    });
+
+                    // Sort by z-depth (back to front)
+                    neoPositions.sort((a, b) => a.pos.z - b.pos.z);
+
+                    const neoGroup = svg.append('g').attr('class', 'neo-dots');
+
+                    neoPositions.forEach(({ neo, pos, radius, missDistanceLD, missDistanceKm }) => {
+                        const isHazardous = neo.is_potentially_hazardous_asteroid;
+                        const isSelected = selectedNEO && normalizeDesignation(neo.name) === normalizeDesignation(selectedNEO.name);
+                        const date = neo.close_approach_data?.[0]?.close_approach_date;
+
+                        // Scale and opacity based on depth
+                        const depthFactor = (pos.z / radius + 1) / 2; // 0 (back) to 1 (front)
+                        const dotScale = 0.6 + 0.4 * depthFactor;
+                        const dotOpacity = 0.4 + 0.6 * depthFactor;
+
+                        const group = neoGroup.append('g')
+                            .attr('transform', `translate(${pos.x}, ${pos.y})`)
+                            .style('cursor', 'pointer')
+                            .on('click', (e) => {
+                                e.stopPropagation();
+                                onSelectNEO({
+                                    designation: neo.id,
+                                    name: neo.name,
+                                    sourceTab: 'neows',
+                                    data: neo
+                                });
+                            })
+                            .on('mouseenter', () => setHoveredNEO({
+                                name: neo.name,
+                                distanceKm: missDistanceKm,
+                                distanceLD: missDistanceLD,
+                                date: date,
+                                isHazardous: isHazardous,
+                                x: pos.x,
+                                y: pos.y
+                            }))
+                            .on('mouseleave', () => setHoveredNEO(null));
+
+                        if (isSelected) {
+                            // Outer glow layers
+                            group.append('circle')
+                                .attr('r', 20)
+                                .attr('fill', '#2dd4bf')
+                                .attr('opacity', 0.15);
+                            group.append('circle')
+                                .attr('r', 14)
+                                .attr('fill', '#2dd4bf')
+                                .attr('opacity', 0.25);
+
+                            // Radar ping animation
+                            group.append('circle')
+                                .attr('r', 12)
+                                .attr('fill', 'none')
+                                .attr('stroke', '#2dd4bf')
+                                .attr('stroke-width', 2)
+                                .attr('class', 'animate-radar-ping');
+
+                            // Connection line to Earth
+                            neoGroup.append('line')
+                                .attr('x1', centerX)
+                                .attr('y1', centerY)
+                                .attr('x2', pos.x)
+                                .attr('y2', pos.y)
+                                .attr('stroke', '#2dd4bf')
+                                .attr('stroke-width', 1)
+                                .attr('stroke-dasharray', '4,4')
+                                .attr('opacity', 0.5);
+
+                            // Selected dot (teal, 7px)
+                            group.append('circle')
+                                .attr('r', 7)
+                                .attr('fill', '#2dd4bf');
+
+                            // Label background
+                            group.append('rect')
+                                .attr('x', 10)
+                                .attr('y', -32)
+                                .attr('width', 160)
+                                .attr('height', 58)
+                                .attr('fill', '#0a0a0a')
+                                .attr('stroke', '#2dd4bf')
+                                .attr('stroke-width', 1)
+                                .attr('rx', 4)
+                                .attr('opacity', 0.9);
+
+                            // Name
+                            group.append('text')
+                                .attr('x', 16)
+                                .attr('y', -16)
+                                .attr('fill', '#2dd4bf')
+                                .attr('font-size', '10px')
+                                .attr('font-family', 'JetBrains Mono')
+                                .attr('font-weight', 'bold')
+                                .text(neo.name);
+
+                            // Miss distance label
+                            group.append('text')
+                                .attr('x', 16)
+                                .attr('y', -2)
+                                .attr('fill', '#71717a')
+                                .attr('font-size', '8px')
+                                .attr('font-family', 'JetBrains Mono')
+                                .text('Miss Distance:');
+
+                            group.append('text')
+                                .attr('x', 16)
+                                .attr('y', 10)
+                                .attr('fill', '#ffffff')
+                                .attr('font-size', '9px')
+                                .attr('font-family', 'JetBrains Mono')
+                                .text(`${missDistanceLD.toFixed(2)} LD (${formatNumber(missDistanceKm)} km)`);
+
+                            // Close approach date
+                            group.append('text')
+                                .attr('x', 16)
+                                .attr('y', 22)
+                                .attr('fill', '#71717a')
+                                .attr('font-size', '8px')
+                                .attr('font-family', 'JetBrains Mono')
+                                .text(`Closest: ${date}`);
+
+                        } else if (isHazardous) {
+                            // Hazardous: amber with pulsing halo (scaled by depth)
+                            group.append('circle')
+                                .attr('r', 8 * dotScale)
+                                .attr('fill', 'none')
+                                .attr('stroke', '#f59e0b')
+                                .attr('stroke-width', 2)
+                                .attr('opacity', 0.5 * dotOpacity)
+                                .style('animation', 'pulse-dot 2s ease-in-out infinite');
+
+                            group.append('circle')
+                                .attr('r', 4 * dotScale)
+                                .attr('fill', '#f59e0b')
+                                .attr('opacity', dotOpacity);
+                        } else {
+                            // Normal NEO: white (scaled by depth)
+                            group.append('circle')
+                                .attr('r', 3 * dotScale)
+                                .attr('fill', '#ffffff')
+                                .attr('opacity', dotOpacity);
+                        }
+                    });
+                }
+
+                // Disclaimer text (bottom-left)
+                svg.append('text')
+                    .attr('x', 10)
+                    .attr('y', height - 10)
+                    .attr('fill', '#555555')
+                    .attr('font-size', '9px')
+                    .attr('font-family', 'JetBrains Mono')
+                    .text('Distances shown to scale (non-linear)');
+
+            }, [worldData, rotation, scale, dimensions, neoData, selectedNEO, distanceToRadius, getNEOPosition, onSelectNEO]);
+
+            // Drag to rotate
+            const handleMouseDown = (e) => {
+                setIsDragging(true);
+                lastInteractionRef.current = Date.now();
+            };
+
+            const handleMouseMove = (e) => {
+                if (!isDragging) return;
+                const dx = e.movementX;
+                const dy = e.movementY;
+                setRotation(prev => [prev[0] + dx * 0.5, prev[1] - dy * 0.5, prev[2]]);
+                lastInteractionRef.current = Date.now();
+            };
+
+            const handleMouseUp = () => {
+                setIsDragging(false);
+                lastInteractionRef.current = Date.now();
+            };
+
+            // Scroll to zoom (50% to 200% per spec)
+            const handleWheel = (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                setScale(prev => Math.max(0.5, Math.min(2, prev + delta)));
+                lastInteractionRef.current = Date.now();
+            };
+
+            // Double-click to clear selection
+            const handleDoubleClick = () => {
+                onSelectNEO(null);
+            };
+
+            // Reset view with 600ms transition
+            const handleReset = () => {
+                setRotation([0, -20, 0]);
+                setScale(1);
+            };
+
+            return (
+                <div
+                    className="globe-container relative h-full w-full"
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                >
+                    <svg
+                        ref={svgRef}
+                        width="100%"
+                        height="100%"
+                        onMouseDown={handleMouseDown}
+                        onWheel={handleWheel}
+                        onDoubleClick={handleDoubleClick}
+                        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+                    />
+
+                    {/* Hover tooltip */}
+                    {hoveredNEO && (
+                        <div
+                            className="absolute pointer-events-none bg-[#0d0f14] border border-[#2a2d36] rounded px-3 py-2 text-xs z-20"
+                            style={{
+                                left: Math.min(hoveredNEO.x + 15, dimensions.width - 220),
+                                top: Math.max(hoveredNEO.y - 80, 10)
+                            }}
+                        >
+                            <p className={`font-semibold ${hoveredNEO.isHazardous ? 'text-[#f59e0b]' : 'text-white'}`}>
+                                {hoveredNEO.name}
+                                {hoveredNEO.isHazardous && ' (PHA)'}
+                            </p>
+                            <p className="text-[#71717a] mt-1">Miss Distance:</p>
+                            <p className="text-white">{parseFloat(hoveredNEO.distanceLD).toFixed(2)} LD ({formatNumber(hoveredNEO.distanceKm)} km)</p>
+                            <p className="text-[#71717a] mt-1">Closest Approach:</p>
+                            <p className="text-white">{hoveredNEO.date}</p>
+                        </div>
+                    )}
+
+                    <button
+                        onClick={handleReset}
+                        className="absolute bottom-4 right-4 px-3 py-1 bg-[#1a1d26] text-[#71717a] text-sm rounded hover:bg-[#2a2d36] hover:text-white transition-colors"
+                    >
+                        ↺ Reset View
+                    </button>
+                </div>
+            );
+        };
+
+        // Loading Component
+        const Loading = ({ message = 'Loading...' }) => (
+            <div className="flex flex-col items-center justify-center p-8">
+                <div className="relative w-16 h-16 mb-4">
+                    <div className="absolute inset-0 border-2 border-[#2dd4bf] rounded-full opacity-20"></div>
+                    <div className="absolute inset-0 border-2 border-transparent border-t-[#2dd4bf] rounded-full radar-sweep"></div>
+                    <div className="absolute inset-2 border border-[#1a1d26] rounded-full"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-2 h-2 bg-[#2dd4bf] rounded-full"></div>
+                    </div>
+                </div>
+                <p className="text-[#71717a] text-sm">{message}</p>
+            </div>
+        );
+
+        // Error Component
+        const ErrorDisplay = ({ error, onRetry }) => (
+            <div className="flex flex-col items-center justify-center p-8 text-center">
+                <div className="text-4xl mb-4">⚠️</div>
+                <h3 className="text-lg font-semibold text-[#ef4444] mb-2">Data Fetch Error</h3>
+                <p className="text-[#71717a] text-sm mb-4">{error}</p>
+                {onRetry && (
+                    <button
+                        onClick={onRetry}
+                        className="px-4 py-2 bg-[#1a1d26] text-white rounded hover:bg-[#2a2d36] transition-colors"
+                    >
+                        Retry
+                    </button>
+                )}
+            </div>
+        );
+
+        // NEO Card Component for Tab 1
+        const NEOCard = ({ neo, isSelected, onSelect }) => {
+            const approach = neo.close_approach_data?.[0];
+            const diameterMin = neo.estimated_diameter?.meters?.estimated_diameter_min;
+            const diameterMax = neo.estimated_diameter?.meters?.estimated_diameter_max;
+            const missDistanceKm = parseFloat(approach?.miss_distance?.kilometers || 0);
+            const missDistanceLD = parseFloat(approach?.miss_distance?.lunar || 0);
+            const velocity = parseFloat(approach?.relative_velocity?.kilometers_per_second || 0);
+            const isHazardous = neo.is_potentially_hazardous_asteroid;
+
+            // Proximity calculation (0-100, where 0 is closest)
+            const maxSafeDistance = 7500000; // 7.5 million km
+            const proximity = Math.min(100, (missDistanceKm / maxSafeDistance) * 100);
+
+            return (
+                <div
+                    onClick={() => onSelect(neo)}
+                    className={`
+                        p-4 rounded-lg border cursor-pointer transition-all duration-300
+                        ${isSelected ? 'card-selected border-[#2dd4bf]' : 'border-[#1a1d26] hover:border-[#2a2d36]'}
+                        ${isHazardous ? 'animate-pulse-amber' : ''}
+                        bg-[#0d0f14]
+                    `}
+                >
+                    <div className="flex justify-between items-start mb-3">
+                        <div>
+                            <h3 className="font-display text-sm font-semibold text-white">
+                                {neo.name}
+                            </h3>
+                            <p className="text-xs text-[#71717a]">{approach?.close_approach_date}</p>
+                        </div>
+                        {isHazardous && (
+                            <span className="px-2 py-1 text-xs bg-[#f59e0b]/20 text-[#f59e0b] rounded border border-[#f59e0b]/30">
+                                PHA
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Proximity Bar */}
+                    <div className="mb-3">
+                        <div className="flex justify-between text-xs text-[#71717a] mb-1">
+                            <span>Miss Distance</span>
+                            <span>{formatNumber(missDistanceKm)} km</span>
+                        </div>
+                        <div className="h-1 bg-[#1a1d26] rounded-full overflow-hidden">
+                            <div
+                                className="proximity-bar h-full transition-all duration-500"
+                                style={{ width: `${proximity}%` }}
+                            />
+                        </div>
+                        <div className="flex justify-between text-xs mt-1">
+                            <span className="text-[#ef4444]">Earth</span>
+                            <span className="text-[#71717a]">{missDistanceLD.toFixed(2)} LD</span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <span className="text-[#71717a]">Diameter</span>
+                            <p className="text-white">
+                                {diameterMin?.toFixed(0)}–{diameterMax?.toFixed(0)} m
+                            </p>
+                        </div>
+                        <div>
+                            <span className="text-[#71717a]">Velocity</span>
+                            <p className="text-white">{velocity.toFixed(2)} km/s</p>
+                        </div>
+                    </div>
+
+                    <a
+                        href={neo.nasa_jpl_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block mt-3 text-xs text-[#2dd4bf] hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        View on JPL →
+                    </a>
+                </div>
+            );
+        };
+
+        // Tab 1: This Week
+        const ThisWeekTab = ({ selectedNEO, onSelectNEO, onDataLoaded }) => {
+            const [data, setData] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [sortBy, setSortBy] = useState('distance');
+            const [showPHAOnly, setShowPHAOnly] = useState(false);
+
+            const fetchData = async () => {
+                setLoading(true);
+                setError(null);
+
+                const today = new Date();
+                const endDate = new Date(today);
+                endDate.setDate(endDate.getDate() + 6);
+
+                const url = `${NEOWS_BASE}?start_date=${formatDate(today)}&end_date=${formatDate(endDate)}&api_key=${NASA_API_KEY}`;
+
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const json = await response.json();
+                    setData(json);
+                } catch (err) {
+                    setError(err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            useEffect(() => {
+                fetchData();
+            }, []);
+
+            if (loading) return <Loading message="Scanning near-Earth space..." />;
+            if (error) return <ErrorDisplay error={error} onRetry={fetchData} />;
+            if (!data) return null;
+
+            // Process and flatten NEOs
+            const allNEOs = Object.entries(data.near_earth_objects || {})
+                .flatMap(([date, neos]) => neos.map(neo => ({ ...neo, approachDate: date })));
+
+            // Calculate summary stats
+            const phaCount = allNEOs.filter(n => n.is_potentially_hazardous_asteroid).length;
+            const closestNEO = allNEOs.reduce((closest, neo) => {
+                const dist = parseFloat(neo.close_approach_data?.[0]?.miss_distance?.kilometers || Infinity);
+                const closestDist = parseFloat(closest?.close_approach_data?.[0]?.miss_distance?.kilometers || Infinity);
+                return dist < closestDist ? neo : closest;
+            }, null);
+            const largestNEO = allNEOs.reduce((largest, neo) => {
+                const size = neo.estimated_diameter?.meters?.estimated_diameter_max || 0;
+                const largestSize = largest?.estimated_diameter?.meters?.estimated_diameter_max || 0;
+                return size > largestSize ? neo : largest;
+            }, null);
+
+            // Filter and sort
+            let filteredNEOs = showPHAOnly
+                ? allNEOs.filter(n => n.is_potentially_hazardous_asteroid)
+                : allNEOs;
+
+            filteredNEOs = [...filteredNEOs].sort((a, b) => {
+                switch (sortBy) {
+                    case 'distance':
+                        return parseFloat(a.close_approach_data?.[0]?.miss_distance?.kilometers || 0) -
+                               parseFloat(b.close_approach_data?.[0]?.miss_distance?.kilometers || 0);
+                    case 'velocity':
+                        return parseFloat(b.close_approach_data?.[0]?.relative_velocity?.kilometers_per_second || 0) -
+                               parseFloat(a.close_approach_data?.[0]?.relative_velocity?.kilometers_per_second || 0);
+                    case 'diameter':
+                        return (b.estimated_diameter?.meters?.estimated_diameter_max || 0) -
+                               (a.estimated_diameter?.meters?.estimated_diameter_max || 0);
+                    case 'date':
+                        return new Date(a.approachDate) - new Date(b.approachDate);
+                    default:
+                        return 0;
+                }
+            });
+
+            // Group by date
+            const groupedByDate = filteredNEOs.reduce((acc, neo) => {
+                const date = neo.approachDate;
+                if (!acc[date]) acc[date] = [];
+                acc[date].push(neo);
+                return acc;
+            }, {});
+
+            return (
+                <div className="h-full overflow-auto p-4">
+                    {/* Summary Bar */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div className="bg-[#0d0f14] border border-[#1a1d26] rounded-lg p-4">
+                            <p className="text-xs text-[#71717a] mb-1">Total NEOs</p>
+                            <p className="text-2xl font-display text-white">{data.element_count}</p>
+                        </div>
+                        <div className="bg-[#0d0f14] border border-[#1a1d26] rounded-lg p-4">
+                            <p className="text-xs text-[#71717a] mb-1">Hazardous (PHA)</p>
+                            <p className="text-2xl font-display text-[#f59e0b]">{phaCount}</p>
+                        </div>
+                        <div className="bg-[#0d0f14] border border-[#1a1d26] rounded-lg p-4">
+                            <p className="text-xs text-[#71717a] mb-1">Closest Approach</p>
+                            <p className="text-sm font-mono text-white truncate">{closestNEO?.name}</p>
+                            <p className="text-xs text-[#2dd4bf]">
+                                {formatNumber(closestNEO?.close_approach_data?.[0]?.miss_distance?.kilometers)} km
+                            </p>
+                        </div>
+                        <div className="bg-[#0d0f14] border border-[#1a1d26] rounded-lg p-4">
+                            <p className="text-xs text-[#71717a] mb-1">Largest Object</p>
+                            <p className="text-sm font-mono text-white truncate">{largestNEO?.name}</p>
+                            <p className="text-xs text-[#2dd4bf]">
+                                {largestNEO?.estimated_diameter?.meters?.estimated_diameter_max?.toFixed(0)} m
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Filters */}
+                    <div className="flex flex-wrap gap-4 mb-6">
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs text-[#71717a]">Sort by:</label>
+                            <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                className="bg-[#1a1d26] border border-[#2a2d36] text-white text-sm rounded px-2 py-1"
+                            >
+                                <option value="distance">Miss Distance</option>
+                                <option value="velocity">Velocity</option>
+                                <option value="diameter">Diameter</option>
+                                <option value="date">Date</option>
+                            </select>
+                        </div>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={showPHAOnly}
+                                onChange={(e) => setShowPHAOnly(e.target.checked)}
+                                className="w-4 h-4 accent-[#f59e0b]"
+                            />
+                            <span className="text-xs text-[#71717a]">Show PHAs only</span>
+                        </label>
+                    </div>
+
+                    {/* Timeline */}
+                    {Object.entries(groupedByDate)
+                        .sort(([a], [b]) => new Date(a) - new Date(b))
+                        .map(([date, neos]) => (
+                            <div key={date} className="mb-6">
+                                <h3 className="font-display text-sm text-[#2dd4bf] mb-3 sticky top-0 bg-[#08090d] py-2 z-10">
+                                    {new Date(date).toLocaleDateString('en-US', {
+                                        weekday: 'long',
+                                        month: 'short',
+                                        day: 'numeric'
+                                    })}
+                                    <span className="ml-2 text-[#71717a]">({neos.length} objects)</span>
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                    {neos.map(neo => (
+                                        <NEOCard
+                                            key={neo.id}
+                                            neo={neo}
+                                            isSelected={selectedNEO && normalizeDesignation(neo.name) === normalizeDesignation(selectedNEO.name)}
+                                            onSelect={(n) => onSelectNEO({
+                                                designation: n.id,
+                                                name: n.name,
+                                                sourceTab: 'neows',
+                                                data: n
+                                            })}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                </div>
+            );
+        };
+
+        // Tab 2: Archive & Predictions
+        const ArchiveTab = ({ selectedNEO, onSelectNEO }) => {
+            const [data, setData] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [mode, setMode] = useState('upcoming');
+            const [searchTerm, setSearchTerm] = useState('');
+            const [page, setPage] = useState(0);
+            const [selectedObject, setSelectedObject] = useState(null);
+            const rowsPerPage = 50;
+
+            const fetchData = async (searchOverride = null) => {
+                setLoading(true);
+                setError(null);
+
+                // Build URL - use 'now' keyword for dates as per API docs
+                let url = `${SBDB_BASE}?dist-max=0.05&fullname=true`;
+
+                const searchVal = searchOverride !== null ? searchOverride : searchTerm;
+
+                if (searchVal) {
+                    url = `${SBDB_BASE}?des=${encodeURIComponent(searchVal)}&fullname=true`;
+                } else {
+                    if (mode === 'upcoming') {
+                        url += `&date-min=now`;
+                    } else {
+                        url += `&date-max=now`;
+                    }
+                }
+
+                console.log('Archive API URL:', url);
+
+                try {
+                    const json = await fetchWithProxy(url);
+                    if (json.error) {
+                        throw new Error(json.error.message || json.error);
+                    }
+                    setData(json);
+                    setPage(0);
+                } catch (err) {
+                    console.error('SBDB API Error:', err);
+                    setError(err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            useEffect(() => {
+                fetchData();
+            }, [mode]);
+
+            const handleSearch = (e) => {
+                e.preventDefault();
+                fetchData(searchTerm);
+            };
+
+            if (loading) return <Loading message="Querying JPL database..." />;
+            if (error) return (
+                <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                    <h3 className="text-lg font-semibold text-[#f59e0b] mb-2">Archive API Unavailable</h3>
+                    <p className="text-[#71717a] text-sm mb-4 max-w-md">
+                        The NASA Close Approach database may be temporarily unavailable or blocked by browser security policies.
+                    </p>
+                    <a
+                        href="https://cneos.jpl.nasa.gov/ca/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-[#2dd4bf] text-black text-sm rounded hover:bg-[#5eead4] transition-colors"
+                    >
+                        View Close Approach Data on NASA Website →
+                    </a>
+                    <button
+                        onClick={() => fetchData()}
+                        className="mt-3 px-4 py-2 bg-[#1a1d26] text-white text-sm rounded hover:bg-[#2a2d36] transition-colors"
+                    >
+                        Retry
+                    </button>
+                </div>
+            );
+            if (error) return <ErrorDisplay error={error} onRetry={fetchData} />;
+
+            const fields = data?.fields || [];
+            const approaches = data?.data || [];
+            const today = new Date().toISOString().split('T')[0];
+
+            // Field indices
+            const desIdx = fields.indexOf('des');
+            const fullnameIdx = fields.indexOf('fullname');
+            const cdIdx = fields.indexOf('cd');
+            const distIdx = fields.indexOf('dist');
+            const distMinIdx = fields.indexOf('dist_min');
+            const distMaxIdx = fields.indexOf('dist_max');
+            const vRelIdx = fields.indexOf('v_rel');
+            const hIdx = fields.indexOf('h');
+
+            const paginatedData = approaches.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
+            const totalPages = Math.ceil(approaches.length / rowsPerPage);
+
+            return (
+                <div className="h-full overflow-auto p-4">
+                    {/* Mode Toggle & Search */}
+                    <div className="flex flex-wrap gap-4 mb-6">
+                        <div className="flex bg-[#1a1d26] rounded-lg p-1">
+                            <button
+                                onClick={() => setMode('upcoming')}
+                                className={`px-4 py-2 text-sm rounded transition-colors ${
+                                    mode === 'upcoming' ? 'bg-[#2dd4bf] text-black' : 'text-[#71717a] hover:text-white'
+                                }`}
+                            >
+                                Upcoming
+                            </button>
+                            <button
+                                onClick={() => setMode('historical')}
+                                className={`px-4 py-2 text-sm rounded transition-colors ${
+                                    mode === 'historical' ? 'bg-[#2dd4bf] text-black' : 'text-[#71717a] hover:text-white'
+                                }`}
+                            >
+                                Historical
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSearch} className="flex gap-2 flex-1 max-w-md">
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Search by designation..."
+                                className="flex-1 bg-[#1a1d26] border border-[#2a2d36] text-white text-sm rounded px-3 py-2"
+                            />
+                            <button
+                                type="submit"
+                                className="px-4 py-2 bg-[#2dd4bf] text-black text-sm rounded hover:bg-[#5eead4] transition-colors"
+                            >
+                                Search
+                            </button>
+                        </form>
+
+                        {searchTerm && (
+                            <button
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    fetchData();
+                                }}
+                                className="px-4 py-2 bg-[#1a1d26] text-white text-sm rounded hover:bg-[#2a2d36] transition-colors"
+                            >
+                                Show All
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Results count */}
+                    <p className="text-sm text-[#71717a] mb-4">
+                        {approaches.length} close approaches found
+                    </p>
+
+                    {/* Data Table */}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="border-b border-[#1a1d26]">
+                                    <th className="text-left py-3 px-2 text-[#71717a] font-normal">Object Name</th>
+                                    <th className="text-left py-3 px-2 text-[#71717a] font-normal">Close Approach Date</th>
+                                    <th className="text-right py-3 px-2 text-[#71717a] font-normal">Miss Distance (AU)</th>
+                                    <th className="text-right py-3 px-2 text-[#71717a] font-normal">Velocity (km/s)</th>
+                                    <th className="text-right py-3 px-2 text-[#71717a] font-normal">H (mag)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {paginatedData.map((row, i) => {
+                                    const rowDate = row[cdIdx]?.split(' ')[0];
+                                    const isPast = rowDate < today;
+                                    const des = row[desIdx];
+                                    const isSelected = selectedNEO && normalizeDesignation(des) === normalizeDesignation(selectedNEO.designation);
+
+                                    return (
+                                        <tr
+                                            key={i}
+                                            onClick={() => {
+                                                onSelectNEO({
+                                                    designation: des,
+                                                    name: row[fullnameIdx] || des,
+                                                    sourceTab: 'sbdb'
+                                                });
+                                                setSelectedObject(row);
+                                            }}
+                                            className={`
+                                                border-b border-[#1a1d26] cursor-pointer transition-colors
+                                                ${isPast ? 'opacity-60' : ''}
+                                                ${isSelected ? 'bg-[#2dd4bf]/10 border-[#2dd4bf]' : 'hover:bg-[#1a1d26]'}
+                                            `}
+                                        >
+                                            <td className="py-3 px-2">
+                                                <a
+                                                    href={`https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=${encodeURIComponent(des)}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-[#2dd4bf] hover:underline"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    {row[fullnameIdx] || des}
+                                                </a>
+                                            </td>
+                                            <td className="py-3 px-2 text-white font-mono">{row[cdIdx]}</td>
+                                            <td className="py-3 px-2 text-right text-white">
+                                                {parseFloat(row[distIdx]).toFixed(5)}
+                                                {distMinIdx >= 0 && distMaxIdx >= 0 && (
+                                                    <span className="text-[#71717a] text-xs ml-1">
+                                                        ±{((parseFloat(row[distMaxIdx]) - parseFloat(row[distMinIdx])) / 2).toFixed(6)}
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="py-3 px-2 text-right text-white">{parseFloat(row[vRelIdx]).toFixed(2)}</td>
+                                            <td className="py-3 px-2 text-right text-white">{row[hIdx]}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="flex justify-center gap-2 mt-4">
+                            <button
+                                onClick={() => setPage(p => Math.max(0, p - 1))}
+                                disabled={page === 0}
+                                className="px-3 py-1 bg-[#1a1d26] text-white text-sm rounded disabled:opacity-50"
+                            >
+                                ← Prev
+                            </button>
+                            <span className="px-3 py-1 text-[#71717a] text-sm">
+                                Page {page + 1} of {totalPages}
+                            </span>
+                            <button
+                                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                                disabled={page === totalPages - 1}
+                                className="px-3 py-1 bg-[#1a1d26] text-white text-sm rounded disabled:opacity-50"
+                            >
+                                Next →
+                            </button>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // Tab 3: Collision Risk (Sentry)
+        const CollisionRiskTab = ({ selectedNEO, onSelectNEO }) => {
+            const [data, setData] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [selectedRow, setSelectedRow] = useState(null);
+
+            const fetchData = async () => {
+                setLoading(true);
+                setError(null);
+
+                // Use default mode (summary table) - no parameters needed
+                const url = SENTRY_BASE;
+                console.log('Sentry API URL:', url);
+
+                try {
+                    const json = await fetchWithProxy(url);
+                    console.log('Sentry API response:', json);
+                    console.log('Sentry API data type:', typeof json);
+                    console.log('Sentry API has data?', json && json.data);
+                    if (json.error) {
+                        throw new Error(json.error.message || json.error);
+                    }
+                    if (!json.data) {
+                        throw new Error('No data field in response');
+                    }
+                    setData(json);
+                } catch (err) {
+                    console.error('Sentry API Error:', err);
+                    console.error('Error details:', err.stack);
+                    setError(err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            useEffect(() => {
+                fetchData();
+            }, []);
+
+            const getTorinoColor = (value) => {
+                const v = parseInt(value) || 0;
+                if (v === 0) return { bg: '#374151', text: '#9ca3af', label: 'No Hazard' };
+                if (v <= 3) return { bg: '#fbbf24', text: '#000', label: 'Attention' };
+                if (v <= 6) return { bg: '#f97316', text: '#000', label: 'Threatening' };
+                if (v === 7) return { bg: '#ea580c', text: '#fff', label: 'Limited' };
+                if (v <= 9) return { bg: '#dc2626', text: '#fff', label: 'Regional/Global' };
+                return { bg: '#7f1d1d', text: '#fff', label: 'Catastrophe' };
+            };
+
+            const getPalermoBar = (value) => {
+                const v = parseFloat(value) || 0;
+                const normalized = Math.min(100, Math.max(0, (v + 10) * 5)); // -10 to +10 → 0 to 100
+                let color = '#374151';
+                if (v >= 0) color = '#fbbf24';
+                if (v >= 1) color = '#f97316';
+                if (v >= 2) color = '#dc2626';
+                return { width: normalized, color };
+            };
+
+            if (loading) return <Loading message="Accessing Sentry impact database..." />;
+            if (error) return (
+                <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                    <h3 className="text-lg font-semibold text-[#f59e0b] mb-2">Sentry API Unavailable</h3>
+                    <p className="text-[#71717a] text-sm mb-4 max-w-md">
+                        The NASA Sentry impact monitoring API may be temporarily unavailable or blocked by browser security policies.
+                    </p>
+                    <a
+                        href="https://cneos.jpl.nasa.gov/sentry/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-[#2dd4bf] text-black text-sm rounded hover:bg-[#5eead4] transition-colors"
+                    >
+                        View Sentry Data on NASA Website →
+                    </a>
+                    <button
+                        onClick={fetchData}
+                        className="mt-3 px-4 py-2 bg-[#1a1d26] text-white text-sm rounded hover:bg-[#2a2d36] transition-colors"
+                    >
+                        Retry
+                    </button>
+                </div>
+            );
+
+            const objects = data?.data || [];
+
+            // Empty state
+            if (objects.length === 0) {
+                return (
+                    <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                        <div className="text-6xl mb-4">🌟</div>
+                        <h2 className="font-display text-2xl text-[#2dd4bf] mb-2">All Clear!</h2>
+                        <p className="text-[#71717a]">No known impact threats detected</p>
+                    </div>
+                );
+            }
+
+            // Sort by Palermo scale (highest risk first)
+            const sortedObjects = [...objects].sort((a, b) =>
+                parseFloat(b.ps_cum) - parseFloat(a.ps_cum)
+            );
+
+            // Summary stats
+            const highestPalermo = Math.max(...objects.map(o => parseFloat(o.ps_cum) || -Infinity));
+            const highestIP = Math.max(...objects.map(o => parseFloat(o.ip) || 0));
+            const highestIPObject = objects.find(o => parseFloat(o.ip) === highestIP);
+
+            // Check if selected NEO is in Sentry list
+            const selectedInSentry = selectedNEO && objects.find(o =>
+                normalizeDesignation(o.des) === normalizeDesignation(selectedNEO.designation) ||
+                normalizeDesignation(o.fullname) === normalizeDesignation(selectedNEO.name)
+            );
+
+            return (
+                <div className="h-full overflow-auto p-4">
+                    {/* Risk Overview Panel */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div className="bg-[#0d0f14] border border-[#1a1d26] rounded-lg p-4">
+                            <p className="text-xs text-[#71717a] mb-1">Objects Monitored</p>
+                            <p className="text-2xl font-display text-white">{objects.length}</p>
+                        </div>
+                        <div className="bg-[#0d0f14] border border-[#1a1d26] rounded-lg p-4">
+                            <p className="text-xs text-[#71717a] mb-1">Highest Palermo Scale</p>
+                            <p className="text-2xl font-display text-[#f59e0b]">{highestPalermo.toFixed(2)}</p>
+                        </div>
+                        <div className="bg-[#0d0f14] border border-[#1a1d26] rounded-lg p-4">
+                            <p className="text-xs text-[#71717a] mb-1">Highest Impact Probability</p>
+                            <p className="text-sm font-mono text-white truncate">{highestIPObject?.fullname || highestIPObject?.des}</p>
+                            <p className="text-xs text-[#ef4444]">{(highestIP * 100).toExponential(2)}%</p>
+                        </div>
+                    </div>
+
+                    {/* Selected NEO banner */}
+                    {selectedNEO && !selectedInSentry && (
+                        <div className="mb-4 p-4 bg-[#166534]/20 border border-[#22c55e]/30 rounded-lg">
+                            <p className="text-[#22c55e] text-sm">
+                                ✓ <strong>{selectedNEO.name}</strong> is not currently tracked by Sentry — no significant impact probability detected.
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Risk Table */}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="border-b border-[#1a1d26]">
+                                    <th className="text-left py-3 px-2 text-[#71717a] font-normal">Object</th>
+                                    <th className="text-left py-3 px-2 text-[#71717a] font-normal">Year Range</th>
+                                    <th className="text-right py-3 px-2 text-[#71717a] font-normal">Potential Impacts</th>
+                                    <th className="text-right py-3 px-2 text-[#71717a] font-normal">
+                                        Impact Prob.
+                                    </th>
+                                    <th className="text-center py-3 px-2 text-[#71717a] font-normal group relative">
+                                        <span className="cursor-help border-b border-dotted border-[#71717a]">Palermo</span>
+                                        <div className="absolute hidden group-hover:block bg-[#1a1d26] border border-[#2a2d36] rounded p-2 text-xs text-left w-64 z-20 -left-20 top-full mt-1">
+                                            Logarithmic scale comparing impact risk to background risk. Negative values are below background; positive values indicate elevated concern.
+                                        </div>
+                                    </th>
+                                    <th className="text-center py-3 px-2 text-[#71717a] font-normal group relative">
+                                        <span className="cursor-help border-b border-dotted border-[#71717a]">Torino</span>
+                                        <div className="absolute hidden group-hover:block bg-[#1a1d26] border border-[#2a2d36] rounded p-2 text-xs text-left w-64 z-20 -left-20 top-full mt-1">
+                                            Integer scale (0-10) for public communication of impact hazard. 0 = no hazard, 10 = certain global catastrophe.
+                                        </div>
+                                    </th>
+                                    <th className="text-right py-3 px-2 text-[#71717a] font-normal">Diameter</th>
+                                    <th className="text-right py-3 px-2 text-[#71717a] font-normal">H (mag)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {sortedObjects.map((obj, i) => {
+                                    const torino = getTorinoColor(obj.ts_max);
+                                    const palermo = getPalermoBar(obj.ps_cum);
+                                    const isSelected = selectedNEO && (
+                                        normalizeDesignation(obj.des) === normalizeDesignation(selectedNEO.designation) ||
+                                        normalizeDesignation(obj.fullname) === normalizeDesignation(selectedNEO.name)
+                                    );
+                                    const isTorinoPositive = parseInt(obj.ts_max) > 0;
+
+                                    return (
+                                        <tr
+                                            key={obj.des || i}
+                                            onClick={() => {
+                                                onSelectNEO({
+                                                    designation: obj.des,
+                                                    name: obj.fullname || obj.des,
+                                                    sourceTab: 'sentry'
+                                                });
+                                                setSelectedRow(obj);
+                                            }}
+                                            className={`
+                                                border-b border-[#1a1d26] cursor-pointer transition-colors
+                                                ${isSelected ? 'bg-[#2dd4bf]/10 border-[#2dd4bf]' : 'hover:bg-[#1a1d26]'}
+                                                ${isTorinoPositive ? 'animate-pulse-amber' : ''}
+                                            `}
+                                        >
+                                            <td className="py-3 px-2 text-white font-mono">
+                                                {obj.fullname || obj.des}
+                                            </td>
+                                            <td className="py-3 px-2 text-[#71717a]">{obj.range}</td>
+                                            <td className="py-3 px-2 text-right text-white">{obj.n_imp}</td>
+                                            <td className="py-3 px-2 text-right text-[#ef4444]">
+                                                {(parseFloat(obj.ip) * 100).toExponential(2)}%
+                                            </td>
+                                            <td className="py-3 px-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex-1 h-2 bg-[#1a1d26] rounded overflow-hidden">
+                                                        <div
+                                                            className="h-full rounded transition-all"
+                                                            style={{
+                                                                width: `${palermo.width}%`,
+                                                                backgroundColor: palermo.color
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-xs text-white w-12 text-right">
+                                                        {parseFloat(obj.ps_cum).toFixed(2)}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="py-3 px-2 text-center">
+                                                <span
+                                                    className="inline-block px-2 py-1 rounded text-xs font-mono"
+                                                    style={{
+                                                        backgroundColor: torino.bg,
+                                                        color: torino.text
+                                                    }}
+                                                    title={torino.label}
+                                                >
+                                                    {obj.ts_max}
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-2 text-right text-white">
+                                                {obj.diameter ? `${parseFloat(obj.diameter).toFixed(3)} km` : '—'}
+                                            </td>
+                                            <td className="py-3 px-2 text-right text-white">{obj.h}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Detail Modal */}
+                    {selectedRow && (
+                        <div
+                            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+                            onClick={() => setSelectedRow(null)}
+                        >
+                            <div
+                                className="bg-[#0d0f14] border border-[#1a1d26] rounded-lg max-w-lg w-full max-h-[80vh] overflow-auto p-6"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className="flex justify-between items-start mb-4">
+                                    <h2 className="font-display text-xl text-white">
+                                        {selectedRow.fullname || selectedRow.des}
+                                    </h2>
+                                    <button
+                                        onClick={() => setSelectedRow(null)}
+                                        className="text-[#71717a] hover:text-white"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                                    <div>
+                                        <p className="text-[#71717a]">Designation</p>
+                                        <p className="text-white">{selectedRow.des}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[#71717a]">Year Range</p>
+                                        <p className="text-white">{selectedRow.range}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[#71717a]">Potential Impacts</p>
+                                        <p className="text-white">{selectedRow.n_imp}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[#71717a]">Cumulative Probability</p>
+                                        <p className="text-[#ef4444]">{(parseFloat(selectedRow.ip) * 100).toExponential(2)}%</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[#71717a]">Palermo Scale</p>
+                                        <p className="text-white">{parseFloat(selectedRow.ps_cum).toFixed(2)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[#71717a]">Torino Scale</p>
+                                        <p className="text-white">{selectedRow.ts_max}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[#71717a]">Diameter</p>
+                                        <p className="text-white">
+                                            {selectedRow.diameter ? `${parseFloat(selectedRow.diameter).toFixed(3)} km` : 'Unknown'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[#71717a]">Absolute Magnitude (H)</p>
+                                        <p className="text-white">{selectedRow.h}</p>
+                                    </div>
+                                </div>
+
+                                <a
+                                    href={`https://cneos.jpl.nasa.gov/sentry/details.html#?des=${encodeURIComponent(selectedRow.des)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block text-center py-2 bg-[#2dd4bf] text-black rounded hover:bg-[#5eead4] transition-colors"
+                                >
+                                    View on CNEOS Sentry →
+                                </a>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // Main App Component
+        const App = () => {
+            const [activeTab, setActiveTab] = useState(null);
+            const [selectedNEO, setSelectedNEO] = useState(null);
+            const [neoData, setNeoData] = useState([]);
+            const [currentTime, setCurrentTime] = useState(new Date());
+            const [isMobile, setIsMobile] = useState(window.innerWidth < 900);
+            const [showGlobe, setShowGlobe] = useState(true);
+            const [panelWidth, setPanelWidth] = useState(38); // percentage
+            const [isDragging, setIsDragging] = useState(false);
+
+            // Update time every second
+            useEffect(() => {
+                const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+                return () => clearInterval(timer);
+            }, []);
+
+            // Handle resize
+            useEffect(() => {
+                const handleResize = () => {
+                    setIsMobile(window.innerWidth < 900);
+                };
+                window.addEventListener('resize', handleResize);
+                return () => window.removeEventListener('resize', handleResize);
+            }, []);
+
+            // URL hash handling
+            useEffect(() => {
+                const hash = window.location.hash;
+                if (hash.startsWith('#neo=')) {
+                    const designation = decodeURIComponent(hash.replace('#neo=', '').replace(/\+/g, ' '));
+                    setSelectedNEO({
+                        designation,
+                        name: designation,
+                        sourceTab: 'neows'
+                    });
+                    setActiveTab('neows');
+                }
+            }, []);
+
+            // Update URL when NEO selected
+            useEffect(() => {
+                if (selectedNEO) {
+                    window.location.hash = `neo=${encodeURIComponent(selectedNEO.designation).replace(/%20/g, '+')}`;
+                } else {
+                    if (window.location.hash) {
+                        history.pushState('', document.title, window.location.pathname);
+                    }
+                }
+            }, [selectedNEO]);
+
+            // Fetch NEO data on page load for the radar
+            useEffect(() => {
+                const fetchNeoData = async () => {
+                    const today = new Date();
+                    const endDate = new Date(today);
+                    endDate.setDate(endDate.getDate() + 6);
+
+                    const url = `${NEOWS_BASE}?start_date=${formatDate(today)}&end_date=${formatDate(endDate)}&api_key=${NASA_API_KEY}`;
+
+                    try {
+                        const response = await fetch(url);
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        const json = await response.json();
+                        const allNEOs = Object.values(json.near_earth_objects || {}).flat();
+                        setNeoData(allNEOs);
+                    } catch (err) {
+                        console.error('Failed to fetch NEO data:', err);
+                    }
+                };
+
+                fetchNeoData();
+            }, []);
+
+            const handleSelectNEO = (neo) => {
+                setSelectedNEO(neo);
+            };
+
+            const handleClearSelection = () => {
+                setSelectedNEO(null);
+            };
+
+            const handleNeoDataLoaded = (data) => {
+                setNeoData(data);
+            };
+
+            // Handle panel resize dragging
+            useEffect(() => {
+                const handleMouseMove = (e) => {
+                    if (!isDragging) return;
+                    const newWidth = ((window.innerWidth - e.clientX) / window.innerWidth) * 100;
+                    setPanelWidth(Math.max(20, Math.min(70, newWidth)));
+                };
+
+                const handleMouseUp = () => {
+                    setIsDragging(false);
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                };
+
+                if (isDragging) {
+                    document.body.style.cursor = 'col-resize';
+                    document.body.style.userSelect = 'none';
+                    window.addEventListener('mousemove', handleMouseMove);
+                    window.addEventListener('mouseup', handleMouseUp);
+                }
+
+                return () => {
+                    window.removeEventListener('mousemove', handleMouseMove);
+                    window.removeEventListener('mouseup', handleMouseUp);
+                };
+            }, [isDragging]);
+
+            const isExpanded = activeTab === null;
+
+            return (
+                <div className="min-h-screen bg-[#000000] text-white">
+                    <StarField />
+
+                    {/* Header */}
+                    <header className="relative z-10 border-b border-[#1a1d26] bg-[#08090d]/90 backdrop-blur scanlines">
+                        <div className="max-w-[1800px] mx-auto px-4 py-4 flex justify-between items-center">
+                            <div>
+                                <h1 className="font-display text-2xl md:text-3xl font-bold tracking-wider text-white">
+                                    NEO TRACKER
+                                </h1>
+                                <p className="text-xs text-[#71717a] tracking-wide">
+                                    Near-Earth Object Surveillance Dashboard
+                                </p>
+                            </div>
+                            <div className="text-right">
+                                <p className="font-mono text-sm text-[#2dd4bf]">
+                                    {currentTime.toISOString().replace('T', ' ').substring(0, 19)} UTC
+                                </p>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Main Content */}
+                    <main className="relative z-10 flex flex-col md:flex-row" style={{ height: 'calc(100vh - 80px)' }}>
+                        {/* Radar Panel */}
+                        {(!isMobile || showGlobe) && (
+                            <div
+                                className={`
+                                    bg-[#000000]
+                                    ${isMobile ? 'h-[50vh] w-full' : 'h-full'}
+                                `}
+                                style={!isMobile ? { width: `${isExpanded ? 70 : 100 - panelWidth}%` } : {}}
+                            >
+                                <Globe
+                                    neoData={neoData}
+                                    selectedNEO={selectedNEO}
+                                    onSelectNEO={handleSelectNEO}
+                                    isExpanded={isExpanded}
+                                />
+                            </div>
+                        )}
+
+                        {/* Resizable Divider */}
+                        {!isMobile && !isExpanded && (
+                            <div
+                                className="w-1 h-full bg-[#1a1d26] hover:bg-[#2dd4bf] cursor-col-resize transition-colors flex items-center justify-center group"
+                                onMouseDown={() => setIsDragging(true)}
+                            >
+                                <div className="w-1 h-8 bg-[#2a2d36] group-hover:bg-[#2dd4bf] rounded-full"></div>
+                            </div>
+                        )}
+
+                        {/* Tab Panel */}
+                        <div
+                            className={`
+                                flex flex-col bg-[#08090d] border-l border-[#1a1d26]
+                                ${isMobile ? 'flex-1' : 'h-full'}
+                            `}
+                            style={!isMobile ? { width: `${isExpanded ? 30 : panelWidth}%` } : {}}
+                        >
+                            {/* Tab Bar */}
+                            <div className="border-b border-[#1a1d26] px-4">
+                                {isMobile && (
+                                    <button
+                                        onClick={() => setShowGlobe(!showGlobe)}
+                                        className="w-full py-2 text-sm text-[#71717a] hover:text-white border-b border-[#1a1d26]"
+                                    >
+                                        🌍 {showGlobe ? 'Hide' : 'Show'} Globe
+                                    </button>
+                                )}
+                                <div className="flex gap-1 pt-2">
+                                    <button
+                                        onClick={() => setActiveTab('neows')}
+                                        className={`
+                                            px-4 py-3 text-sm transition-colors
+                                            ${activeTab === 'neows' ? 'text-white tab-active' : 'text-[#71717a] hover:text-white'}
+                                        `}
+                                    >
+                                        This Week
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveTab('sbdb')}
+                                        className={`
+                                            px-4 py-3 text-sm transition-colors
+                                            ${activeTab === 'sbdb' ? 'text-white tab-active' : 'text-[#71717a] hover:text-white'}
+                                        `}
+                                    >
+                                        Archive
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveTab('sentry')}
+                                        className={`
+                                            px-4 py-3 text-sm transition-colors
+                                            ${activeTab === 'sentry' ? 'text-white tab-active' : 'text-[#71717a] hover:text-white'}
+                                        `}
+                                    >
+                                        Collision Risk
+                                    </button>
+                                </div>
+
+                                {/* Sync Indicator */}
+                                {selectedNEO && (
+                                    <div className="flex items-center gap-2 py-2 text-xs">
+                                        <span className="text-[#2dd4bf]">🔗 Synced: {selectedNEO.name}</span>
+                                        <button
+                                            onClick={handleClearSelection}
+                                            className="text-[#71717a] hover:text-white"
+                                        >
+                                            ✕
+                                        </button>
+                                        {activeTab && activeTab !== selectedNEO.sourceTab && (
+                                            <div className="flex gap-2 ml-auto">
+                                                {selectedNEO.sourceTab !== 'neows' && (
+                                                    <button
+                                                        onClick={() => setActiveTab('neows')}
+                                                        className="text-[#71717a] hover:text-[#2dd4bf]"
+                                                    >
+                                                        → This Week
+                                                    </button>
+                                                )}
+                                                {selectedNEO.sourceTab !== 'sbdb' && (
+                                                    <button
+                                                        onClick={() => setActiveTab('sbdb')}
+                                                        className="text-[#71717a] hover:text-[#2dd4bf]"
+                                                    >
+                                                        → Archive
+                                                    </button>
+                                                )}
+                                                {selectedNEO.sourceTab !== 'sentry' && (
+                                                    <button
+                                                        onClick={() => setActiveTab('sentry')}
+                                                        className="text-[#71717a] hover:text-[#2dd4bf]"
+                                                    >
+                                                        → Risk
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Tab Content */}
+                            <div className="flex-1 overflow-hidden">
+                                {activeTab === null && (
+                                    <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                                        <div className="text-6xl mb-4">🌍</div>
+                                        <h2 className="font-display text-xl text-white mb-2">
+                                            Welcome to NEO Tracker
+                                        </h2>
+                                        <p className="text-[#71717a] text-sm max-w-md">
+                                            Select a tab to explore near-Earth objects.
+                                            The globe shows this week's asteroid approaches —
+                                            drag to rotate, scroll to zoom. Amber dots indicate
+                                            potentially hazardous asteroids.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {activeTab === 'neows' && (
+                                    <ThisWeekTab
+                                        selectedNEO={selectedNEO}
+                                        onSelectNEO={handleSelectNEO}
+                                        onDataLoaded={handleNeoDataLoaded}
+                                    />
+                                )}
+
+                                {activeTab === 'sbdb' && (
+                                    <ArchiveTab
+                                        selectedNEO={selectedNEO}
+                                        onSelectNEO={handleSelectNEO}
+                                    />
+                                )}
+
+                                {activeTab === 'sentry' && (
+                                    <CollisionRiskTab
+                                        selectedNEO={selectedNEO}
+                                        onSelectNEO={handleSelectNEO}
+                                    />
+                                )}
+                            </div>
+                        </div>
+                    </main>
+
+                    {/* Footer */}
+                    <footer className="fixed bottom-0 left-0 right-0 z-10 bg-[#08090d]/90 backdrop-blur border-t border-[#1a1d26] py-2 px-4">
+                        <div className="max-w-[1800px] mx-auto flex justify-between items-center text-xs text-[#71717a]">
+                            <span>Data provided by NASA APIs</span>
+                            <a
+                                href="https://api.nasa.gov"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-white transition-colors"
+                            >
+                                api.nasa.gov
+                            </a>
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
