@@ -1,0 +1,2567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drug Information Portal</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pmc-blue: #205493;
+            --pmc-light-blue: #0071bc;
+            --pmc-dark-blue: #112e51;
+            --pmc-teal: #02bfe7;
+            --pmc-gray: #5b616b;
+            --pmc-light-gray: #d6d7d9;
+            --pmc-bg: #f1f1f1;
+            --pmc-white: #ffffff;
+            --pmc-border: #d6d7d9;
+            --pmc-text: #212121;
+            --pmc-text-light: #5b616b;
+            --pmc-warning: #fad980;
+            --pmc-warning-bg: #fff1d2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Source Sans Pro', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--pmc-bg);
+            min-height: 100vh;
+            color: var(--pmc-text);
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding: 1rem 0;
+            border-bottom: 3px solid var(--pmc-blue);
+            background: var(--pmc-white);
+            margin: -1.5rem -1.5rem 1.5rem -1.5rem;
+            padding: 1.5rem;
+        }
+
+        header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--pmc-dark-blue);
+            margin-bottom: 0.25rem;
+        }
+
+        header p {
+            color: var(--pmc-gray);
+            font-size: 1rem;
+        }
+
+        .nav-btn {
+            padding: 0.5rem 1rem;
+            background: var(--pmc-white);
+            border: 1px solid var(--pmc-blue);
+            border-radius: 4px;
+            color: var(--pmc-blue);
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-btn:hover {
+            background: var(--pmc-blue);
+            color: var(--pmc-white);
+        }
+
+        .nav-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 1rem;
+            background: var(--pmc-white);
+            margin: -1.5rem -1.5rem 1rem -1.5rem;
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid var(--pmc-border);
+        }
+
+        .about-page {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .about-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background: var(--pmc-white);
+            border-top: 4px solid var(--pmc-blue);
+            border-bottom: 4px solid var(--pmc-blue);
+        }
+
+        .about-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--pmc-dark-blue);
+            margin-bottom: 0.25rem;
+        }
+
+        .about-header p {
+            color: var(--pmc-gray);
+            font-size: 1rem;
+        }
+
+        .about-layout {
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+
+        .toc-sidebar {
+            width: 220px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 1rem;
+        }
+
+        .toc-card {
+            background: var(--pmc-white);
+            border: 1px solid var(--pmc-border);
+            border-radius: 4px;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .toc-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--pmc-dark-blue);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--pmc-blue);
+        }
+
+        .toc-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .toc-list li {
+            margin-bottom: 0.25rem;
+        }
+
+        .toc-list a {
+            display: block;
+            padding: 0.4rem 0.5rem;
+            color: var(--pmc-light-blue);
+            text-decoration: none;
+            font-size: 0.85rem;
+            border-radius: 3px;
+            transition: all 0.15s;
+            border-left: 3px solid transparent;
+        }
+
+        .toc-list a:hover {
+            color: var(--pmc-dark-blue);
+            background: #e8f4fd;
+            border-left-color: var(--pmc-blue);
+        }
+
+        .toc-list a.toc-search-link {
+            margin-top: 0.75rem;
+            padding: 0.75rem 0.5rem;
+            border-top: 1px solid var(--pmc-border);
+            color: var(--pmc-white);
+            background: var(--pmc-blue);
+            font-weight: 600;
+            text-align: center;
+            border-left: none;
+            border-radius: 4px;
+        }
+
+        .toc-list a.toc-search-link:hover {
+            background: var(--pmc-dark-blue);
+            color: var(--pmc-white);
+            border-left: none;
+        }
+
+        .about-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .about-content {
+            background: var(--pmc-white);
+            border: 1px solid var(--pmc-border);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .about-section {
+            scroll-margin-top: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--pmc-light-gray);
+        }
+
+        .about-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        @media (max-width: 900px) {
+            .about-layout {
+                flex-direction: column;
+            }
+
+            .toc-sidebar {
+                width: 100%;
+                position: static;
+            }
+
+            .toc-list {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+
+            .toc-list li {
+                margin-bottom: 0;
+            }
+
+            .toc-list a {
+                padding: 0.35rem 0.75rem;
+                background: #e8f4fd;
+                border-radius: 3px;
+                border-left: none;
+                font-size: 0.8rem;
+            }
+
+            .toc-list a:hover {
+                background: var(--pmc-blue);
+                color: white;
+                border-left: none;
+            }
+        }
+
+        .cta-section {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: #e8f4fd;
+            border: 1px solid var(--pmc-light-blue);
+            border-radius: 4px;
+        }
+
+        .cta-section h3 {
+            font-size: 1.25rem;
+            color: var(--pmc-dark-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        .cta-section p {
+            color: var(--pmc-gray);
+            margin-bottom: 1rem;
+        }
+
+        .cta-btn {
+            padding: 0.75rem 2rem;
+            background: var(--pmc-blue);
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .cta-btn:hover {
+            background: var(--pmc-dark-blue);
+        }
+
+        .about-section h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--pmc-dark-blue);
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--pmc-blue);
+        }
+
+        .about-section p {
+            color: var(--pmc-text);
+            line-height: 1.6;
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .about-section ul {
+            margin-left: 1.5rem;
+            color: var(--pmc-text);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .about-section li {
+            margin-bottom: 0.5rem;
+        }
+
+        .about-section strong {
+            color: var(--pmc-dark-blue);
+        }
+
+        .data-source-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            margin-top: 0.75rem;
+            border: 1px solid var(--pmc-border);
+        }
+
+        .data-source-table th,
+        .data-source-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--pmc-border);
+        }
+
+        .data-source-table th {
+            background: var(--pmc-bg);
+            color: var(--pmc-dark-blue);
+            font-weight: 600;
+        }
+
+        .data-source-table td {
+            color: var(--pmc-text);
+        }
+
+        .data-source-table tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        .data-source-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .search-container {
+            position: relative;
+            max-width: 700px;
+            margin: 0 auto 1.5rem;
+            display: flex;
+            gap: 0.5rem;
+            align-items: stretch;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            flex: 1;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.875rem 1.25rem;
+            font-size: 1rem;
+            border: 1px solid var(--pmc-border);
+            border-radius: 4px;
+            background: var(--pmc-white);
+            color: var(--pmc-text);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--pmc-blue);
+            box-shadow: 0 0 0 3px rgba(32, 84, 147, 0.15);
+        }
+
+        .search-input::placeholder {
+            color: var(--pmc-gray);
+        }
+
+        .rx-key {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            color: var(--pmc-gray);
+        }
+
+        .rx-key-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .filter-container {
+            position: relative;
+        }
+
+        .filter-toggle-btn {
+            padding: 0.875rem 1rem;
+            background: var(--pmc-white);
+            border: 1px solid var(--pmc-border);
+            border-radius: 4px;
+            color: var(--pmc-gray);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .filter-toggle-btn:hover {
+            border-color: var(--pmc-blue);
+            color: var(--pmc-blue);
+        }
+
+        .filter-toggle-btn.has-filters {
+            background: var(--pmc-blue);
+            border-color: var(--pmc-blue);
+            color: white;
+        }
+
+        .filter-badge {
+            background: white;
+            color: var(--pmc-blue);
+            padding: 0.1rem 0.4rem;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .filter-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+            background: var(--pmc-white);
+            border: 1px solid var(--pmc-border);
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 1rem;
+            z-index: 100;
+            min-width: 280px;
+        }
+
+        .filter-section {
+            margin-bottom: 1rem;
+        }
+
+        .filter-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--pmc-dark-blue);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 0.5rem;
+        }
+
+        .filter-options {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-option-btn {
+            padding: 0.35rem 0.7rem;
+            background: var(--pmc-bg);
+            border: 1px solid var(--pmc-border);
+            border-radius: 3px;
+            color: var(--pmc-gray);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .filter-option-btn:hover {
+            border-color: var(--pmc-blue);
+            color: var(--pmc-blue);
+        }
+
+        .filter-option-btn.active {
+            background: var(--pmc-blue);
+            border-color: var(--pmc-blue);
+            color: white;
+        }
+
+        .filter-option-btn.active-otc {
+            background: #2e8540;
+            border-color: #2e8540;
+            color: white;
+        }
+
+        .filter-select {
+            width: 100%;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.85rem;
+            border: 1px solid var(--pmc-border);
+            border-radius: 3px;
+            background: var(--pmc-white);
+            color: var(--pmc-text);
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--pmc-blue);
+        }
+
+        .class-search-container {
+            position: relative;
+        }
+
+        .class-search-input {
+            width: 100%;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.85rem;
+            border: 1px solid var(--pmc-border);
+            border-radius: 3px;
+            background: var(--pmc-white);
+            color: var(--pmc-text);
+        }
+
+        .class-search-input:focus {
+            outline: none;
+            border-color: var(--pmc-blue);
+            box-shadow: 0 0 0 2px rgba(32, 84, 147, 0.15);
+        }
+
+        .class-search-input::placeholder {
+            color: var(--pmc-gray);
+        }
+
+        .class-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--pmc-white);
+            border: 1px solid var(--pmc-border);
+            border-radius: 3px;
+            margin-top: 2px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 110;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .class-dropdown-item {
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--pmc-text);
+            border-bottom: 1px solid var(--pmc-light-gray);
+        }
+
+        .class-dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .class-dropdown-item:hover {
+            background: #e8f4fd;
+            color: var(--pmc-dark-blue);
+        }
+
+        .class-dropdown-item.selected {
+            background: var(--pmc-blue);
+            color: white;
+        }
+
+        .class-dropdown-item.all-option {
+            font-weight: 600;
+            border-bottom: 2px solid var(--pmc-border);
+        }
+
+        .selected-class-tag {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.75rem;
+            background: var(--pmc-blue);
+            color: white;
+            border-radius: 3px;
+            font-size: 0.85rem;
+        }
+
+        .selected-class-tag button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0;
+            font-size: 1rem;
+            line-height: 1;
+            opacity: 0.8;
+        }
+
+        .selected-class-tag button:hover {
+            opacity: 1;
+        }
+
+        .clear-filters-btn {
+            width: 100%;
+            margin-top: 0.75rem;
+            padding: 0.4rem;
+            background: transparent;
+            border: 1px solid var(--pmc-border);
+            border-radius: 3px;
+            color: var(--pmc-gray);
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .clear-filters-btn:hover {
+            border-color: #cd2026;
+            color: #cd2026;
+        }
+
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--pmc-white);
+            border: 1px solid var(--pmc-border);
+            border-radius: 4px;
+            margin-top: 2px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .suggestion-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-bottom: 1px solid var(--pmc-light-gray);
+            color: var(--pmc-light-blue);
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-item:hover {
+            background: #e8f4fd;
+            color: var(--pmc-dark-blue);
+        }
+
+        .quick-drugs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .quick-drug-btn {
+            padding: 0.4rem 0.875rem;
+            background: var(--pmc-white);
+            border: 1px solid var(--pmc-blue);
+            border-radius: 3px;
+            color: var(--pmc-blue);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .quick-drug-btn:hover {
+            background: var(--pmc-blue);
+            color: var(--pmc-white);
+        }
+
+        .search-mode-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .mode-btn {
+            padding: 0.5rem 1.25rem;
+            background: var(--pmc-white);
+            border: 1px solid var(--pmc-border);
+            border-radius: 4px;
+            color: var(--pmc-gray);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .mode-btn:hover {
+            border-color: var(--pmc-blue);
+            color: var(--pmc-blue);
+        }
+
+        .mode-btn.active {
+            background: var(--pmc-blue);
+            border-color: var(--pmc-blue);
+            color: white;
+        }
+
+        .symptom-results {
+            background: var(--pmc-white);
+            border: 1px solid var(--pmc-border);
+            border-left: 4px solid var(--pmc-teal);
+            border-radius: 4px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .symptom-results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .symptom-results-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--pmc-dark-blue);
+        }
+
+        .symptom-results-subtitle {
+            font-size: 0.85rem;
+            color: var(--pmc-gray);
+            margin-top: 0.25rem;
+        }
+
+        .symptom-drugs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .symptom-drug-card {
+            background: var(--pmc-bg);
+            border: 1px solid var(--pmc-border);
+            border-radius: 4px;
+            padding: 1rem;
+            transition: all 0.2s;
+        }
+
+        .symptom-drug-card:hover {
+            border-color: var(--pmc-blue);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .symptom-drug-name {
+            font-weight: 600;
+            color: var(--pmc-dark-blue);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .symptom-drug-brand {
+            font-size: 0.8rem;
+            color: var(--pmc-gray);
+            margin-bottom: 0.5rem;
+        }
+
+        .symptom-drug-indication {
+            font-size: 0.85rem;
+            color: var(--pmc-text);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .symptom-drug-actions {
+            margin-top: 0.75rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .add-drug-btn {
+            padding: 0.4rem 0.75rem;
+            background: var(--pmc-blue);
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .add-drug-btn:hover {
+            background: var(--pmc-dark-blue);
+        }
+
+        .close-results-btn {
+            padding: 0.4rem 0.75rem;
+            background: var(--pmc-white);
+            border: 1px solid var(--pmc-border);
+            border-radius: 4px;
+            color: var(--pmc-gray);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .close-results-btn:hover {
+            border-color: var(--pmc-blue);
+            color: var(--pmc-blue);
+        }
+
+        .quick-symptoms {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .quick-symptom-btn {
+            padding: 0.4rem 0.875rem;
+            background: #e0f7f6;
+            border: 1px solid var(--pmc-teal);
+            border-radius: 3px;
+            color: #0d7d7d;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .quick-symptom-btn:hover {
+            background: var(--pmc-teal);
+            color: white;
+        }
+
+        .drugs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            gap: 1rem;
+        }
+
+        .drug-card {
+            background: var(--pmc-white);
+            border: 1px solid var(--pmc-border);
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .drug-card-header {
+            padding: 1rem 1.25rem;
+            background: var(--pmc-bg);
+            border-bottom: 1px solid var(--pmc-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .drug-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--pmc-dark-blue);
+        }
+
+        .drug-brands {
+            font-size: 0.85rem;
+            color: var(--pmc-gray);
+            margin-top: 0.25rem;
+        }
+
+        .remove-btn {
+            background: #cd2026;
+            border: none;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .remove-btn:hover {
+            background: #a01a1e;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-left: 0.5rem;
+        }
+
+        .badge-rx {
+            background: var(--pmc-blue);
+            color: white;
+        }
+
+        .badge-otc {
+            background: #2e8540;
+            color: white;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--pmc-border);
+            background: var(--pmc-bg);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 0.6rem;
+            background: transparent;
+            border: none;
+            color: var(--pmc-gray);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab:hover {
+            color: var(--pmc-blue);
+            background: #e8f4fd;
+        }
+
+        .tab.active {
+            color: var(--pmc-blue);
+            border-bottom-color: var(--pmc-blue);
+            background: var(--pmc-white);
+        }
+
+        .tab-content {
+            padding: 1.25rem;
+            max-height: 450px;
+            overflow-y: auto;
+        }
+
+        .section {
+            margin-bottom: 1.25rem;
+        }
+
+        .section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--pmc-dark-blue);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.35rem;
+            border-bottom: 1px solid var(--pmc-light-gray);
+        }
+
+        .class-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .class-badge {
+            background: #e8f4fd;
+            border: 1px solid var(--pmc-light-blue);
+            padding: 0.25rem 0.6rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            color: var(--pmc-blue);
+            cursor: help;
+        }
+
+        .expandable {
+            background: var(--pmc-bg);
+            border: 1px solid var(--pmc-border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .expandable-header {
+            padding: 0.6rem 1rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.15s;
+            color: var(--pmc-light-blue);
+            font-weight: 500;
+        }
+
+        .expandable-header:hover {
+            background: #e8f4fd;
+        }
+
+        .expandable-content {
+            padding: 1rem;
+            border-top: 1px solid var(--pmc-border);
+            font-size: 0.875rem;
+            line-height: 1.6;
+            color: var(--pmc-text);
+            max-height: 200px;
+            overflow-y: auto;
+            background: var(--pmc-white);
+        }
+
+        .expandable-content.warning {
+            background: var(--pmc-warning-bg);
+            border-color: var(--pmc-warning);
+        }
+
+        .side-effects-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .effect-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .effect-name {
+            width: 130px;
+            font-size: 0.8rem;
+            color: var(--pmc-text);
+            text-transform: lowercase;
+        }
+
+        .effect-bar-container {
+            flex: 1;
+            height: 18px;
+            background: var(--pmc-light-gray);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .effect-bar {
+            height: 100%;
+            background: var(--pmc-blue);
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+
+        .effect-count {
+            width: 55px;
+            text-align: right;
+            font-size: 0.75rem;
+            color: var(--pmc-gray);
+        }
+
+        .interaction-item {
+            background: var(--pmc-bg);
+            border: 1px solid var(--pmc-border);
+            border-left: 3px solid var(--pmc-blue);
+            border-radius: 4px;
+            padding: 0.875rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .interaction-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .interaction-drugs {
+            font-weight: 600;
+            color: var(--pmc-dark-blue);
+            margin-bottom: 0.4rem;
+        }
+
+        .interaction-desc {
+            font-size: 0.85rem;
+            color: var(--pmc-text);
+            line-height: 1.5;
+        }
+
+        .severity-badge {
+            display: inline-block;
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            margin-left: 0.5rem;
+        }
+
+        .severity-high {
+            background: #cd2026;
+            color: white;
+        }
+
+        .severity-moderate {
+            background: #fdb81e;
+            color: var(--pmc-dark-blue);
+        }
+
+        .severity-low {
+            background: #2e8540;
+            color: white;
+        }
+
+        .similar-drugs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .similar-drug-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.3rem 0.6rem;
+            background: var(--pmc-white);
+            border: 1px solid var(--pmc-light-blue);
+            border-radius: 3px;
+            color: var(--pmc-light-blue);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .similar-drug-btn:hover {
+            background: var(--pmc-blue);
+            border-color: var(--pmc-blue);
+            color: white;
+        }
+
+        .cross-interaction-panel {
+            background: var(--pmc-white);
+            border: 1px solid var(--pmc-border);
+            border-left: 4px solid #cd2026;
+            border-radius: 4px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .cross-interaction-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .cross-interaction-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #cd2026;
+        }
+
+        .refresh-btn {
+            padding: 0.4rem 0.75rem;
+            background: var(--pmc-white);
+            border: 1px solid var(--pmc-border);
+            border-radius: 4px;
+            color: var(--pmc-gray);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .refresh-btn:hover {
+            border-color: var(--pmc-blue);
+            color: var(--pmc-blue);
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            color: var(--pmc-gray);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--pmc-light-gray);
+            border-top-color: var(--pmc-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 0.75rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fce4e4;
+            border: 1px solid #cd2026;
+            border-radius: 4px;
+            padding: 1rem;
+            color: #cd2026;
+            text-align: center;
+        }
+
+        .no-data {
+            color: var(--pmc-gray);
+            font-style: italic;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .disclaimer {
+            margin-top: 1.5rem;
+            padding: 1.25rem;
+            background: var(--pmc-warning-bg);
+            border: 1px solid var(--pmc-warning);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: var(--pmc-text);
+            line-height: 1.6;
+        }
+
+        .disclaimer h3 {
+            margin-bottom: 0.5rem;
+            color: var(--pmc-dark-blue);
+            font-size: 1rem;
+        }
+
+        .disclaimer ul {
+            margin-left: 1.25rem;
+            color: var(--pmc-text);
+        }
+
+        .disclaimer li {
+            margin-bottom: 0.35rem;
+        }
+
+        .source-badge {
+            display: inline-block;
+            padding: 0.1rem 0.35rem;
+            background: var(--pmc-light-gray);
+            border-radius: 2px;
+            font-size: 0.65rem;
+            color: var(--pmc-gray);
+            margin-left: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .drugs-grid {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 1.5rem;
+            }
+
+            .effect-name {
+                width: 90px;
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useRef } = React;
+
+        // API endpoints
+        const RXNAV_BASE = 'https://rxnav.nlm.nih.gov/REST';
+        const FDA_BASE = 'https://api.fda.gov/drug';
+
+        // Quick launch drugs
+        const QUICK_DRUGS = ['Aspirin', 'Ibuprofen', 'Acetaminophen', 'Lisinopril', 'Metformin', 'Atorvastatin', 'Omeprazole', 'Sertraline'];
+
+        // Quick symptoms
+        const QUICK_SYMPTOMS = ['Headache', 'Pain', 'Fever', 'Anxiety', 'Insomnia', 'Nausea', 'Hypertension', 'Diabetes'];
+
+        // Debounce helper
+        function useDebounce(value, delay) {
+            const [debouncedValue, setDebouncedValue] = useState(value);
+            useEffect(() => {
+                const handler = setTimeout(() => setDebouncedValue(value), delay);
+                return () => clearTimeout(handler);
+            }, [value, delay]);
+            return debouncedValue;
+        }
+
+        // Expandable section component
+        // About Page Component
+        function AboutPage({ onNavigateToSearch }) {
+            return (
+                <div className="about-page">
+                    <div className="about-header">
+                        <h1>Drug Information Portal</h1>
+                        <p>Your educational resource for drug information</p>
+                    </div>
+
+                    <div className="about-layout">
+                        <div className="toc-sidebar">
+                            <div className="toc-card">
+                                <div className="toc-title">Table of Contents</div>
+                                <ul className="toc-list">
+                                    <li><a href="#disclaimer">Credits & Disclaimer</a></li>
+                                    <li><a href="#about">About This Tool</a></li>
+                                    <li><a href="#adverse-events">Interpreting Adverse Events</a></li>
+                                    <li><a href="#drug-labels">Drug Labels Explained</a></li>
+                                    <li><a href="#report-counts">Report Count Factors</a></li>
+                                    <li><a href="#recalls">Recall Classifications</a></li>
+                                    <li><a href="#interactions">Dangerous Interactions</a></li>
+                                    <li><a href="#sources">Data Sources</a></li>
+                                    <li><a href="#" onClick={(e) => { e.preventDefault(); onNavigateToSearch(); }} className="toc-search-link">Search Drugs →</a></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div className="about-main">
+                            <div className="about-content">
+                                <div className="about-section" id="disclaimer">
+                                    <h3>Credits & Disclaimer</h3>
+                                <p>
+                                    This product uses publicly available data from the U.S. Food and Drug Administration (FDA)
+                                    and the U.S. National Library of Medicine (NLM). RxNav interaction data is provided under
+                                    the DrugBank non-commercial license for educational purposes.
+                                </p>
+                                <p style={{marginTop: '0.75rem', padding: '0.75rem', background: '#fff1d2', borderRadius: '4px', borderLeft: '3px solid #fdb81e', color: '#212121'}}>
+                                    <strong>This tool is for educational purposes only and is NOT a substitute for professional
+                                    medical advice, diagnosis, or treatment.</strong> Always seek the advice of your physician
+                                    or other qualified health provider with any questions you may have regarding a medical condition.
+                                </p>
+                            </div>
+
+                            <div className="about-section" id="about">
+                                <h3>About This Tool</h3>
+                                <p>
+                                    Drug Information Portal is a free, educational tool for searching drugs and viewing
+                                    their side effects, drug classes, similar medications, and potential drug-drug interactions.
+                                    All data comes exclusively from official U.S. government and open-source medical databases —
+                                    no AI-generated content is used.
+                                </p>
+                                <p>
+                                    <strong>What this tool CAN do:</strong> Help you understand basic drug information, compare
+                                    medications, and identify potential interactions to discuss with your healthcare provider.
+                                </p>
+                                <p>
+                                    <strong>What this tool CANNOT do:</strong> Replace professional medical advice, diagnose
+                                    conditions, or recommend treatments. Always consult a healthcare professional before
+                                    starting, stopping, or changing any medication.
+                                </p>
+                            </div>
+
+                            <div className="about-section" id="adverse-events">
+                                <h3>How to Interpret Adverse Event Data</h3>
+                                <p>
+                                    The side effect charts show data from the FDA Adverse Event Reporting System (FAERS).
+                                    It's important to understand what these numbers mean:
+                                </p>
+                                <ul>
+                                    <li><strong>Reports are voluntary:</strong> Healthcare professionals and consumers can submit
+                                    reports, but there's no requirement to do so. Many adverse events go unreported.</li>
+                                    <li><strong>Correlation ≠ causation:</strong> A report means someone experienced a symptom
+                                    while taking a drug — it doesn't prove the drug caused it.</li>
+                                    <li><strong>More reports ≠ more dangerous:</strong> Popular drugs naturally get more reports
+                                    because more people take them. Aspirin has millions of reports simply because billions of
+                                    doses are taken each year.</li>
+                                    <li><strong>Reporting bias exists:</strong> Newer drugs, drugs with media attention, and
+                                    serious events are more likely to be reported.</li>
+                                </ul>
+                            </div>
+
+                            <div className="about-section" id="drug-labels">
+                                <h3>What Drug Labels Actually Tell You</h3>
+                                <p>
+                                    The label information shown here comes from FDA-approved prescribing information — the most
+                                    authoritative source for drug data. This information is thoroughly reviewed before a drug
+                                    is approved and includes:
+                                </p>
+                                <ul>
+                                    <li><strong>Indications:</strong> What the drug is approved to treat</li>
+                                    <li><strong>Adverse Reactions:</strong> Side effects observed in clinical trials</li>
+                                    <li><strong>Warnings:</strong> Important safety information and precautions</li>
+                                    <li><strong>Contraindications:</strong> Situations where the drug should NOT be used</li>
+                                </ul>
+                                <p>
+                                    Note: Label text is submitted by manufacturers and may not always reflect the most
+                                    current approved labeling.
+                                </p>
+                            </div>
+
+                            <div className="about-section" id="report-counts">
+                                <h3>Why Some Drugs Have More Reports Than Others</h3>
+                                <p>
+                                    When comparing adverse event counts between drugs, remember these factors:
+                                </p>
+                                <ul>
+                                    <li><strong>Prescription volume:</strong> A drug taken by 50 million people will have far
+                                    more reports than one taken by 50,000, even if equally safe</li>
+                                    <li><strong>Time on market:</strong> Older drugs have had more time to accumulate reports</li>
+                                    <li><strong>Patient population:</strong> Drugs for serious conditions may show more adverse
+                                    events because the patients are already sicker</li>
+                                    <li><strong>Media attention:</strong> Drugs that receive news coverage get more scrutiny
+                                    and more reports</li>
+                                </ul>
+                            </div>
+
+                            <div className="about-section" id="recalls">
+                                <h3>Understanding Drug Recall Classifications</h3>
+                                <p>
+                                    The FDA classifies drug recalls by severity:
+                                </p>
+                                <ul>
+                                    <li><strong>Class I (Most Serious):</strong> Reasonable probability of serious health
+                                    consequences or death. Example: A medication contaminated with a dangerous substance.</li>
+                                    <li><strong>Class II (Moderate):</strong> May cause temporary or medically reversible
+                                    health problems. Example: A drug with incorrect dosage labeling.</li>
+                                    <li><strong>Class III (Least Serious):</strong> Not likely to cause adverse health
+                                    consequences. Example: A container with a minor labeling error.</li>
+                                </ul>
+                            </div>
+
+                            <div className="about-section" id="interactions">
+                                <h3>Drug Pairs with Known Dangerous Interactions</h3>
+                                <p>
+                                    Some drug combinations are well-known to cause serious problems. Classic examples include:
+                                </p>
+                                <ul>
+                                    <li><strong>Warfarin + NSAIDs</strong> (e.g., ibuprofen, aspirin): Significantly increased
+                                    bleeding risk. NSAIDs inhibit platelet function and can cause GI bleeding.</li>
+                                    <li><strong>MAO Inhibitors + Serotonergic Drugs</strong> (e.g., SSRIs, tramadol):
+                                    Can cause serotonin syndrome — a potentially life-threatening condition with symptoms
+                                    including agitation, high fever, and rapid heart rate.</li>
+                                    <li><strong>Methotrexate + NSAIDs:</strong> NSAIDs can reduce methotrexate clearance,
+                                    leading to dangerous methotrexate toxicity affecting bone marrow and liver.</li>
+                                    <li><strong>Potassium-sparing diuretics + ACE inhibitors:</strong> Can cause dangerous
+                                    hyperkalemia (high potassium levels), potentially leading to cardiac arrhythmias.</li>
+                                    <li><strong>Statins + Certain Antibiotics</strong> (e.g., clarithromycin, erythromycin):
+                                    Increased risk of rhabdomyolysis (muscle breakdown).</li>
+                                </ul>
+                                <p>
+                                    Always check with your pharmacist or doctor when taking multiple medications.
+                                </p>
+                            </div>
+
+                            <div className="about-section" id="sources">
+                                <h3>Data Sources</h3>
+                                <table className="data-source-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Source</th>
+                                            <th>Data Provided</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>openFDA Drug Labels</td>
+                                            <td>Indications, warnings, adverse reactions, Rx/OTC status</td>
+                                        </tr>
+                                        <tr>
+                                            <td>openFDA FAERS</td>
+                                            <td>Adverse event report counts from voluntary reporting</td>
+                                        </tr>
+                                        <tr>
+                                            <td>RxNorm API</td>
+                                            <td>Standardized drug names, brand names, identifiers</td>
+                                        </tr>
+                                        <tr>
+                                            <td>RxClass API</td>
+                                            <td>Drug classifications, therapeutic categories, similar drugs</td>
+                                        </tr>
+                                        <tr>
+                                            <td>RxNav Interaction API</td>
+                                            <td>Drug-drug interactions (DrugBank, ONCHigh sources)</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            </div>
+
+                            <div className="cta-section">
+                                <h3>Ready to Explore?</h3>
+                                <p>Search for drugs by name or find treatments for specific symptoms</p>
+                                <button className="cta-btn" onClick={onNavigateToSearch}>
+                                    Start Searching Drugs
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function Expandable({ title, children, isWarning = false }) {
+            const [expanded, setExpanded] = useState(false);
+            return (
+                <div className="expandable">
+                    <div className="expandable-header" onClick={() => setExpanded(!expanded)}>
+                        <span>{title}</span>
+                        <span>{expanded ? '−' : '+'}</span>
+                    </div>
+                    {expanded && (
+                        <div className={`expandable-content ${isWarning ? 'warning' : ''}`}>
+                            {children}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // Drug Card Component
+        function DrugCard({ drug, onRemove, onAddDrug }) {
+            const [activeTab, setActiveTab] = useState('overview');
+
+            if (!drug) return null;
+
+            const { info, loading, error } = drug;
+
+            if (loading) {
+                return (
+                    <div className="drug-card">
+                        <div className="loading">
+                            <div className="spinner"></div>
+                            Loading drug information...
+                        </div>
+                    </div>
+                );
+            }
+
+            if (error) {
+                return (
+                    <div className="drug-card">
+                        <div className="drug-card-header">
+                            <div>
+                                <div className="drug-name">{drug.name}</div>
+                            </div>
+                            <button className="remove-btn" onClick={onRemove}>×</button>
+                        </div>
+                        <div className="tab-content">
+                            <div className="error">{error}</div>
+                        </div>
+                    </div>
+                );
+            }
+
+            const maxCount = info.sideEffects?.[0]?.count || 1;
+
+            return (
+                <div className="drug-card">
+                    <div className="drug-card-header">
+                        <div>
+                            <div className="drug-name">
+                                {info.canonicalName || drug.name}
+                                {info.rxStatus && (
+                                    <span className={`badge ${info.rxStatus === 'Rx' ? 'badge-rx' : 'badge-otc'}`}>
+                                        {info.rxStatus}
+                                    </span>
+                                )}
+                            </div>
+                            {info.brandNames?.length > 0 && (
+                                <div className="drug-brands">
+                                    {info.brandNames.slice(0, 3).join(', ')}
+                                    {info.brandNames.length > 3 && ` +${info.brandNames.length - 3} more`}
+                                </div>
+                            )}
+                            {info.route && (
+                                <div className="drug-brands">Route: {info.route}</div>
+                            )}
+                        </div>
+                        <button className="remove-btn" onClick={onRemove}>×</button>
+                    </div>
+
+                    <div className="tabs">
+                        <button
+                            className={`tab ${activeTab === 'overview' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('overview')}
+                        >
+                            Overview
+                        </button>
+                        <button
+                            className={`tab ${activeTab === 'sideEffects' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('sideEffects')}
+                        >
+                            Side Effects
+                        </button>
+                        <button
+                            className={`tab ${activeTab === 'interactions' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('interactions')}
+                        >
+                            Interactions
+                        </button>
+                    </div>
+
+                    <div className="tab-content">
+                        {activeTab === 'overview' && (
+                            <>
+                                {info.primaryClass && (
+                                    <div className="section">
+                                        <div className="section-title">Primary Drug Class</div>
+                                        <div className="class-badge">{info.primaryClass}</div>
+                                    </div>
+                                )}
+
+                                {info.drugClasses?.length > 0 && (
+                                    <div className="section">
+                                        <div className="section-title">All Drug Classes</div>
+                                        <div className="class-badges">
+                                            {info.drugClasses.slice(0, 6).map((cls, i) => (
+                                                <span key={i} className="class-badge" title={cls.type}>
+                                                    {cls.name}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {info.indications && (
+                                    <div className="section">
+                                        <div className="section-title">Indications & Usage</div>
+                                        <Expandable title="View full indications">
+                                            {info.indications}
+                                        </Expandable>
+                                    </div>
+                                )}
+
+                                {info.similarDrugs?.length > 0 && (
+                                    <div className="section">
+                                        <div className="section-title">Similar Drugs</div>
+                                        <div className="similar-drugs">
+                                            {info.similarDrugs.slice(0, 6).map((d, i) => (
+                                                <button
+                                                    key={i}
+                                                    className="similar-drug-btn"
+                                                    onClick={() => onAddDrug(d.name)}
+                                                >
+                                                    + {d.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {activeTab === 'sideEffects' && (
+                            <>
+                                {info.sideEffects?.length > 0 && (
+                                    <div className="section">
+                                        <div className="section-title">Top Adverse Events (FAERS Reports)</div>
+                                        <div className="side-effects-chart">
+                                            {info.sideEffects.slice(0, 10).map((effect, i) => (
+                                                <div key={i} className="effect-row">
+                                                    <span className="effect-name">{effect.term}</span>
+                                                    <div className="effect-bar-container">
+                                                        <div
+                                                            className="effect-bar"
+                                                            style={{ width: `${(effect.count / maxCount) * 100}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="effect-count">{effect.count.toLocaleString()}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {info.adverseReactions && (
+                                    <div className="section">
+                                        <div className="section-title">Adverse Reactions (FDA Label)</div>
+                                        <Expandable title="View adverse reactions">
+                                            {info.adverseReactions}
+                                        </Expandable>
+                                    </div>
+                                )}
+
+                                {info.warnings && (
+                                    <div className="section">
+                                        <div className="section-title">Warnings</div>
+                                        <Expandable title="View warnings" isWarning>
+                                            {info.warnings}
+                                        </Expandable>
+                                    </div>
+                                )}
+
+                                {!info.sideEffects?.length && !info.adverseReactions && !info.warnings && (
+                                    <div className="no-data">No side effect data</div>
+                                )}
+                            </>
+                        )}
+
+                        {activeTab === 'interactions' && (
+                            <>
+                                {info.contraindications && (
+                                    <div className="section">
+                                        <div className="section-title">Contraindications</div>
+                                        <Expandable title="View contraindications">
+                                            {info.contraindications}
+                                        </Expandable>
+                                    </div>
+                                )}
+
+                                {info.interactions?.length > 0 ? (
+                                    <div className="section">
+                                        <div className="section-title">Known Drug Interactions</div>
+                                        {info.interactions.slice(0, 10).map((interaction, i) => (
+                                            <div key={i} className="interaction-item">
+                                                <div className="interaction-drugs">
+                                                    {interaction.drug}
+                                                    {interaction.severity && (
+                                                        <span className={`severity-badge severity-${interaction.severity.toLowerCase()}`}>
+                                                            {interaction.severity}
+                                                        </span>
+                                                    )}
+                                                    <span className="source-badge">{interaction.source}</span>
+                                                </div>
+                                                <div className="interaction-desc">{interaction.description}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    !info.contraindications && <div className="no-data">No interaction data available</div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // Symptom search results panel
+        function SymptomResultsPanel({ symptom, results, loading, onAddDrug, onClose }) {
+            if (!symptom) return null;
+
+            return (
+                <div className="symptom-results">
+                    <div className="symptom-results-header">
+                        <div>
+                            <div className="symptom-results-title">
+                                Drugs for: {symptom}
+                            </div>
+                            <div className="symptom-results-subtitle">
+                                {loading ? 'Searching...' : `${results.length} drugs found in FDA database`}
+                            </div>
+                        </div>
+                        <button className="close-results-btn" onClick={onClose}>
+                            Close
+                        </button>
+                    </div>
+
+                    {loading ? (
+                        <div className="loading">
+                            <div className="spinner"></div>
+                            Searching FDA labels for treatments...
+                        </div>
+                    ) : results.length > 0 ? (
+                        <div className="symptom-drugs-grid">
+                            {results.map((drug, i) => (
+                                <div key={i} className="symptom-drug-card">
+                                    <div className="symptom-drug-name">
+                                        {drug.genericName}
+                                        {drug.rxStatus && (
+                                            <span className={`badge ${drug.rxStatus === 'Rx' ? 'badge-rx' : 'badge-otc'}`}>
+                                                {drug.rxStatus}
+                                            </span>
+                                        )}
+                                    </div>
+                                    {drug.brandName && (
+                                        <div className="symptom-drug-brand">
+                                            Brand: {drug.brandName}
+                                        </div>
+                                    )}
+                                    <div className="symptom-drug-indication">
+                                        {drug.indication}
+                                    </div>
+                                    <div className="symptom-drug-actions">
+                                        <button
+                                            className="add-drug-btn"
+                                            onClick={() => onAddDrug(drug.genericName)}
+                                        >
+                                            + Add to Compare
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="no-data">No drugs found for this symptom in the FDA database</div>
+                    )}
+                </div>
+            );
+        }
+
+        // Cross-drug interaction panel
+        function CrossInteractionPanel({ drugs, interactions, loading, onRefresh }) {
+            if (drugs.length < 2) return null;
+
+            return (
+                <div className="cross-interaction-panel">
+                    <div className="cross-interaction-header">
+                        <div className="cross-interaction-title">
+                            ⚠️ Drug-Drug Interactions ({drugs.length} drugs selected)
+                        </div>
+                        <button className="refresh-btn" onClick={onRefresh}>
+                            🔄 Refresh
+                        </button>
+                    </div>
+
+                    {loading ? (
+                        <div className="loading">
+                            <div className="spinner"></div>
+                            Checking interactions...
+                        </div>
+                    ) : interactions.length > 0 ? (
+                        interactions.map((interaction, i) => (
+                            <div key={i} className="interaction-item">
+                                <div className="interaction-drugs">
+                                    {interaction.drugs.join(' ↔ ')}
+                                    {interaction.severity && (
+                                        <span className={`severity-badge severity-${interaction.severity.toLowerCase()}`}>
+                                            {interaction.severity}
+                                        </span>
+                                    )}
+                                    <span className="source-badge">{interaction.source}</span>
+                                </div>
+                                <div className="interaction-desc">{interaction.description}</div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="no-data">No interactions found between selected drugs</div>
+                    )}
+                </div>
+            );
+        }
+
+        // Main App Component
+        function App() {
+            const [query, setQuery] = useState('');
+            const [searchMode, setSearchMode] = useState('drug'); // 'drug' or 'symptom'
+            const [suggestions, setSuggestions] = useState([]);
+            const [selectedDrugs, setSelectedDrugs] = useState({});
+            const [crossInteractions, setCrossInteractions] = useState([]);
+            const [crossLoading, setCrossLoading] = useState(false);
+            const [showSuggestions, setShowSuggestions] = useState(false);
+            const [symptomResults, setSymptomResults] = useState([]);
+            const [symptomQuery, setSymptomQuery] = useState('');
+            const [symptomLoading, setSymptomLoading] = useState(false);
+            const [currentPage, setCurrentPage] = useState('about'); // 'about' or 'search'
+            const [rxFilter, setRxFilter] = useState('all'); // 'all', 'rx', 'otc'
+            const [classFilter, setClassFilter] = useState('all');
+            const [showFilters, setShowFilters] = useState(false);
+            const [allDrugClasses, setAllDrugClasses] = useState([]);
+            const [classSearchQuery, setClassSearchQuery] = useState('');
+            const [showClassDropdown, setShowClassDropdown] = useState(false);
+            const inputRef = useRef(null);
+            const filterRef = useRef(null);
+            const classSearchRef = useRef(null);
+
+            const debouncedQuery = useDebounce(query, 280);
+
+            // Fetch all drug classes on mount
+            useEffect(() => {
+                const fetchAllClasses = async () => {
+                    try {
+                        const res = await fetch(`${RXNAV_BASE}/rxclass/allClasses.json?classTypes=EPC`);
+                        const data = await res.json();
+                        const classes = data.rxclassMinConceptList?.rxclassMinConcept || [];
+                        const classNames = classes
+                            .map(c => c.className)
+                            .filter(Boolean)
+                            .sort();
+                        setAllDrugClasses(classNames);
+                    } catch (err) {
+                        console.error('Error fetching drug classes:', err);
+                    }
+                };
+                fetchAllClasses();
+            }, []);
+
+            // Fetch spelling suggestions
+            useEffect(() => {
+                if (debouncedQuery.length < 2) {
+                    setSuggestions([]);
+                    return;
+                }
+
+                const fetchSuggestions = async () => {
+                    try {
+                        const res = await fetch(
+                            `${RXNAV_BASE}/spellingsuggestions.json?name=${encodeURIComponent(debouncedQuery)}`
+                        );
+                        const data = await res.json();
+                        const suggestionList = data.suggestionGroup?.suggestionList?.suggestion || [];
+                        setSuggestions(suggestionList.slice(0, 8));
+                    } catch (err) {
+                        console.error('Error fetching suggestions:', err);
+                    }
+                };
+
+                fetchSuggestions();
+            }, [debouncedQuery]);
+
+            // Close filter dropdown when clicking outside
+            useEffect(() => {
+                const handleClickOutside = (event) => {
+                    if (filterRef.current && !filterRef.current.contains(event.target)) {
+                        setShowFilters(false);
+                    }
+                    if (classSearchRef.current && !classSearchRef.current.contains(event.target)) {
+                        setShowClassDropdown(false);
+                    }
+                };
+                document.addEventListener('mousedown', handleClickOutside);
+                return () => document.removeEventListener('mousedown', handleClickOutside);
+            }, []);
+
+            // Resolve RxCUI for a drug name
+            const resolveRxCUI = async (drugName) => {
+                // Try exact match first
+                let res = await fetch(
+                    `${RXNAV_BASE}/rxcui.json?name=${encodeURIComponent(drugName)}&search=1`
+                );
+                let data = await res.json();
+                let rxcui = data.idGroup?.rxnormId?.[0];
+
+                if (!rxcui) {
+                    // Fall back to approximate match
+                    res = await fetch(
+                        `${RXNAV_BASE}/approximateTerm.json?term=${encodeURIComponent(drugName)}`
+                    );
+                    data = await res.json();
+                    rxcui = data.approximateGroup?.candidate?.[0]?.rxcui;
+                }
+
+                return rxcui;
+            };
+
+            // Fetch all drug information
+            const fetchDrugInfo = async (drugName, rxcui) => {
+                const info = { rxcui };
+
+                try {
+                    // Fetch in parallel
+                    const [propsRes, relatedRes, classRes, labelRes, eventsRes, interactionsRes] = await Promise.allSettled([
+                        // RxNorm properties
+                        fetch(`${RXNAV_BASE}/rxcui/${rxcui}/properties.json`).then(r => r.json()),
+                        // Brand names
+                        fetch(`${RXNAV_BASE}/rxcui/${rxcui}/related.json?tty=SBD+GPCK+SBG+BN`).then(r => r.json()),
+                        // Drug classes
+                        fetch(`${RXNAV_BASE}/rxclass/class/byRxcui.json?rxcui=${rxcui}&relaSource=MEDRT+ATC+VA`).then(r => r.json()),
+                        // FDA label
+                        fetch(`${FDA_BASE}/label.json?search=openfda.generic_name:"${encodeURIComponent(drugName)}"&limit=1`).then(r => r.json()),
+                        // FAERS events
+                        fetch(`${FDA_BASE}/event.json?search=patient.drug.medicinalproduct:"${encodeURIComponent(drugName)}"&count=patient.reaction.reactionmeddrapt.exact&limit=15`).then(r => r.json()),
+                        // Interactions
+                        fetch(`${RXNAV_BASE}/interaction/interaction.json?rxcui=${rxcui}&sources=DrugBank+ONCHigh`).then(r => r.json())
+                    ]);
+
+                    // Process properties
+                    if (propsRes.status === 'fulfilled' && propsRes.value.properties) {
+                        info.canonicalName = propsRes.value.properties.name;
+                    }
+
+                    // Process brand names
+                    if (relatedRes.status === 'fulfilled') {
+                        const groups = relatedRes.value.relatedGroup?.conceptGroup || [];
+                        const brands = new Set();
+                        groups.forEach(g => {
+                            g.conceptProperties?.forEach(p => {
+                                if (p.name) brands.add(p.name.split(' ')[0]);
+                            });
+                        });
+                        info.brandNames = [...brands].slice(0, 5);
+                    }
+
+                    // Process drug classes
+                    if (classRes.status === 'fulfilled') {
+                        const classes = classRes.value.rxclassDrugInfoList?.rxclassDrugInfo || [];
+                        info.drugClasses = classes.map(c => ({
+                            name: c.rxclassMinConceptItem?.className,
+                            type: c.rxclassMinConceptItem?.classType,
+                            id: c.rxclassMinConceptItem?.classId
+                        })).filter(c => c.name);
+
+                        // Get primary class (prefer EPC > MOA > VA)
+                        const epc = info.drugClasses.find(c => c.type === 'EPC');
+                        const moa = info.drugClasses.find(c => c.type === 'MOA');
+                        const va = info.drugClasses.find(c => c.type === 'VA');
+                        const primaryClassObj = epc || moa || va || info.drugClasses[0];
+                        info.primaryClass = primaryClassObj?.name;
+
+                        // Fetch similar drugs from primary class
+                        if (primaryClassObj?.id) {
+                            try {
+                                const similarRes = await fetch(
+                                    `${RXNAV_BASE}/rxclass/classMembers.json?classId=${primaryClassObj.id}&relaSource=${primaryClassObj.type || 'MEDRT'}&ttys=IN`
+                                );
+                                const similarData = await similarRes.json();
+                                const members = similarData.drugMemberGroup?.drugMember || [];
+                                info.similarDrugs = members
+                                    .filter(m => m.minConcept?.name?.toLowerCase() !== drugName.toLowerCase())
+                                    .map(m => ({ name: m.minConcept?.name, rxcui: m.minConcept?.rxcui }))
+                                    .slice(0, 6);
+                            } catch (err) {
+                                console.error('Error fetching similar drugs:', err);
+                            }
+                        }
+                    }
+
+                    // Process FDA label
+                    if (labelRes.status === 'fulfilled' && labelRes.value.results?.[0]) {
+                        const label = labelRes.value.results[0];
+                        info.indications = label.indications_and_usage?.[0];
+                        info.adverseReactions = label.adverse_reactions?.[0];
+                        info.warnings = label.warnings?.[0] || label.warnings_and_cautions?.[0];
+                        info.contraindications = label.contraindications?.[0];
+                        info.route = label.openfda?.route?.[0];
+
+                        // Determine Rx/OTC status
+                        const productType = label.openfda?.product_type?.[0] || '';
+                        if (productType.includes('PRESCRIPTION')) {
+                            info.rxStatus = 'Rx';
+                        } else if (productType.includes('OTC')) {
+                            info.rxStatus = 'OTC';
+                        }
+                    }
+
+                    // Process FAERS events
+                    if (eventsRes.status === 'fulfilled' && eventsRes.value.results) {
+                        info.sideEffects = eventsRes.value.results.map(r => ({
+                            term: r.term,
+                            count: r.count
+                        }));
+                    }
+
+                    // Process interactions
+                    if (interactionsRes.status === 'fulfilled') {
+                        const groups = interactionsRes.value.interactionTypeGroup || [];
+                        const interactions = [];
+                        groups.forEach(g => {
+                            g.interactionType?.forEach(t => {
+                                t.interactionPair?.forEach(p => {
+                                    const otherDrug = p.interactionConcept?.find(
+                                        c => c.minConceptItem?.rxcui !== rxcui
+                                    );
+                                    interactions.push({
+                                        drug: otherDrug?.minConceptItem?.name || 'Unknown',
+                                        description: p.description,
+                                        severity: p.severity,
+                                        source: g.sourceName
+                                    });
+                                });
+                            });
+                        });
+                        info.interactions = interactions;
+                    }
+
+                } catch (err) {
+                    console.error('Error fetching drug info:', err);
+                }
+
+                return info;
+            };
+
+            // Search for drugs by symptom
+            const searchBySymptom = async (symptom) => {
+                setSymptomLoading(true);
+                setSymptomQuery(symptom);
+                setSymptomResults([]);
+                setQuery('');
+                setSuggestions([]);
+
+                try {
+                    // Search FDA labels for drugs with this symptom in indications
+                    const res = await fetch(
+                        `${FDA_BASE}/label.json?search=indications_and_usage:"${encodeURIComponent(symptom)}"&limit=20`
+                    );
+                    const data = await res.json();
+
+                    if (data.results) {
+                        const seen = new Set();
+                        const drugs = data.results
+                            .map(label => {
+                                const genericName = label.openfda?.generic_name?.[0] ||
+                                                   label.openfda?.substance_name?.[0] ||
+                                                   null;
+                                const brandName = label.openfda?.brand_name?.[0];
+                                const productType = label.openfda?.product_type?.[0] || '';
+
+                                let rxStatus = null;
+                                if (productType.includes('PRESCRIPTION')) {
+                                    rxStatus = 'Rx';
+                                } else if (productType.includes('OTC')) {
+                                    rxStatus = 'OTC';
+                                }
+
+                                // Get a snippet of the indication
+                                let indication = label.indications_and_usage?.[0] || '';
+                                if (indication.length > 200) {
+                                    indication = indication.substring(0, 200) + '...';
+                                }
+
+                                return {
+                                    genericName,
+                                    brandName,
+                                    rxStatus,
+                                    indication
+                                };
+                            })
+                            .filter(drug => {
+                                if (!drug.genericName || seen.has(drug.genericName.toLowerCase())) {
+                                    return false;
+                                }
+                                seen.add(drug.genericName.toLowerCase());
+                                return true;
+                            });
+
+                        setSymptomResults(drugs);
+                    }
+                } catch (err) {
+                    console.error('Error searching by symptom:', err);
+                } finally {
+                    setSymptomLoading(false);
+                }
+            };
+
+            // Clear symptom results
+            const clearSymptomResults = () => {
+                setSymptomQuery('');
+                setSymptomResults([]);
+            };
+
+            // Add a drug
+            const addDrug = async (drugName) => {
+                const key = drugName.toLowerCase();
+
+                // Duplicate prevention
+                if (selectedDrugs[key]) return;
+
+                setSelectedDrugs(prev => ({
+                    ...prev,
+                    [key]: { name: drugName, loading: true, info: null, error: null }
+                }));
+
+                setQuery('');
+                setSuggestions([]);
+                setShowSuggestions(false);
+
+                try {
+                    const rxcui = await resolveRxCUI(drugName);
+
+                    if (!rxcui) {
+                        setSelectedDrugs(prev => ({
+                            ...prev,
+                            [key]: { ...prev[key], loading: false, error: 'Drug not found in RxNorm database' }
+                        }));
+                        return;
+                    }
+
+                    const info = await fetchDrugInfo(drugName, rxcui);
+
+                    setSelectedDrugs(prev => ({
+                        ...prev,
+                        [key]: { ...prev[key], loading: false, info, rxcui }
+                    }));
+                } catch (err) {
+                    setSelectedDrugs(prev => ({
+                        ...prev,
+                        [key]: { ...prev[key], loading: false, error: 'Failed to fetch drug information' }
+                    }));
+                }
+            };
+
+            // Remove a drug
+            const removeDrug = (key) => {
+                setSelectedDrugs(prev => {
+                    const newDrugs = { ...prev };
+                    delete newDrugs[key];
+                    return newDrugs;
+                });
+            };
+
+            // Fetch cross-drug interactions
+            const fetchCrossInteractions = useCallback(async () => {
+                const drugsWithRxcui = Object.values(selectedDrugs).filter(d => d.rxcui);
+
+                if (drugsWithRxcui.length < 2) {
+                    setCrossInteractions([]);
+                    return;
+                }
+
+                setCrossLoading(true);
+
+                try {
+                    const rxcuis = drugsWithRxcui.map(d => d.rxcui).join('+');
+                    const res = await fetch(
+                        `${RXNAV_BASE}/interaction/list.json?rxcuis=${rxcuis}&sources=DrugBank+ONCHigh`
+                    );
+                    const data = await res.json();
+
+                    const interactions = [];
+                    const groups = data.fullInteractionTypeGroup || [];
+
+                    groups.forEach(g => {
+                        g.fullInteractionType?.forEach(t => {
+                            t.interactionPair?.forEach(p => {
+                                const drugs = p.interactionConcept?.map(c => c.minConceptItem?.name) || [];
+                                interactions.push({
+                                    drugs,
+                                    description: p.description,
+                                    severity: p.severity,
+                                    source: g.sourceName
+                                });
+                            });
+                        });
+                    });
+
+                    setCrossInteractions(interactions);
+                } catch (err) {
+                    console.error('Error fetching cross interactions:', err);
+                } finally {
+                    setCrossLoading(false);
+                }
+            }, [selectedDrugs]);
+
+            // Auto-fetch cross interactions when drugs change
+            useEffect(() => {
+                fetchCrossInteractions();
+            }, [Object.keys(selectedDrugs).join(',')]);
+
+            const drugKeys = Object.keys(selectedDrugs);
+
+            const filteredDrugKeys = drugKeys.filter(key => {
+                const drug = selectedDrugs[key];
+
+                // Filter by Rx status
+                if (rxFilter !== 'all') {
+                    const status = drug.info?.rxStatus;
+                    if (rxFilter === 'rx' && status !== 'Rx') return false;
+                    if (rxFilter === 'otc' && status !== 'OTC') return false;
+                }
+
+                // Filter by drug class
+                if (classFilter !== 'all') {
+                    const primaryClass = drug.info?.primaryClass;
+                    if (primaryClass !== classFilter) return false;
+                }
+
+                return true;
+            });
+            const hasNoDrugs = drugKeys.length === 0;
+
+            // Reset class filter if selected class is no longer available
+            useEffect(() => {
+                if (classFilter !== 'all' && allDrugClasses.length > 0 && !allDrugClasses.includes(classFilter)) {
+                    setClassFilter('all');
+                }
+            }, [allDrugClasses, classFilter]);
+
+            // Render About Page
+            if (currentPage === 'about') {
+                return (
+                    <div className="container">
+                        <AboutPage onNavigateToSearch={() => setCurrentPage('search')} />
+                    </div>
+                );
+            }
+
+            // Render Search Page
+            return (
+                <div className="container">
+                    <div className="nav-bar">
+                        <button className="nav-btn" onClick={() => setCurrentPage('about')}>
+                            ← Back to About
+                        </button>
+                    </div>
+
+                    <header>
+                        <h1>Drug Information Portal</h1>
+                        <p>Search for drugs or symptoms to view treatments, side effects, and interactions</p>
+                    </header>
+
+                    <div className="search-mode-toggle">
+                        <button
+                            className={`mode-btn ${searchMode === 'drug' ? 'active' : ''}`}
+                            onClick={() => { setSearchMode('drug'); clearSymptomResults(); }}
+                        >
+                            Search by Drug
+                        </button>
+                        <button
+                            className={`mode-btn ${searchMode === 'symptom' ? 'active' : ''}`}
+                            onClick={() => setSearchMode('symptom')}
+                        >
+                            Search by Symptom
+                        </button>
+                    </div>
+
+                    <div className="search-container">
+                        <div className="search-input-wrapper">
+                            <input
+                                ref={inputRef}
+                                type="text"
+                                className="search-input"
+                                placeholder={searchMode === 'drug'
+                                    ? "Search for a drug (e.g., Lisinopril, Metformin)..."
+                                    : "Search for a symptom (e.g., Headache, Anxiety)..."
+                                }
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                onFocus={() => setShowSuggestions(true)}
+                                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && query.trim()) {
+                                        if (searchMode === 'drug') {
+                                            addDrug(query.trim());
+                                        } else {
+                                            searchBySymptom(query.trim());
+                                        }
+                                    }
+                                }}
+                            />
+                            {showSuggestions && suggestions.length > 0 && searchMode === 'drug' && (
+                                <div className="suggestions">
+                                    {suggestions.map((s, i) => (
+                                        <div
+                                            key={i}
+                                            className="suggestion-item"
+                                            onClick={() => addDrug(s)}
+                                        >
+                                            {s}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="filter-container" ref={filterRef}>
+                            <button
+                                className={`filter-toggle-btn ${(rxFilter !== 'all' || classFilter !== 'all') ? 'has-filters' : ''}`}
+                                onClick={() => setShowFilters(!showFilters)}
+                            >
+                                Filter
+                                {(rxFilter !== 'all' || classFilter !== 'all') && (
+                                    <span className="filter-badge">
+                                        {(rxFilter !== 'all' ? 1 : 0) + (classFilter !== 'all' ? 1 : 0)}
+                                    </span>
+                                )}
+                                <span>{showFilters ? '▲' : '▼'}</span>
+                            </button>
+
+                            {showFilters && (
+                                <div className="filter-dropdown">
+                                    <div className="filter-section">
+                                        <div className="filter-section-title">Prescription Type</div>
+                                        <div className="filter-options">
+                                            <button
+                                                className={`filter-option-btn ${rxFilter === 'all' ? 'active' : ''}`}
+                                                onClick={() => setRxFilter('all')}
+                                            >
+                                                All
+                                            </button>
+                                            <button
+                                                className={`filter-option-btn ${rxFilter === 'rx' ? 'active' : ''}`}
+                                                onClick={() => setRxFilter('rx')}
+                                            >
+                                                Rx Only
+                                            </button>
+                                            <button
+                                                className={`filter-option-btn ${rxFilter === 'otc' ? 'active-otc' : ''}`}
+                                                onClick={() => setRxFilter('otc')}
+                                            >
+                                                OTC Only
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="filter-section">
+                                        <div className="filter-section-title">Drug Class</div>
+                                        {classFilter !== 'all' ? (
+                                            <div className="selected-class-tag">
+                                                <span>{classFilter}</span>
+                                                <button onClick={() => { setClassFilter('all'); setClassSearchQuery(''); }}>×</button>
+                                            </div>
+                                        ) : (
+                                            <div className="class-search-container" ref={classSearchRef}>
+                                                <input
+                                                    type="text"
+                                                    className="class-search-input"
+                                                    placeholder="Search or select a class..."
+                                                    value={classSearchQuery}
+                                                    onChange={(e) => setClassSearchQuery(e.target.value)}
+                                                    onFocus={() => setShowClassDropdown(true)}
+                                                />
+                                                {showClassDropdown && (
+                                                    <div className="class-dropdown">
+                                                        <div
+                                                            className="class-dropdown-item all-option"
+                                                            onClick={() => {
+                                                                setClassFilter('all');
+                                                                setClassSearchQuery('');
+                                                                setShowClassDropdown(false);
+                                                            }}
+                                                        >
+                                                            All Classes
+                                                        </div>
+                                                        {allDrugClasses
+                                                            .filter(cls => cls.toLowerCase().includes(classSearchQuery.toLowerCase()))
+                                                            .slice(0, 50)
+                                                            .map((cls, i) => (
+                                                                <div
+                                                                    key={i}
+                                                                    className="class-dropdown-item"
+                                                                    onClick={() => {
+                                                                        setClassFilter(cls);
+                                                                        setClassSearchQuery('');
+                                                                        setShowClassDropdown(false);
+                                                                    }}
+                                                                >
+                                                                    {cls}
+                                                                </div>
+                                                            ))
+                                                        }
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {(rxFilter !== 'all' || classFilter !== 'all') && (
+                                        <button
+                                            className="clear-filters-btn"
+                                            onClick={() => { setRxFilter('all'); setClassFilter('all'); }}
+                                        >
+                                            Clear All Filters
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="rx-key">
+                        <div className="rx-key-item">
+                            <span className="badge badge-rx">Rx</span>
+                            <span>Prescription required</span>
+                        </div>
+                        <div className="rx-key-item">
+                            <span className="badge badge-otc">OTC</span>
+                            <span>Over-the-counter</span>
+                        </div>
+                    </div>
+
+                    {searchMode === 'drug' && hasNoDrugs && !symptomQuery && (
+                        <div className="quick-drugs">
+                            {QUICK_DRUGS.map((drug, i) => (
+                                <button
+                                    key={i}
+                                    className="quick-drug-btn"
+                                    onClick={() => addDrug(drug)}
+                                >
+                                    {drug}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {searchMode === 'symptom' && !symptomQuery && (
+                        <div className="quick-symptoms">
+                            {QUICK_SYMPTOMS.map((symptom, i) => (
+                                <button
+                                    key={i}
+                                    className="quick-symptom-btn"
+                                    onClick={() => searchBySymptom(symptom)}
+                                >
+                                    {symptom}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    <SymptomResultsPanel
+                        symptom={symptomQuery}
+                        results={symptomResults}
+                        loading={symptomLoading}
+                        onAddDrug={addDrug}
+                        onClose={clearSymptomResults}
+                    />
+
+                    <CrossInteractionPanel
+                        drugs={drugKeys}
+                        interactions={crossInteractions}
+                        loading={crossLoading}
+                        onRefresh={fetchCrossInteractions}
+                    />
+
+                    <div className="drugs-grid">
+                        {filteredDrugKeys.map(key => (
+                            <DrugCard
+                                key={key}
+                                drug={selectedDrugs[key]}
+                                onRemove={() => removeDrug(key)}
+                                onAddDrug={addDrug}
+                            />
+                        ))}
+                        {drugKeys.length > 0 && filteredDrugKeys.length === 0 && (
+                            <div className="no-data" style={{gridColumn: '1 / -1'}}>
+                                No drugs match the selected filter
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="disclaimer">
+                        <h3>Important Disclaimers</h3>
+                        <ul>
+                            <li>FAERS report counts reflect submitted reports, not incidence rates. Common drugs appear more often. No causal relationship is implied.</li>
+                            <li>FDA label text is as submitted by manufacturers and may not reflect the most current approved labeling.</li>
+                            <li>RxNav interaction data is for educational and research purposes (DrugBank non-commercial license).</li>
+                            <li>This product uses publicly available data from the U.S. National Library of Medicine.</li>
+                            <li><strong>This is not a substitute for professional medical advice.</strong></li>
+                        </ul>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
