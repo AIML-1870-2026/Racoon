@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error Reference - LLM Switchboard</title>
+    <style>
+        :root {
+            --bg-primary: #0f0f0f;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #252525;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-muted: #666666;
+            --border-color: #333333;
+            --accent-color: #6366f1;
+            --success-color: #22c55e;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent-color), #a855f7);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .back-link {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .section {
+            margin-bottom: 2.5rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title .icon {
+            font-size: 1.25rem;
+        }
+
+        .error-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .error-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .error-id {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--error-color);
+        }
+
+        .http-code {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            color: var(--text-muted);
+        }
+
+        .error-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .error-message {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .error-resolution {
+            font-size: 0.8125rem;
+            padding: 0.75rem;
+            background: rgba(99, 102, 241, 0.1);
+            border-left: 3px solid var(--accent-color);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .error-resolution strong {
+            color: var(--accent-color);
+        }
+
+        /* CORS Section */
+        .info-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-box h3 {
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .info-box p {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .info-box p:last-child {
+            margin-bottom: 0;
+        }
+
+        .code-block {
+            background: var(--bg-tertiary);
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.8125rem;
+            overflow-x: auto;
+            margin: 0.75rem 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--bg-tertiary);
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .status-yes {
+            color: var(--success-color);
+        }
+
+        .status-no {
+            color: var(--error-color);
+        }
+
+        .status-partial {
+            color: var(--warning-color);
+        }
+
+        .warning-box {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid var(--warning-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .warning-box strong {
+            color: var(--warning-color);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="index.html" class="logo">
+            <div class="logo-icon">&#9876;</div>
+            <span>LLM Switchboard</span>
+        </a>
+        <a href="index.html" class="back-link">
+            &#8592; Back to Switchboard
+        </a>
+    </header>
+
+    <div class="container">
+        <h1>Error Reference</h1>
+        <p class="subtitle">Understanding and resolving common API errors</p>
+
+        <!-- CORS Section -->
+        <div class="section" id="cors">
+            <h2 class="section-title"><span class="icon">&#128683;</span> CORS Limitations</h2>
+
+            <div class="error-card">
+                <div class="error-header">
+                    <span class="error-id">CORS_BLOCKED</span>
+                    <span class="http-code">-</span>
+                </div>
+                <div class="error-title">Request Blocked</div>
+                <div class="error-message">
+                    The request was blocked by the browser's CORS policy. This is a browser security feature, not an error with your API key.
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h3>What is CORS?</h3>
+                <p>
+                    CORS (Cross-Origin Resource Sharing) is a browser security mechanism that restricts web pages from making HTTP requests to a domain different from the one that served the page. When this app tries to call an API on a different domain, the browser enforces CORS rules.
+                </p>
+            </div>
+
+            <div class="info-box">
+                <h3>Why does it block the request?</h3>
+                <p>
+                    Before sending the actual API call, the browser sends a preflight OPTIONS request asking: "Do you allow requests from this origin?" The API server must respond with headers like:
+                </p>
+                <div class="code-block">
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Headers: Authorization, Content-Type
+                </div>
+                <p>
+                    If the server doesn't include these headers, the browser blocks the request entirely - even if your API key is correct.
+                </p>
+            </div>
+
+            <div class="info-box">
+                <h3>Which providers are affected?</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Provider</th>
+                            <th>Browser-Direct Calls</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Anthropic</td>
+                            <td class="status-no">Blocked</td>
+                            <td>Requires a backend proxy</td>
+                        </tr>
+                        <tr>
+                            <td>OpenAI</td>
+                            <td class="status-no">Blocked</td>
+                            <td>No CORS support for browser requests</td>
+                        </tr>
+                        <tr>
+                            <td>Google Gemini</td>
+                            <td class="status-partial">Partial</td>
+                            <td>Some endpoints may work; behavior varies</td>
+                        </tr>
+                        <tr>
+                            <td>Mistral</td>
+                            <td class="status-no">Blocked</td>
+                            <td>Backend-only API</td>
+                        </tr>
+                        <tr>
+                            <td>Meta (Groq/Together)</td>
+                            <td class="status-partial">Varies</td>
+                            <td>Depends on hosting provider's CORS policy</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="info-box">
+                <h3>How to resolve CORS issues</h3>
+                <p><strong>Option 1: Proxy Mode (Recommended)</strong></p>
+                <p>
+                    Route all API requests through a lightweight backend proxy server. Configure the proxy URL in Settings. The proxy forwards requests to the provider and returns responses to your browser.
+                </p>
+                <p style="margin-top: 1rem;"><strong>Option 2: Local Proxy / Desktop Mode</strong></p>
+                <p>
+                    If running locally, some providers permit requests from localhost origins. A local proxy (Express, FastAPI, etc.) on the same machine can forward requests without triggering CORS.
+                </p>
+
+                <div class="warning-box">
+                    <strong>Security Warning:</strong> When using a proxy, ensure it is a server you control. Never route your API keys through a third-party proxy service you do not trust, as the proxy can read your keys and request payloads.
+                </div>
+            </div>
+        </div>
+
+        <!-- Authentication Errors -->
+        <div class="section" id="auth">
+            <h2 class="section-title"><span class="icon">&#128274;</span> Authentication Errors</h2>
+
+            <div class="error-card">
+                <div class="error-header">
+                    <span class="error-id">AUTH_INVALID_KEY</span>
+                    <span class="http-code">HTTP 401</span>
+                </div>
+                <div class="error-title">Invalid API Key</div>
+                <div class="error-message">
+                    The key provided for the selected provider was rejected. This typically means the API key is incorrect, has been revoked, or was never valid.
+                </div>
+                <div class="error-resolution">
+                    <strong>Resolution:</strong> Double-check that you've copied the complete API key from your provider's dashboard. Ensure there are no extra spaces. If the key was recently created, wait a few minutes and try again.
+                </div>
+            </div>
+
+            <div class="error-card">
+                <div class="error-header">
+                    <span class="error-id">AUTH_INSUFFICIENT_PERMISSIONS</span>
+                    <span class="http-code">HTTP 403</span>
+                </div>
+                <div class="error-title">Access Denied</div>
+                <div class="error-message">
+                    Your API key does not have permission to use this model or endpoint. Some models require specific access tiers or permissions.
+                </div>
+                <div class="error-resolution">
+                    <strong>Resolution:</strong> Check your account's tier or feature access at the provider's dashboard. Some models (like GPT-4, Claude Opus) may require paid plans or explicit access grants.
+                </div>
+            </div>
+        </div>
+
+        <!-- Rate Limiting Errors -->
+        <div class="section" id="rate-limit">
+            <h2 class="section-title"><span class="icon">&#9203;</span> Rate Limiting & Quota Errors</h2>
+
+            <div class="error-card">
+                <div class="error-header">
+                    <span class="error-id">RATE_LIMIT_REQUESTS</span>
+                    <span class="http-code">HTTP 429</span>
+                </div>
+                <div class="error-title">Too Many Requests</div>
+                <div class="error-message">
+                    You've exceeded the request rate limit for the provider. Each provider has limits on how many requests you can make per minute.
+                </div>
+                <div class="error-resolution">
+                    <strong>Resolution:</strong> Wait a moment before retrying. Consider reducing request frequency or implementing request queuing in your workflow.
+                </div>
+            </div>
+
+            <div class="error-card">
+                <div class="error-header">
+                    <span class="error-id">RATE_LIMIT_TOKENS</span>
+                    <span class="http-code">HTTP 429</span>
+                </div>
+                <div class="error-title">Token Quota Exceeded</div>
+                <div class="error-message">
+                    You've hit the per-minute token limit. This is separate from request limits and applies to the total tokens processed.
+                </div>
+                <div class="error-resolution">
+                    <strong>Resolution:</strong> Try reducing Max Tokens or simplify your prompt. Wait for your token quota to reset (usually per minute).
+                </div>
+            </div>
+
+            <div class="error-card">
+                <div class="error-header">
+                    <span class="error-id">QUOTA_EXHAUSTED</span>
+                    <span class="http-code">HTTP 402</span>
+                </div>
+                <div class="error-title">Account Quota Exhausted</div>
+                <div class="error-message">
+                    Your account has no remaining credits or has hit its monthly usage cap.
+                </div>
+                <div class="error-resolution">
+                    <strong>Resolution:</strong> Add credits to your account or upgrade your plan at the provider's billing page.
+                </div>
+            </div>
+        </div>
+
+        <!-- Request Errors -->
+        <div class="section" id="request">
+            <h2 class="section-title"><span class="icon">&#9888;</span> Request Errors</h2>
+
+            <div class="error-card">
+                <div class="error-header">
+                    <span class="error-id">INVALID_REQUEST_BODY</span>
+                    <span class="http-code">HTTP 400</span>
+                </div>
+                <div class="error-title">Bad Request</div>
+                <div class="error-message">
+                    The request was malformed. This may be caused by an invalid schema, an unsupported parameter for this model, or a missing required field.
+                </div>
+                <div class="error-resolution">
+                    <strong>Resolution:</strong> Check your custom schema for JSON syntax errors. Ensure all required fields are provided. Some parameters may not be supported by all models.
+                </div>
+            </div>
+
+            <div class="error-card">
+                <div class="error-header">
+                    <span class="error-id">CONTEXT_LENGTH_EXCEEDED</span>
+                    <span class="http-code">HTTP 400</span>
+                </div>
+                <div class="error-title">Prompt Too Long</div>
+                <div class="error-message">
+                    Your prompt exceeds the context window for the selected model. Each model has a maximum number of tokens it can process.
+                </div>
+                <div class="error-resolution">
+                    <strong>Resolution:</strong> Shorten your input text or switch to a model with a larger context window (e.g., Gemini 2.5 Pro with 1M tokens, or Claude with 200K tokens).
+                </div>
+            </div>
+
+            <div class="error-card">
+                <div class="error-header">
+                    <span class="error-id">INVALID_MODEL</span>
+                    <span class="http-code">HTTP 400</span>
+                </div>
+                <div class="error-title">Unknown Model</div>
+                <div class="error-message">
+                    The selected model ID is not recognized by the provider. The model may have been deprecated or the ID is incorrect.
+                </div>
+                <div class="error-resolution">
+                    <strong>Resolution:</strong> Check that the model ID is spelled correctly. For custom providers, verify the model name matches what the API expects.
+                </div>
+            </div>
+
+            <div class="error-card">
+                <div class="error-header">
+                    <span class="error-id">SCHEMA_PARSE_FAILURE</span>
+                    <span class="http-code">HTTP 422</span>
+                </div>
+                <div class="error-title">Response Parse Error</div>
+                <div class="error-message">
+                    The model returned a response that could not be parsed as valid JSON. This happens when using structured output mode but the model doesn't return valid JSON.
+                </div>
+                <div class="error-resolution">
+                    <strong>Resolution:</strong> Try adjusting your schema or adding stricter formatting instructions in your system prompt. Some models follow JSON schemas more reliably than others.
+                </div>
+            </div>
+        </div>
+
+        <!-- Server & Network Errors -->
+        <div class="section" id="network">
+            <h2 class="section-title"><span class="icon">&#127760;</span> Server & Network Errors</h2>
+
+            <div class="error-card">
+                <div class="error-header">
+                    <span class="error-id">PROVIDER_SERVER_ERROR</span>
+                    <span class="http-code">HTTP 500</span>
+                </div>
+                <div class="error-title">Provider Error</div>
+                <div class="error-message">
+                    The provider's API returned an internal server error. This is not caused by your request.
+                </div>
+                <div class="error-resolution">
+                    <strong>Resolution:</strong> Wait a few moments and retry. Check the provider's status page for any ongoing incidents.
+                </div>
+            </div>
+
+            <div class="error-card">
+                <div class="error-header">
+                    <span class="error-id">PROVIDER_UNAVAILABLE</span>
+                    <span class="http-code">HTTP 503</span>
+                </div>
+                <div class="error-title">Service Unavailable</div>
+                <div class="error-message">
+                    The provider is temporarily unavailable or undergoing maintenance.
+                </div>
+                <div class="error-resolution">
+                    <strong>Resolution:</strong> Check the provider's status page and retry shortly. Consider using a different provider temporarily.
+                </div>
+            </div>
+
+            <div class="error-card">
+                <div class="error-header">
+                    <span class="error-id">NETWORK_TIMEOUT</span>
+                    <span class="http-code">-</span>
+                </div>
+                <div class="error-title">Request Timed Out</div>
+                <div class="error-message">
+                    No response was received within the configured timeout period.
+                </div>
+                <div class="error-resolution">
+                    <strong>Resolution:</strong> Check your internet connection. You can increase the timeout in Settings. For long prompts, consider reducing Max Tokens.
+                </div>
+            </div>
+
+            <div class="error-card">
+                <div class="error-header">
+                    <span class="error-id">NETWORK_OFFLINE</span>
+                    <span class="http-code">-</span>
+                </div>
+                <div class="error-title">No Internet Connection</div>
+                <div class="error-message">
+                    Your device appears to be offline.
+                </div>
+                <div class="error-resolution">
+                    <strong>Resolution:</strong> Restore your internet connection and retry.
+                </div>
+            </div>
+        </div>
+
+        <!-- Application Errors -->
+        <div class="section" id="app">
+            <h2 class="section-title"><span class="icon">&#128736;</span> Application Errors</h2>
+
+            <div class="error-card">
+                <div class="error-header">
+                    <span class="error-id">NO_API_KEY</span>
+                    <span class="http-code">-</span>
+                </div>
+                <div class="error-title">No API Key Set</div>
+                <div class="error-message">
+                    You haven't entered an API key for the selected provider.
+                </div>
+                <div class="error-resolution">
+                    <strong>Resolution:</strong> Add your API key in the API Keys panel. You can get keys from each provider's developer console.
+                </div>
+            </div>
+
+            <div class="error-card">
+                <div class="error-header">
+                    <span class="error-id">NO_MODEL_SELECTED</span>
+                    <span class="http-code">-</span>
+                </div>
+                <div class="error-title">No Model Selected</div>
+                <div class="error-message">
+                    Please select a model before sending your request.
+                </div>
+                <div class="error-resolution">
+                    <strong>Resolution:</strong> Choose a provider and model from the Model Selection panel.
+                </div>
+            </div>
+
+            <div class="error-card">
+                <div class="error-header">
+                    <span class="error-id">EMPTY_PROMPT</span>
+                    <span class="http-code">-</span>
+                </div>
+                <div class="error-title">Prompt is Empty</div>
+                <div class="error-message">
+                    The User Message field cannot be blank.
+                </div>
+                <div class="error-resolution">
+                    <strong>Resolution:</strong> Enter your prompt in the User Message field, or select an example prompt to get started.
+                </div>
+            </div>
+
+            <div class="error-card">
+                <div class="error-header">
+                    <span class="error-id">INVALID_JSON_SCHEMA</span>
+                    <span class="http-code">-</span>
+                </div>
+                <div class="error-title">Invalid Schema</div>
+                <div class="error-message">
+                    Your custom schema contains a JSON syntax error.
+                </div>
+                <div class="error-resolution">
+                    <strong>Resolution:</strong> Check the schema editor for highlighted errors. Ensure proper JSON formatting with matching brackets and quotes.
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
