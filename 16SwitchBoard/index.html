@@ -256,7 +256,6 @@
         }
 
         input[type="text"],
-        input[type="password"],
         input[type="number"],
         textarea,
         select {
@@ -268,6 +267,16 @@
             color: var(--text-primary);
             font-size: 0.875rem;
             font-family: inherit;
+        }
+
+        .api-key-input {
+            -webkit-text-security: disc;
+            text-security: disc;
+        }
+
+        .api-key-input.visible {
+            -webkit-text-security: none;
+            text-security: none;
         }
 
         input:focus,
@@ -1084,7 +1093,7 @@
                             <div class="form-group">
                                 <label>Anthropic API Key</label>
                                 <div class="api-key-row">
-                                    <input type="password" id="key-anthropic" placeholder="sk-ant-...">
+                                    <input type="text" id="key-anthropic" class="api-key-input" placeholder="sk-ant-..." autocomplete="off" data-lpignore="true">
                                     <button type="button" class="toggle-visibility hidden" onclick="toggleKeyVisibility('anthropic')" title="Show"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle><line class="slash" x1="2" y1="2" x2="22" y2="22"></line></svg></button>
                                     <span class="status-badge no-key" id="status-anthropic">- No key</span>
                                 </div>
@@ -1101,7 +1110,7 @@
                             <div class="form-group">
                                 <label>OpenAI API Key</label>
                                 <div class="api-key-row">
-                                    <input type="password" id="key-openai" placeholder="sk-...">
+                                    <input type="text" id="key-openai" class="api-key-input" placeholder="sk-..." autocomplete="off" data-lpignore="true">
                                     <button type="button" class="toggle-visibility hidden" onclick="toggleKeyVisibility('openai')" title="Show"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle><line class="slash" x1="2" y1="2" x2="22" y2="22"></line></svg></button>
                                     <span class="status-badge no-key" id="status-openai">- No key</span>
                                 </div>
@@ -1118,7 +1127,7 @@
                             <div class="form-group">
                                 <label>Google AI API Key</label>
                                 <div class="api-key-row">
-                                    <input type="password" id="key-google" placeholder="AIza...">
+                                    <input type="text" id="key-google" class="api-key-input" placeholder="AIza..." autocomplete="off" data-lpignore="true">
                                     <button type="button" class="toggle-visibility hidden" onclick="toggleKeyVisibility('google')" title="Show"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle><line class="slash" x1="2" y1="2" x2="22" y2="22"></line></svg></button>
                                     <span class="status-badge no-key" id="status-google">- No key</span>
                                 </div>
@@ -1135,7 +1144,7 @@
                             <div class="form-group">
                                 <label>Groq API Key (for Meta models)</label>
                                 <div class="api-key-row">
-                                    <input type="password" id="key-meta" placeholder="gsk_...">
+                                    <input type="text" id="key-meta" class="api-key-input" placeholder="gsk_..." autocomplete="off" data-lpignore="true">
                                     <button type="button" class="toggle-visibility hidden" onclick="toggleKeyVisibility('meta')" title="Show"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle><line class="slash" x1="2" y1="2" x2="22" y2="22"></line></svg></button>
                                     <span class="status-badge no-key" id="status-meta">- No key</span>
                                 </div>
@@ -1152,7 +1161,7 @@
                             <div class="form-group">
                                 <label>Mistral API Key</label>
                                 <div class="api-key-row">
-                                    <input type="password" id="key-mistral" placeholder="...">
+                                    <input type="text" id="key-mistral" class="api-key-input" placeholder="..." autocomplete="off" data-lpignore="true">
                                     <button type="button" class="toggle-visibility hidden" onclick="toggleKeyVisibility('mistral')" title="Show"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle><line class="slash" x1="2" y1="2" x2="22" y2="22"></line></svg></button>
                                     <span class="status-badge no-key" id="status-mistral">- No key</span>
                                 </div>
@@ -1189,7 +1198,7 @@
                             <div class="form-group">
                                 <label>API Key</label>
                                 <div class="api-key-row">
-                                    <input type="password" id="key-custom" placeholder="Your API key...">
+                                    <input type="text" id="key-custom" class="api-key-input" placeholder="Your API key..." autocomplete="off" data-lpignore="true">
                                     <button type="button" class="toggle-visibility hidden" onclick="toggleKeyVisibility('custom')" title="Show"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle><line class="slash" x1="2" y1="2" x2="22" y2="22"></line></svg></button>
                                     <span class="status-badge no-key" id="status-custom">- No key</span>
                                 </div>
@@ -1404,7 +1413,7 @@
             <!-- Error Pop-up Notification -->
             <div class="error-popup" id="errorPopup">
                 <span class="error-popup-icon">&#9888;</span>
-                <span class="error-popup-text">Oh no! Looks like an error has occurred. Click <a href="errors.html" id="errorPopupLink" target="_blank">here</a> to learn more about it.</span>
+                <span class="error-popup-text">Oh no! Looks like an error has occurred. <a href="errors.html" id="errorPopupLink" target="_blank">View the error guide</a> for help.</span>
                 <button class="error-popup-close" onclick="dismissErrorPopup()">&times;</button>
             </div>
 
@@ -1842,14 +1851,14 @@
             const input = document.getElementById(`key-${provider}`);
             const btn = input.nextElementSibling;
 
-            if (input.type === 'password') {
-                input.type = 'text';
-                btn.classList.remove('hidden');
-                btn.title = 'Hide';
-            } else {
-                input.type = 'password';
+            if (input.classList.contains('visible')) {
+                input.classList.remove('visible');
                 btn.classList.add('hidden');
                 btn.title = 'Show';
+            } else {
+                input.classList.add('visible');
+                btn.classList.remove('hidden');
+                btn.title = 'Hide';
             }
         }
 
