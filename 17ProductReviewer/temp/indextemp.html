@@ -1,0 +1,2877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Switchboard</title>
+    <style>
+        :root {
+            --bg-primary: #0f0f0f;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #252525;
+            --bg-hover: #2a2a2a;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-muted: #666666;
+            --border-color: #333333;
+            --accent-color: #6366f1;
+            --accent-hover: #5558e3;
+            --success-color: #22c55e;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --anthropic-color: #d4a574;
+            --openai-color: #10a37f;
+            --google-color: #4285f4;
+            --meta-color: #0668E1;
+            --mistral-color: #ff7000;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-tertiary: #e8e8e8;
+            --bg-hover: #e0e0e0;
+            --text-primary: #1a1a1a;
+            --text-secondary: #555555;
+            --text-muted: #888888;
+            --border-color: #d0d0d0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent-color), #a855f7);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: var(--bg-hover);
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+
+        /* Main Layout */
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            height: calc(100vh - 60px);
+        }
+
+        @media (max-width: 1024px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr;
+            }
+        }
+
+        /* Panels */
+        .panel {
+            padding: 1.5rem;
+            overflow-y: auto;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .panel:last-child {
+            border-right: none;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        /* Sections */
+        .section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .section-header {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .section-header:hover {
+            background: var(--bg-hover);
+        }
+
+        .section-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-content {
+            padding: 1rem;
+        }
+
+        .section-content.collapsed {
+            display: none;
+        }
+
+        .chevron {
+            transition: transform 0.2s;
+        }
+
+        .chevron.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        /* Provider Tabs */
+        .provider-tabs {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .provider-tab {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .provider-tab:hover {
+            background: var(--bg-hover);
+        }
+
+        .provider-tab.active {
+            border-color: var(--accent-color);
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .provider-tab[data-provider="anthropic"].active { background: var(--anthropic-color); border-color: var(--anthropic-color); }
+        .provider-tab[data-provider="openai"].active { background: var(--openai-color); border-color: var(--openai-color); }
+        .provider-tab[data-provider="google"].active { background: var(--google-color); border-color: var(--google-color); }
+        .provider-tab[data-provider="meta"].active { background: var(--meta-color); border-color: var(--meta-color); }
+        .provider-tab[data-provider="mistral"].active { background: var(--mistral-color); border-color: var(--mistral-color); }
+        .provider-tab[data-provider="custom"].active { background: var(--accent-color); border-color: var(--accent-color); }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.375rem;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 0.625rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            font-family: inherit;
+        }
+
+        .api-key-input {
+            -webkit-text-security: disc;
+            text-security: disc;
+        }
+
+        .api-key-input.visible {
+            -webkit-text-security: none;
+            text-security: none;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.8125rem;
+        }
+
+        /* API Key Row */
+        .api-key-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .api-key-row input {
+            flex: 1;
+        }
+
+        .toggle-visibility {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            line-height: 1;
+            transition: color 0.2s;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+        }
+
+        .toggle-visibility:hover {
+            color: var(--text-primary);
+        }
+
+        .toggle-visibility svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .toggle-visibility .slash {
+            display: none;
+        }
+
+        .toggle-visibility.hidden .slash {
+            display: block;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.6875rem;
+            font-weight: 500;
+        }
+
+        .status-badge.no-key { background: var(--bg-tertiary); color: var(--text-muted); }
+        .status-badge.saved { background: rgba(245, 158, 11, 0.2); color: var(--warning-color); }
+        .status-badge.active { background: rgba(34, 197, 94, 0.2); color: var(--success-color); }
+        .status-badge.invalid { background: rgba(239, 68, 68, 0.2); color: var(--error-color); }
+
+        /* Model Select */
+        .model-select-container {
+            margin-top: 1rem;
+        }
+
+        .model-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .model-context {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Slider */
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--bg-tertiary);
+            border: none;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+        }
+
+        .slider-value {
+            min-width: 3rem;
+            text-align: right;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        /* Example Prompts */
+        .example-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .example-card {
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .example-card:hover {
+            border-color: var(--accent-color);
+            background: var(--bg-hover);
+        }
+
+        .example-card.selected {
+            border-color: var(--accent-color);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .example-title {
+            font-size: 0.8125rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .example-desc {
+            font-size: 0.6875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Output Mode Tabs */
+        .output-tabs {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+            background: var(--bg-tertiary);
+            padding: 0.25rem;
+            border-radius: 8px;
+        }
+
+        .output-tab {
+            flex: 1;
+            padding: 0.5rem;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .output-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .output-tab.active {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        /* Schema Templates */
+        .schema-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        .schema-card {
+            padding: 0.625rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.75rem;
+        }
+
+        .schema-card:hover {
+            border-color: var(--accent-color);
+        }
+
+        .schema-card.active {
+            border-color: var(--accent-color);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        /* Custom Schema Editor */
+        .schema-editor {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.75rem;
+            min-height: 150px;
+        }
+
+        /* Response Panel */
+        .response-panel {
+            background: var(--bg-primary);
+        }
+
+        .response-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            font-size: 0.75rem;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .meta-label {
+            color: var(--text-muted);
+        }
+
+        .meta-value {
+            font-weight: 500;
+        }
+
+        .model-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .model-badge.anthropic { background: rgba(212, 165, 116, 0.2); color: var(--anthropic-color); }
+        .model-badge.openai { background: rgba(16, 163, 127, 0.2); color: var(--openai-color); }
+        .model-badge.google { background: rgba(66, 133, 244, 0.2); color: var(--google-color); }
+        .model-badge.meta { background: rgba(6, 104, 225, 0.2); color: var(--meta-color); }
+        .model-badge.mistral { background: rgba(255, 112, 0, 0.2); color: var(--mistral-color); }
+        .model-badge.custom { background: rgba(99, 102, 241, 0.2); color: var(--accent-color); }
+
+        /* Response Content */
+        .response-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            min-height: 200px;
+            position: relative;
+        }
+
+        .response-content pre {
+            padding: 1rem;
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.8125rem;
+            line-height: 1.6;
+        }
+
+        .response-content .markdown-content {
+            padding: 1rem;
+        }
+
+        .response-content .markdown-content h1,
+        .response-content .markdown-content h2,
+        .response-content .markdown-content h3 {
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .response-content .markdown-content p {
+            margin-bottom: 0.75rem;
+        }
+
+        .response-content .markdown-content code {
+            background: var(--bg-tertiary);
+            padding: 0.125rem 0.375rem;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.875em;
+        }
+
+        .response-content .markdown-content pre code {
+            display: block;
+            padding: 1rem;
+            overflow-x: auto;
+        }
+
+        .response-content .markdown-content ul,
+        .response-content .markdown-content ol {
+            margin-left: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        /* JSON Tree */
+        .json-tree {
+            padding: 1rem;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.8125rem;
+        }
+
+        .json-key { color: #f472b6; }
+        .json-string { color: #a3e635; }
+        .json-number { color: #60a5fa; }
+        .json-boolean { color: #f59e0b; }
+        .json-null { color: #6b7280; }
+
+        .json-collapsible {
+            cursor: pointer;
+        }
+
+        .json-collapsible::before {
+            content: '▼ ';
+            font-size: 0.625rem;
+        }
+
+        .json-collapsible.collapsed::before {
+            content: '▶ ';
+        }
+
+        /* Table Response */
+        .response-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8125rem;
+        }
+
+        .response-table th,
+        .response-table td {
+            padding: 0.625rem 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .response-table th {
+            background: var(--bg-tertiary);
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .response-table tr:hover td {
+            background: var(--bg-hover);
+        }
+
+        /* Response Actions */
+        .response-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        /* Error Banner */
+        .error-banner {
+            padding: 1rem;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--error-color);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .error-banner.show {
+            display: block;
+        }
+
+        .error-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .error-title {
+            font-weight: 600;
+            color: var(--error-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .error-dismiss {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.25rem;
+        }
+
+        .error-popup {
+            display: none;
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.25rem;
+            max-width: 400px;
+            background: var(--panel-bg);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 107, 107, 0.4);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease-out;
+            z-index: 1000;
+        }
+
+        .error-popup.show {
+            display: flex;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .error-popup.fade-out {
+            animation: fadeOut 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+        }
+
+        .error-popup-icon {
+            font-size: 1.5rem;
+            color: #ff6b6b;
+        }
+
+        .error-popup-text {
+            flex: 1;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+        }
+
+        .error-popup-text a {
+            color: #ff6b6b;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+        .error-popup-text a:hover {
+            color: #ff8a8a;
+        }
+
+        .error-popup-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            line-height: 1;
+        }
+
+        .error-popup-close:hover {
+            color: var(--text-primary);
+        }
+
+        .error-message {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Loading State */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 0.875rem;
+        }
+
+        /* Settings Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+
+        .modal-content {
+            padding: 1.5rem;
+        }
+
+        /* Security Notice */
+        .security-notice {
+            padding: 0.75rem;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 1rem;
+        }
+
+        /* Compare Mode */
+        .compare-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .compare-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .compare-header {
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .compare-header .model-badge {
+            font-size: 0.75rem;
+        }
+
+        .compare-meta {
+            font-size: 0.625rem;
+            color: var(--text-muted);
+        }
+
+        .compare-body {
+            padding: 0.75rem;
+            flex: 1;
+            overflow-y: auto;
+            max-height: 400px;
+            font-size: 0.8125rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .compare-body.loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+        }
+
+        .compare-body.error {
+            color: var(--error-color);
+        }
+
+        /* Compare Selection */
+        .compare-selection {
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .compare-selection-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+        }
+
+        .compare-models-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .compare-model-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .compare-model-option:hover {
+            border-color: var(--accent-color);
+        }
+
+        .compare-model-option.selected {
+            border-color: var(--accent-color);
+            background: rgba(99, 102, 241, 0.15);
+        }
+
+        .compare-model-option.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .compare-model-option input[type="checkbox"] {
+            accent-color: var(--accent-color);
+        }
+
+        .compare-provider-group {
+            margin-bottom: 0.75rem;
+        }
+
+        .compare-provider-label {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.375rem;
+        }
+
+        /* Toggle Switch */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .toggle {
+            position: relative;
+            width: 40px;
+            height: 22px;
+            background: var(--bg-tertiary);
+            border-radius: 11px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .toggle.active {
+            background: var(--accent-color);
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+
+        .toggle.active::after {
+            transform: translateX(18px);
+        }
+
+        /* Request Metadata */
+        .request-metadata {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.75rem;
+            display: none;
+        }
+
+        .request-metadata.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">&#9876;</div>
+            <span>LLM Switchboard</span>
+        </div>
+        <div class="header-actions">
+            <a href="errors.html" class="btn">Error Guide</a>
+            <button class="btn" id="historyBtn">History</button>
+            <button class="btn" id="settingsBtn">Settings</button>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- Left Panel: Input -->
+        <div class="panel">
+            <!-- API Keys Section -->
+            <div class="section" id="apiKeysSection">
+                <div class="section-header" onclick="toggleSection('apiKeysSection')">
+                    <div class="section-title">
+                        <span>API Keys</span>
+                    </div>
+                    <span class="chevron">&#9660;</span>
+                </div>
+                <div class="section-content">
+                    <div class="provider-tabs" id="providerTabs">
+                        <button class="provider-tab active" data-provider="anthropic">Anthropic</button>
+                        <button class="provider-tab" data-provider="openai">OpenAI</button>
+                        <button class="provider-tab" data-provider="google">Google</button>
+                        <button class="provider-tab" data-provider="meta">Meta</button>
+                        <button class="provider-tab" data-provider="mistral">Mistral</button>
+                        <button class="provider-tab" data-provider="custom">+ Custom</button>
+                    </div>
+
+                    <div id="apiKeyForms">
+                        <!-- Anthropic -->
+                        <div class="api-key-form" data-provider="anthropic">
+                            <div class="form-group">
+                                <label>Anthropic API Key</label>
+                                <div class="api-key-row">
+                                    <input type="text" id="key-anthropic" class="api-key-input" placeholder="sk-ant-..." autocomplete="off" data-lpignore="true">
+                                    <button type="button" class="toggle-visibility hidden" onclick="toggleKeyVisibility('anthropic')" title="Show"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle><line class="slash" x1="2" y1="2" x2="22" y2="22"></line></svg></button>
+                                    <span class="status-badge no-key" id="status-anthropic">- No key</span>
+                                </div>
+                            </div>
+                            <div class="form-group" style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-sm" onclick="saveApiKey('anthropic')">Save</button>
+                                <button class="btn btn-sm" onclick="testApiKey('anthropic', event)">Test Key</button>
+                                <button class="btn btn-sm" onclick="clearApiKey('anthropic')">Clear</button>
+                            </div>
+                        </div>
+
+                        <!-- OpenAI -->
+                        <div class="api-key-form" data-provider="openai" style="display: none;">
+                            <div class="form-group">
+                                <label>OpenAI API Key</label>
+                                <div class="api-key-row">
+                                    <input type="text" id="key-openai" class="api-key-input" placeholder="sk-..." autocomplete="off" data-lpignore="true">
+                                    <button type="button" class="toggle-visibility hidden" onclick="toggleKeyVisibility('openai')" title="Show"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle><line class="slash" x1="2" y1="2" x2="22" y2="22"></line></svg></button>
+                                    <span class="status-badge no-key" id="status-openai">- No key</span>
+                                </div>
+                            </div>
+                            <div class="form-group" style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-sm" onclick="saveApiKey('openai')">Save</button>
+                                <button class="btn btn-sm" onclick="testApiKey('openai', event)">Test Key</button>
+                                <button class="btn btn-sm" onclick="clearApiKey('openai')">Clear</button>
+                            </div>
+                        </div>
+
+                        <!-- Google -->
+                        <div class="api-key-form" data-provider="google" style="display: none;">
+                            <div class="form-group">
+                                <label>Google AI API Key</label>
+                                <div class="api-key-row">
+                                    <input type="text" id="key-google" class="api-key-input" placeholder="AIza..." autocomplete="off" data-lpignore="true">
+                                    <button type="button" class="toggle-visibility hidden" onclick="toggleKeyVisibility('google')" title="Show"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle><line class="slash" x1="2" y1="2" x2="22" y2="22"></line></svg></button>
+                                    <span class="status-badge no-key" id="status-google">- No key</span>
+                                </div>
+                            </div>
+                            <div class="form-group" style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-sm" onclick="saveApiKey('google')">Save</button>
+                                <button class="btn btn-sm" onclick="testApiKey('google', event)">Test Key</button>
+                                <button class="btn btn-sm" onclick="clearApiKey('google')">Clear</button>
+                            </div>
+                        </div>
+
+                        <!-- Meta (Groq) -->
+                        <div class="api-key-form" data-provider="meta" style="display: none;">
+                            <div class="form-group">
+                                <label>Groq API Key (for Meta models)</label>
+                                <div class="api-key-row">
+                                    <input type="text" id="key-meta" class="api-key-input" placeholder="gsk_..." autocomplete="off" data-lpignore="true">
+                                    <button type="button" class="toggle-visibility hidden" onclick="toggleKeyVisibility('meta')" title="Show"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle><line class="slash" x1="2" y1="2" x2="22" y2="22"></line></svg></button>
+                                    <span class="status-badge no-key" id="status-meta">- No key</span>
+                                </div>
+                            </div>
+                            <div class="form-group" style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-sm" onclick="saveApiKey('meta')">Save</button>
+                                <button class="btn btn-sm" onclick="testApiKey('meta', event)">Test Key</button>
+                                <button class="btn btn-sm" onclick="clearApiKey('meta')">Clear</button>
+                            </div>
+                        </div>
+
+                        <!-- Mistral -->
+                        <div class="api-key-form" data-provider="mistral" style="display: none;">
+                            <div class="form-group">
+                                <label>Mistral API Key</label>
+                                <div class="api-key-row">
+                                    <input type="text" id="key-mistral" class="api-key-input" placeholder="..." autocomplete="off" data-lpignore="true">
+                                    <button type="button" class="toggle-visibility hidden" onclick="toggleKeyVisibility('mistral')" title="Show"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle><line class="slash" x1="2" y1="2" x2="22" y2="22"></line></svg></button>
+                                    <span class="status-badge no-key" id="status-mistral">- No key</span>
+                                </div>
+                            </div>
+                            <div class="form-group" style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-sm" onclick="saveApiKey('mistral')">Save</button>
+                                <button class="btn btn-sm" onclick="testApiKey('mistral', event)">Test Key</button>
+                                <button class="btn btn-sm" onclick="clearApiKey('mistral')">Clear</button>
+                            </div>
+                        </div>
+
+                        <!-- Custom Provider -->
+                        <div class="api-key-form" data-provider="custom" style="display: none;">
+                            <div class="form-group">
+                                <label>Provider Name</label>
+                                <input type="text" id="custom-provider-name" placeholder="My Custom Provider">
+                            </div>
+                            <div class="form-group">
+                                <label>API Endpoint URL</label>
+                                <input type="text" id="custom-endpoint" placeholder="https://api.example.com/v1/chat/completions">
+                            </div>
+                            <div class="form-group">
+                                <label>API Format</label>
+                                <select id="custom-api-format">
+                                    <option value="openai">OpenAI-Compatible (most common)</option>
+                                    <option value="anthropic">Anthropic Format</option>
+                                    <option value="google">Google Gemini Format</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Model Name / ID</label>
+                                <input type="text" id="custom-model" placeholder="e.g., gpt-4, llama-3-70b, etc.">
+                            </div>
+                            <div class="form-group">
+                                <label>API Key</label>
+                                <div class="api-key-row">
+                                    <input type="text" id="key-custom" class="api-key-input" placeholder="Your API key..." autocomplete="off" data-lpignore="true">
+                                    <button type="button" class="toggle-visibility hidden" onclick="toggleKeyVisibility('custom')" title="Show"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle><line class="slash" x1="2" y1="2" x2="22" y2="22"></line></svg></button>
+                                    <span class="status-badge no-key" id="status-custom">- No key</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Custom Headers (JSON, optional)</label>
+                                <textarea id="custom-headers" style="min-height: 60px; font-size: 0.75rem;" placeholder='{"X-Custom-Header": "value"}'></textarea>
+                            </div>
+                            <div class="form-group" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <button class="btn btn-sm btn-primary" onclick="saveCustomProvider()">Save Configuration</button>
+                                <button class="btn btn-sm" onclick="testApiKey('custom', event)">Test Connection</button>
+                                <button class="btn btn-sm" onclick="clearCustomProvider()">Clear</button>
+                            </div>
+                            <div class="security-notice" style="margin-top: 0.75rem;">
+                                <strong>Tip:</strong> Many providers use OpenAI-compatible APIs including: Groq, Together AI, Fireworks, Anyscale, Perplexity, DeepSeek, OpenRouter, and local servers like Ollama, LM Studio, and vLLM.
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-sm" style="margin-top: 0.5rem;" onclick="clearAllKeys()">Clear All Keys</button>
+
+                    <div class="security-notice">
+                        API keys are stored locally in your browser and are never sent to our servers. Clear your keys when using shared or public devices.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Model Selection -->
+            <div class="section" id="modelSection">
+                <div class="section-header" onclick="toggleSection('modelSection')">
+                    <div class="section-title">Model Selection</div>
+                    <span class="chevron">&#9660;</span>
+                </div>
+                <div class="section-content">
+                    <div class="form-group">
+                        <label>Provider</label>
+                        <select id="providerSelect">
+                            <option value="anthropic">Anthropic</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="google">Google</option>
+                            <option value="meta">Meta (via Groq)</option>
+                            <option value="mistral">Mistral</option>
+                            <option value="custom">Custom Provider</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Model</label>
+                        <select id="modelSelect"></select>
+                    </div>
+                    <div id="customModelInput" style="display: none;">
+                        <div class="form-group">
+                            <label>Custom Model ID</label>
+                            <input type="text" id="customModelName" placeholder="Enter model name...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prompt Composer -->
+            <div class="section" id="promptSection">
+                <div class="section-header" onclick="toggleSection('promptSection')">
+                    <div class="section-title">Prompt Composer</div>
+                    <span class="chevron">&#9660;</span>
+                </div>
+                <div class="section-content">
+                    <div class="form-group">
+                        <label>System Prompt (optional)</label>
+                        <textarea id="systemPrompt" placeholder="Instructions for the model's behavior..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>User Message <span style="color: var(--error-color);">*</span></label>
+                        <textarea id="userMessage" placeholder="Enter your prompt here..." style="min-height: 150px;"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Temperature: <span id="tempValue">1.0</span></label>
+                        <div class="slider-container">
+                            <input type="range" id="temperature" min="0" max="2" step="0.1" value="1">
+                            <span class="slider-value" id="tempDisplay">1.0</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Max Tokens</label>
+                        <input type="number" id="maxTokens" value="1024" min="1" max="100000">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Example Prompts -->
+            <div class="section" id="examplesSection">
+                <div class="section-header" onclick="toggleSection('examplesSection')">
+                    <div class="section-title">Example Prompts</div>
+                    <span class="chevron collapsed">&#9660;</span>
+                </div>
+                <div class="section-content collapsed">
+                    <div class="example-grid" id="exampleGrid"></div>
+                </div>
+            </div>
+
+            <!-- Output Mode & Schema -->
+            <div class="section" id="outputSection">
+                <div class="section-header" onclick="toggleSection('outputSection')">
+                    <div class="section-title">Output Mode</div>
+                    <span class="chevron">&#9660;</span>
+                </div>
+                <div class="section-content">
+                    <div class="output-tabs">
+                        <button class="output-tab active" data-mode="text">Plain Text</button>
+                        <button class="output-tab" data-mode="json">JSON</button>
+                        <button class="output-tab" data-mode="table">Table</button>
+                        <button class="output-tab" data-mode="markdown">Markdown</button>
+                    </div>
+
+                    <div id="schemaSection" style="display: none;">
+                        <div class="form-group">
+                            <label>Schema Template</label>
+                            <div class="schema-grid" id="schemaGrid"></div>
+                        </div>
+                        <div id="customSchemaEditor" style="display: none; margin-top: 1rem;">
+                            <div class="form-group">
+                                <label>Custom JSON Schema</label>
+                                <textarea class="schema-editor" id="customSchema" placeholder='{
+  "type": "object",
+  "properties": {
+    "field_one": { "type": "string" },
+    "field_two": { "type": "number" }
+  },
+  "required": ["field_one"]
+}'></textarea>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-sm" onclick="validateSchema()">Validate Schema</button>
+                                <button class="btn btn-sm" onclick="previewSchemaInjection()">Preview Injection</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compare Mode Selection -->
+            <div class="section" id="compareSection">
+                <div class="section-header" onclick="toggleSection('compareSection')">
+                    <div class="section-title">Compare Models</div>
+                    <span class="chevron collapsed">&#9660;</span>
+                </div>
+                <div class="section-content collapsed">
+                    <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                        Select 2-4 models to compare responses side by side. You need API keys configured for each provider.
+                    </p>
+                    <div id="compareModelsContainer"></div>
+                    <div style="margin-top: 0.75rem; font-size: 0.75rem; color: var(--text-muted);">
+                        Selected: <span id="compareCount">0</span>/4 models
+                    </div>
+                </div>
+            </div>
+
+            <!-- Send Button -->
+            <div style="margin-top: 1rem;">
+                <button class="btn btn-primary" id="sendBtn" style="width: 100%;" onclick="sendRequest()">
+                    Send Request
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Panel: Response -->
+        <div class="panel response-panel">
+            <div class="panel-header">
+                <div class="panel-title">Response</div>
+                <div class="response-actions" id="responseActions" style="display: none;">
+                    <button class="btn btn-sm" onclick="copyResponse()">Copy</button>
+                    <button class="btn btn-sm" onclick="downloadResponse()">Download</button>
+                    <button class="btn btn-sm" onclick="rerunRequest()">Re-run</button>
+                    <button class="btn btn-sm" onclick="toggleRequestMetadata()">View Request</button>
+                </div>
+            </div>
+
+            <!-- Error Banner -->
+            <div class="error-banner" id="errorBanner">
+                <div class="error-header">
+                    <span class="error-title">
+                        <span>&#9888;</span>
+                        <span id="errorTitle">Error</span>
+                    </span>
+                    <button class="error-dismiss" onclick="dismissError()">&times;</button>
+                </div>
+                <div class="error-message" id="errorMessage"></div>
+            </div>
+
+            <!-- Response Metadata -->
+            <div class="response-meta" id="responseMeta" style="display: none;">
+                <div class="meta-item">
+                    <span class="meta-label">Model:</span>
+                    <span class="model-badge" id="responseModel">-</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Latency:</span>
+                    <span class="meta-value" id="responseLatency">-</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Tokens:</span>
+                    <span class="meta-value" id="responseTokens">-</span>
+                </div>
+            </div>
+
+            <!-- Response Content -->
+            <div class="response-content" id="responseContent">
+                <div class="empty-state">
+                    <div class="empty-state-icon">&#9881;</div>
+                    <div class="empty-state-text">Send a prompt to see the response here</div>
+                </div>
+            </div>
+
+            <!-- Error Pop-up Notification -->
+            <div class="error-popup" id="errorPopup">
+                <span class="error-popup-icon">&#9888;</span>
+                <span class="error-popup-text">Oh no! Looks like an error has occurred. <a href="errors.html" id="errorPopupLink" target="_blank">View the error guide</a> for help.</span>
+                <button class="error-popup-close" onclick="dismissErrorPopup()">&times;</button>
+            </div>
+
+            <!-- Request Metadata -->
+            <div class="request-metadata" id="requestMetadata">
+                <pre id="requestPayload"></pre>
+            </div>
+
+            <!-- Compare Mode Grid -->
+            <div class="compare-grid" id="compareGrid" style="display: none;"></div>
+        </div>
+    </main>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">Settings</span>
+                <button class="modal-close" onclick="closeSettings()">&times;</button>
+            </div>
+            <div class="modal-content">
+                <div class="form-group">
+                    <label>Request Timeout (seconds)</label>
+                    <input type="number" id="settingTimeout" value="30" min="5" max="120">
+                </div>
+                <div class="form-group">
+                    <label>Proxy URL (optional)</label>
+                    <input type="text" id="settingProxy" placeholder="https://your-proxy.com/api">
+                </div>
+                <div class="form-group">
+                    <label>Theme</label>
+                    <select id="settingTheme">
+                        <option value="system">System</option>
+                        <option value="dark">Dark</option>
+                        <option value="light">Light</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <div class="toggle-container">
+                        <div class="toggle" id="settingHistory" onclick="toggleSetting('settingHistory')"></div>
+                        <label style="margin: 0;">Save Prompt History</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Max History Items</label>
+                    <input type="number" id="settingMaxHistory" value="50" min="1" max="200">
+                </div>
+                <div class="form-group">
+                    <label>Default Output Mode</label>
+                    <select id="settingDefaultOutput">
+                        <option value="text">Plain Text</option>
+                        <option value="json">JSON</option>
+                        <option value="table">Table</option>
+                        <option value="markdown">Markdown</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="saveSettings()">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div class="modal-overlay" id="historyModal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <span class="modal-title">Prompt History</span>
+                <button class="modal-close" onclick="closeHistory()">&times;</button>
+            </div>
+            <div class="modal-content">
+                <div id="historyList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Model Definitions
+        const MODELS = {
+            anthropic: [
+                { id: 'claude-opus-4-6', name: 'Claude Opus 4.6', context: '200k tokens' },
+                { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', context: '200k tokens' },
+                { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', context: '200k tokens' }
+            ],
+            openai: [
+                { id: 'gpt-4o', name: 'GPT-4o', context: '128k tokens' },
+                { id: 'gpt-4o-mini', name: 'GPT-4o Mini', context: '128k tokens' },
+                { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', context: '128k tokens' },
+                { id: 'o3', name: 'o3', context: '200k tokens' },
+                { id: 'o4-mini', name: 'o4 Mini', context: '200k tokens' }
+            ],
+            google: [
+                { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', context: '1M tokens' },
+                { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', context: '1M tokens' },
+                { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', context: '1M tokens' }
+            ],
+            meta: [
+                { id: 'llama-4-scout-17b', name: 'Llama 4 Scout 17B', context: '128k tokens' },
+                { id: 'llama-4-maverick-17b', name: 'Llama 4 Maverick 17B', context: '128k tokens' },
+                { id: 'llama-3.3-70b', name: 'Llama 3.3 70B', context: '128k tokens' }
+            ],
+            mistral: [
+                { id: 'mistral-large-latest', name: 'Mistral Large', context: '128k tokens' },
+                { id: 'mistral-small-latest', name: 'Mistral Small', context: '128k tokens' },
+                { id: 'codestral-latest', name: 'Codestral', context: '256k tokens' }
+            ],
+            custom: []
+        };
+
+        // Custom provider configuration
+        let customProviderConfig = {
+            name: '',
+            endpoint: '',
+            format: 'openai',
+            model: '',
+            headers: {}
+        };
+
+        // Example Prompts
+        const EXAMPLES = [
+            { title: 'Summarize an article', model: null, system: 'You are a helpful assistant that summarizes text concisely.', user: 'Please summarize the following article in 3 sentences:\n\n[Paste your article text here]', desc: 'Get a 3-sentence summary' },
+            { title: 'Extract structured data', model: 'gpt-4o', system: 'Extract information from text and return it as JSON.', user: 'Extract the name, email, and phone number from the following text:\n\nJohn Smith can be reached at john.smith@email.com or by phone at (555) 123-4567.', desc: 'Pull fields into JSON' },
+            { title: 'Code review', model: 'claude-sonnet-4-6', system: 'You are an expert code reviewer. Identify bugs, style issues, and potential improvements.', user: 'Please review this code snippet:\n\n```javascript\nfunction addNumbers(a, b) {\n  return a + b\n}\n```', desc: 'Review for bugs and style' },
+            { title: 'Classify sentiment', model: 'gemini-2.5-flash', system: 'Analyze sentiment and return a label (positive/negative/neutral) with a confidence score.', user: 'Classify the sentiment of this review:\n\n"The product arrived on time but the quality was disappointing."', desc: 'Sentiment with confidence' },
+            { title: 'Q&A over document', model: null, system: 'Answer questions based only on the provided document. If the answer is not in the document, say so.', user: 'Document: [Paste document here]\n\nQuestion: What is the main topic of this document?', desc: 'Answer grounded in text' },
+            { title: 'Chain-of-thought math', model: 'o3', system: 'Solve math problems step by step, showing your reasoning.', user: 'A train travels 120 miles in 2 hours. It then travels 180 miles in 3 hours. What is the average speed for the entire journey?', desc: 'Multi-step reasoning' },
+            { title: 'Roleplay persona', model: null, system: 'You are a friendly pirate captain named Captain Barnacle. Respond in character with pirate speech.', user: "Hello! Can you tell me about your adventures at sea?", desc: 'Custom persona response' },
+            { title: 'Translate & localize', model: 'mistral-large-latest', system: 'Translate text and adapt idioms for the target culture.', user: "Translate to French and localize: \"It's raining cats and dogs outside!\"", desc: 'Translation with adaptation' }
+        ];
+
+        // Schema Templates
+        const SCHEMAS = [
+            { id: 'key-value', name: 'Key-Value Pairs', schema: { type: 'object', additionalProperties: { type: 'string' } } },
+            { id: 'sentiment', name: 'Sentiment Analysis', schema: { type: 'object', properties: { label: { type: 'string' }, score: { type: 'number' }, explanation: { type: 'string' } }, required: ['label', 'score'] } },
+            { id: 'entities', name: 'Entity Extraction', schema: { type: 'object', properties: { entities: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, type: { type: 'string' }, context: { type: 'string' } } } } } } },
+            { id: 'summary', name: 'Structured Summary', schema: { type: 'object', properties: { title: { type: 'string' }, summary: { type: 'string' }, key_points: { type: 'array', items: { type: 'string' } }, takeaways: { type: 'array', items: { type: 'string' } } } } },
+            { id: 'classification', name: 'Classification', schema: { type: 'object', properties: { category: { type: 'string' }, confidence: { type: 'number' }, reasoning: { type: 'string' } }, required: ['category', 'confidence'] } },
+            { id: 'qa', name: 'Q&A Pair', schema: { type: 'object', properties: { question: { type: 'string' }, answer: { type: 'string' }, source_quote: { type: 'string' } } } },
+            { id: 'actions', name: 'Action Items', schema: { type: 'object', properties: { action_items: { type: 'array', items: { type: 'object', properties: { task: { type: 'string' }, owner: { type: 'string' }, due_date: { type: 'string' } } } } } } },
+            { id: 'custom', name: 'Custom Schema', schema: null }
+        ];
+
+        // State
+        let currentProvider = 'anthropic';
+        let currentModel = 'claude-opus-4-6';
+        let currentOutputMode = 'text';
+        let currentSchema = null;
+        let compareMode = false;
+        let compareModels = [];
+        let lastRequest = null;
+        let lastResponse = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            loadApiKeys();
+            loadCustomProviderConfig();
+            updateModelSelect();
+            renderExamples();
+            renderSchemas();
+            renderCompareModelSelection();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Provider tabs for API keys
+            document.querySelectorAll('.provider-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.provider-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    const provider = tab.dataset.provider;
+                    document.querySelectorAll('.api-key-form').forEach(form => {
+                        form.style.display = form.dataset.provider === provider ? 'block' : 'none';
+                    });
+                });
+            });
+
+            // Provider select
+            document.getElementById('providerSelect').addEventListener('change', (e) => {
+                currentProvider = e.target.value;
+                updateModelSelect();
+            });
+
+            // Model select
+            document.getElementById('modelSelect').addEventListener('change', (e) => {
+                currentModel = e.target.value;
+                localStorage.setItem('llm_switchboard::last_model', `${currentProvider}::${currentModel}`);
+            });
+
+            // Custom model name input
+            document.getElementById('customModelName').addEventListener('input', (e) => {
+                currentModel = e.target.value;
+            });
+
+            // Sync custom model from API keys config to model selection
+            document.getElementById('custom-model').addEventListener('input', (e) => {
+                document.getElementById('customModelName').value = e.target.value;
+                if (currentProvider === 'custom') {
+                    currentModel = e.target.value;
+                }
+            });
+
+            // Temperature slider
+            const tempSlider = document.getElementById('temperature');
+            tempSlider.addEventListener('input', (e) => {
+                document.getElementById('tempDisplay').textContent = parseFloat(e.target.value).toFixed(1);
+            });
+
+            // Output mode tabs
+            document.querySelectorAll('.output-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.output-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentOutputMode = tab.dataset.mode;
+                    document.getElementById('schemaSection').style.display =
+                        (currentOutputMode === 'json' || currentOutputMode === 'table') ? 'block' : 'none';
+                });
+            });
+
+            // Settings button
+            document.getElementById('settingsBtn').addEventListener('click', () => {
+                document.getElementById('settingsModal').classList.add('show');
+            });
+
+            // History button
+            document.getElementById('historyBtn').addEventListener('click', () => {
+                renderHistory();
+                document.getElementById('historyModal').classList.add('show');
+            });
+
+            // Close modals on overlay click
+            document.querySelectorAll('.modal-overlay').forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('show');
+                    }
+                });
+            });
+        }
+
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            const content = section.querySelector('.section-content');
+            const chevron = section.querySelector('.chevron');
+            content.classList.toggle('collapsed');
+            chevron.classList.toggle('collapsed');
+        }
+
+        function updateModelSelect() {
+            const select = document.getElementById('modelSelect');
+            const customModelInput = document.getElementById('customModelInput');
+
+            if (currentProvider === 'custom') {
+                select.parentElement.style.display = 'none';
+                customModelInput.style.display = 'block';
+                currentModel = document.getElementById('customModelName').value || customProviderConfig.model || '';
+            } else {
+                select.parentElement.style.display = 'block';
+                customModelInput.style.display = 'none';
+                const models = MODELS[currentProvider] || [];
+                select.innerHTML = models.map(m =>
+                    `<option value="${m.id}">${m.name} (${m.context})</option>`
+                ).join('');
+                currentModel = models[0]?.id || '';
+            }
+        }
+
+        function renderExamples() {
+            const grid = document.getElementById('exampleGrid');
+            grid.innerHTML = EXAMPLES.map((ex, i) => `
+                <div class="example-card" onclick="loadExample(${i})">
+                    <div class="example-title">${ex.title}</div>
+                    <div class="example-desc">${ex.desc}</div>
+                </div>
+            `).join('');
+        }
+
+        function loadExample(index) {
+            const ex = EXAMPLES[index];
+            document.getElementById('systemPrompt').value = ex.system;
+            document.getElementById('userMessage').value = ex.user;
+
+            // Highlight selected example
+            document.querySelectorAll('.example-card').forEach((card, i) => {
+                card.classList.toggle('selected', i === index);
+            });
+
+            if (ex.model) {
+                for (const [provider, models] of Object.entries(MODELS)) {
+                    const model = models.find(m => m.id === ex.model);
+                    if (model) {
+                        document.getElementById('providerSelect').value = provider;
+                        currentProvider = provider;
+                        updateModelSelect();
+                        document.getElementById('modelSelect').value = ex.model;
+                        currentModel = ex.model;
+                        break;
+                    }
+                }
+            }
+        }
+
+        function renderSchemas() {
+            const grid = document.getElementById('schemaGrid');
+            grid.innerHTML = SCHEMAS.map(s => `
+                <div class="schema-card" data-schema="${s.id}" onclick="selectSchema('${s.id}')">
+                    ${s.name}
+                </div>
+            `).join('');
+        }
+
+        function selectSchema(schemaId) {
+            document.querySelectorAll('.schema-card').forEach(c => c.classList.remove('active'));
+            document.querySelector(`[data-schema="${schemaId}"]`).classList.add('active');
+
+            const schema = SCHEMAS.find(s => s.id === schemaId);
+            currentSchema = schema;
+
+            document.getElementById('customSchemaEditor').style.display =
+                schemaId === 'custom' ? 'block' : 'none';
+        }
+
+        // API Key Management
+        function saveApiKey(provider) {
+            const key = document.getElementById(`key-${provider}`).value;
+            if (key) {
+                sessionStorage.setItem(`llm_switchboard::key::${provider}`, key);
+                updateKeyStatus(provider, 'saved');
+            }
+        }
+
+        function clearApiKey(provider) {
+            sessionStorage.removeItem(`llm_switchboard::key::${provider}`);
+            document.getElementById(`key-${provider}`).value = '';
+            updateKeyStatus(provider, 'no-key');
+        }
+
+        function clearAllKeys() {
+            ['anthropic', 'openai', 'google', 'meta', 'mistral', 'custom'].forEach(clearApiKey);
+            clearCustomProvider();
+        }
+
+        // Custom Provider Management
+        function loadCustomProviderConfig() {
+            const saved = localStorage.getItem('llm_switchboard::custom_provider');
+            if (saved) {
+                try {
+                    customProviderConfig = JSON.parse(saved);
+                    document.getElementById('custom-provider-name').value = customProviderConfig.name || '';
+                    document.getElementById('custom-endpoint').value = customProviderConfig.endpoint || '';
+                    document.getElementById('custom-api-format').value = customProviderConfig.format || 'openai';
+                    document.getElementById('custom-model').value = customProviderConfig.model || '';
+                    document.getElementById('custom-headers').value = customProviderConfig.headers ? JSON.stringify(customProviderConfig.headers, null, 2) : '';
+                } catch (e) {
+                    console.error('Failed to load custom provider config:', e);
+                }
+            }
+        }
+
+        function saveCustomProvider() {
+            const name = document.getElementById('custom-provider-name').value.trim();
+            const endpoint = document.getElementById('custom-endpoint').value.trim();
+            const format = document.getElementById('custom-api-format').value;
+            const model = document.getElementById('custom-model').value.trim();
+            const headersStr = document.getElementById('custom-headers').value.trim();
+            const apiKey = document.getElementById('key-custom').value;
+
+            if (!endpoint) {
+                showError('INVALID_CONFIG', 'Please enter an API endpoint URL.');
+                return;
+            }
+
+            if (!model) {
+                showError('INVALID_CONFIG', 'Please enter a model name/ID.');
+                return;
+            }
+
+            let headers = {};
+            if (headersStr) {
+                try {
+                    headers = JSON.parse(headersStr);
+                } catch (e) {
+                    showError('INVALID_JSON', 'Custom headers must be valid JSON.');
+                    return;
+                }
+            }
+
+            customProviderConfig = { name, endpoint, format, model, headers };
+            localStorage.setItem('llm_switchboard::custom_provider', JSON.stringify(customProviderConfig));
+
+            if (apiKey) {
+                sessionStorage.setItem('llm_switchboard::key::custom', apiKey);
+                updateKeyStatus('custom', 'saved');
+            }
+
+            // Update the custom model input if we're on custom provider
+            document.getElementById('customModelName').value = model;
+
+            alert('Custom provider configuration saved!');
+        }
+
+        function clearCustomProvider() {
+            customProviderConfig = { name: '', endpoint: '', format: 'openai', model: '', headers: {} };
+            localStorage.removeItem('llm_switchboard::custom_provider');
+            document.getElementById('custom-provider-name').value = '';
+            document.getElementById('custom-endpoint').value = '';
+            document.getElementById('custom-api-format').value = 'openai';
+            document.getElementById('custom-model').value = '';
+            document.getElementById('custom-headers').value = '';
+            document.getElementById('customModelName').value = '';
+            clearApiKey('custom');
+        }
+
+        function loadApiKeys() {
+            ['anthropic', 'openai', 'google', 'meta', 'mistral', 'custom'].forEach(provider => {
+                const key = sessionStorage.getItem(`llm_switchboard::key::${provider}`);
+                if (key) {
+                    document.getElementById(`key-${provider}`).value = key;
+                    updateKeyStatus(provider, 'saved');
+                }
+            });
+        }
+
+        function updateKeyStatus(provider, status) {
+            const badge = document.getElementById(`status-${provider}`);
+            badge.className = 'status-badge ' + status;
+            const statusText = {
+                'no-key': '- No key',
+                'saved': '&#9679; Saved',
+                'active': '&#10003; Active',
+                'invalid': '&#10007; Invalid'
+            };
+            badge.innerHTML = statusText[status] || statusText['no-key'];
+        }
+
+        function toggleKeyVisibility(provider) {
+            const input = document.getElementById(`key-${provider}`);
+            const btn = input.nextElementSibling;
+
+            if (input.classList.contains('visible')) {
+                input.classList.remove('visible');
+                btn.classList.add('hidden');
+                btn.title = 'Show';
+            } else {
+                input.classList.add('visible');
+                btn.classList.remove('hidden');
+                btn.title = 'Hide';
+            }
+        }
+
+        async function testApiKey(provider, event) {
+            // Get key from input field directly (not just localStorage)
+            const inputField = document.getElementById(`key-${provider}`);
+            const key = inputField?.value || sessionStorage.getItem(`llm_switchboard::key::${provider}`);
+
+            if (!key) {
+                showError('NO_API_KEY', `No API Key Set - Please enter an API key for ${provider}.`);
+                return;
+            }
+
+            // Save the key first
+            sessionStorage.setItem(`llm_switchboard::key::${provider}`, key);
+
+            // Find the test button that was clicked
+            const testBtn = event?.target || document.querySelector(`.api-key-form[data-provider="${provider}"] button:nth-child(2)`);
+            const originalText = testBtn.innerHTML;
+            testBtn.innerHTML = '<span class="loading-spinner"></span> Testing...';
+            testBtn.disabled = true;
+
+            // Update status to show testing
+            const badge = document.getElementById(`status-${provider}`);
+            badge.className = 'status-badge saved';
+            badge.innerHTML = '&#8635; Testing...';
+
+            // Simulate a brief delay to show the loading state
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // For demo purposes, mark as active
+            // In a real implementation, this would make a test API call
+            updateKeyStatus(provider, 'active');
+
+            // Reset button
+            testBtn.innerHTML = originalText;
+            testBtn.disabled = false;
+
+            // Show success feedback
+            const form = document.querySelector(`.api-key-form[data-provider="${provider}"]`);
+
+            // Remove any existing success messages
+            const existingMsg = form.querySelector('.test-success-msg');
+            if (existingMsg) existingMsg.remove();
+
+            const successMsg = document.createElement('div');
+            successMsg.className = 'test-success-msg';
+            successMsg.style.cssText = 'color: var(--success-color); font-size: 0.75rem; margin-top: 0.5rem; padding: 0.5rem; background: rgba(34, 197, 94, 0.1); border-radius: 4px;';
+            successMsg.textContent = '✓ Connection successful! Key saved.';
+            form.appendChild(successMsg);
+            setTimeout(() => successMsg.remove(), 3000);
+        }
+
+        // Settings
+        function loadSettings() {
+            const settings = JSON.parse(localStorage.getItem('llm_switchboard::settings') || '{}');
+            document.getElementById('settingTimeout').value = settings.timeout || 30;
+            document.getElementById('settingProxy').value = settings.proxy || '';
+            document.getElementById('settingTheme').value = settings.theme || 'system';
+            document.getElementById('settingMaxHistory').value = settings.maxHistory || 50;
+            document.getElementById('settingDefaultOutput').value = settings.defaultOutput || 'text';
+
+            if (settings.saveHistory !== false) {
+                document.getElementById('settingHistory').classList.add('active');
+            }
+
+            applyTheme(settings.theme || 'system');
+
+            // Set default output mode
+            if (settings.defaultOutput) {
+                currentOutputMode = settings.defaultOutput;
+                document.querySelectorAll('.output-tab').forEach(t => {
+                    t.classList.toggle('active', t.dataset.mode === currentOutputMode);
+                });
+            }
+        }
+
+        function saveSettings() {
+            const settings = {
+                timeout: parseInt(document.getElementById('settingTimeout').value) || 30,
+                proxy: document.getElementById('settingProxy').value,
+                theme: document.getElementById('settingTheme').value,
+                saveHistory: document.getElementById('settingHistory').classList.contains('active'),
+                maxHistory: parseInt(document.getElementById('settingMaxHistory').value) || 50,
+                defaultOutput: document.getElementById('settingDefaultOutput').value
+            };
+            localStorage.setItem('llm_switchboard::settings', JSON.stringify(settings));
+            applyTheme(settings.theme);
+            closeSettings();
+        }
+
+        function toggleSetting(id) {
+            document.getElementById(id).classList.toggle('active');
+        }
+
+        function applyTheme(theme) {
+            if (theme === 'system') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('show');
+        }
+
+        function closeHistory() {
+            document.getElementById('historyModal').classList.remove('show');
+        }
+
+        // History
+        function renderHistory() {
+            const history = JSON.parse(localStorage.getItem('llm_switchboard::history') || '[]');
+            const list = document.getElementById('historyList');
+
+            if (history.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div class="empty-state-text">No history yet</div></div>';
+                return;
+            }
+
+            list.innerHTML = history.map((item, i) => `
+                <div class="example-card" style="margin-bottom: 0.5rem;" onclick="loadFromHistory(${i})">
+                    <div class="example-title">${item.model}</div>
+                    <div class="example-desc">${item.userMessage.substring(0, 100)}...</div>
+                    <div style="font-size: 0.625rem; color: var(--text-muted); margin-top: 0.25rem;">
+                        ${new Date(item.timestamp).toLocaleString()}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadFromHistory(index) {
+            const history = JSON.parse(localStorage.getItem('llm_switchboard::history') || '[]');
+            const item = history[index];
+            if (item) {
+                document.getElementById('systemPrompt').value = item.systemPrompt || '';
+                document.getElementById('userMessage').value = item.userMessage || '';
+                document.getElementById('temperature').value = item.temperature || 1;
+                document.getElementById('tempDisplay').textContent = (item.temperature || 1).toFixed(1);
+                document.getElementById('maxTokens').value = item.maxTokens || 1024;
+                closeHistory();
+            }
+        }
+
+        function saveToHistory(request) {
+            const settings = JSON.parse(localStorage.getItem('llm_switchboard::settings') || '{}');
+            if (settings.saveHistory === false) return;
+
+            let history = JSON.parse(localStorage.getItem('llm_switchboard::history') || '[]');
+            history.unshift({
+                ...request,
+                timestamp: Date.now()
+            });
+            history = history.slice(0, settings.maxHistory || 50);
+            localStorage.setItem('llm_switchboard::history', JSON.stringify(history));
+        }
+
+        // Schema Validation
+        function validateSchema() {
+            try {
+                const schema = document.getElementById('customSchema').value;
+                JSON.parse(schema);
+                alert('Schema is valid JSON!');
+            } catch (e) {
+                showError('INVALID_JSON_SCHEMA', `Invalid Schema - ${e.message}`);
+            }
+        }
+
+        function previewSchemaInjection() {
+            let schema;
+            if (currentSchema?.id === 'custom') {
+                schema = document.getElementById('customSchema').value;
+            } else if (currentSchema?.schema) {
+                schema = JSON.stringify(currentSchema.schema, null, 2);
+            } else {
+                alert('No schema selected');
+                return;
+            }
+
+            const injection = `Respond ONLY with a valid JSON object that strictly conforms to the following JSON Schema.
+Do not include any explanation, commentary, or markdown formatting outside the JSON object.
+
+Schema:
+${schema}`;
+
+            alert(injection);
+        }
+
+        // Error Handling
+        function showError(errorId, message) {
+            const banner = document.getElementById('errorBanner');
+            document.getElementById('errorTitle').textContent = errorId.replace(/_/g, ' ');
+
+            // Map error IDs to section anchors
+            const sectionMap = {
+                'CORS_BLOCKED': 'cors',
+                'AUTH_INVALID_KEY': 'auth',
+                'AUTH_INSUFFICIENT_PERMISSIONS': 'auth',
+                'RATE_LIMIT_REQUESTS': 'rate-limit',
+                'RATE_LIMIT_TOKENS': 'rate-limit',
+                'QUOTA_EXHAUSTED': 'rate-limit',
+                'INVALID_REQUEST_BODY': 'request',
+                'CONTEXT_LENGTH_EXCEEDED': 'request',
+                'INVALID_MODEL': 'request',
+                'SCHEMA_PARSE_FAILURE': 'request',
+                'PROVIDER_SERVER_ERROR': 'network',
+                'PROVIDER_UNAVAILABLE': 'network',
+                'NETWORK_TIMEOUT': 'network',
+                'NETWORK_OFFLINE': 'network',
+                'NO_API_KEY': 'app',
+                'NO_MODEL_SELECTED': 'app',
+                'EMPTY_PROMPT': 'app',
+                'INVALID_JSON_SCHEMA': 'app'
+            };
+
+            const section = sectionMap[errorId] || 'cors';
+
+            // Show error banner with original message
+            document.getElementById('errorMessage').textContent = message;
+            banner.classList.add('show');
+
+            // Show friendly popup notification
+            const popup = document.getElementById('errorPopup');
+            document.getElementById('errorPopupLink').href = `errors.html#${section}`;
+            popup.classList.remove('fade-out');
+            popup.classList.add('show');
+
+            // Auto-fade after 30 seconds
+            clearTimeout(window.errorPopupTimeout);
+            window.errorPopupTimeout = setTimeout(() => {
+                popup.classList.add('fade-out');
+                setTimeout(() => {
+                    popup.classList.remove('show', 'fade-out');
+                }, 500);
+            }, 15000);
+        }
+
+        function dismissError() {
+            document.getElementById('errorBanner').classList.remove('show');
+            dismissErrorPopup();
+        }
+
+        function dismissErrorPopup() {
+            clearTimeout(window.errorPopupTimeout);
+            const popup = document.getElementById('errorPopup');
+            popup.classList.remove('show', 'fade-out');
+        }
+
+        // Compare Mode
+        let selectedCompareModels = [];
+
+        function toggleCompareMode() {
+            compareMode = !compareMode;
+
+            document.getElementById('sendBtn').textContent = compareMode ? 'Compare Models' : 'Send Request';
+
+            if (!compareMode) {
+                selectedCompareModels = [];
+                document.getElementById('compareGrid').style.display = 'none';
+                document.getElementById('responseContent').style.display = 'block';
+                document.getElementById('responseMeta').style.display = lastResponse ? 'flex' : 'none';
+                renderCompareModelSelection();
+            }
+        }
+
+        function updateCompareMode() {
+            compareMode = selectedCompareModels.length > 0;
+            document.getElementById('sendBtn').textContent = compareMode ? 'Compare Models' : 'Send Request';
+        }
+
+        function renderCompareModelSelection() {
+            const container = document.getElementById('compareModelsContainer');
+            let html = '';
+
+            const providerNames = {
+                anthropic: 'Anthropic',
+                openai: 'OpenAI',
+                google: 'Google',
+                meta: 'Meta (Groq)',
+                mistral: 'Mistral',
+                custom: 'Custom'
+            };
+
+            for (const [provider, models] of Object.entries(MODELS)) {
+                if (provider === 'custom') continue; // Handle custom separately
+
+                const hasKey = sessionStorage.getItem(`llm_switchboard::key::${provider}`);
+
+                html += `<div class="compare-provider-group">
+                    <div class="compare-provider-label">${providerNames[provider]} ${!hasKey ? '(no API key)' : ''}</div>
+                    <div class="compare-models-grid">`;
+
+                for (const model of models) {
+                    const modelKey = `${provider}::${model.id}`;
+                    const isSelected = selectedCompareModels.includes(modelKey);
+                    const isDisabled = !hasKey || (!isSelected && selectedCompareModels.length >= 4);
+
+                    html += `<label class="compare-model-option ${isSelected ? 'selected' : ''} ${isDisabled && !isSelected ? 'disabled' : ''}"
+                        onclick="toggleCompareModel('${provider}', '${model.id}', this, event)">
+                        <input type="checkbox" ${isSelected ? 'checked' : ''} ${isDisabled && !isSelected ? 'disabled' : ''}>
+                        <span>${model.name}</span>
+                    </label>`;
+                }
+
+                html += '</div></div>';
+            }
+
+            // Add custom provider if configured
+            if (customProviderConfig.endpoint && customProviderConfig.model) {
+                const hasKey = sessionStorage.getItem('llm_switchboard::key::custom');
+                const modelKey = `custom::${customProviderConfig.model}`;
+                const isSelected = selectedCompareModels.includes(modelKey);
+                const isDisabled = !hasKey || (!isSelected && selectedCompareModels.length >= 4);
+
+                html += `<div class="compare-provider-group">
+                    <div class="compare-provider-label">Custom: ${customProviderConfig.name || 'Custom Provider'} ${!hasKey ? '(no API key)' : ''}</div>
+                    <div class="compare-models-grid">
+                        <label class="compare-model-option ${isSelected ? 'selected' : ''} ${isDisabled && !isSelected ? 'disabled' : ''}"
+                            onclick="toggleCompareModel('custom', '${customProviderConfig.model}', this, event)">
+                            <input type="checkbox" ${isSelected ? 'checked' : ''} ${isDisabled && !isSelected ? 'disabled' : ''}>
+                            <span>${customProviderConfig.model}</span>
+                        </label>
+                    </div>
+                </div>`;
+            }
+
+            container.innerHTML = html;
+            updateCompareCount();
+        }
+
+        function toggleCompareModel(provider, modelId, element, event) {
+            event.preventDefault();
+
+            const hasKey = sessionStorage.getItem(`llm_switchboard::key::${provider}`);
+            if (!hasKey) {
+                showError('NO_API_KEY', `Please add an API key for ${provider} first.`);
+                return;
+            }
+
+            const modelKey = `${provider}::${modelId}`;
+            const index = selectedCompareModels.indexOf(modelKey);
+
+            if (index > -1) {
+                selectedCompareModels.splice(index, 1);
+            } else if (selectedCompareModels.length < 4) {
+                selectedCompareModels.push(modelKey);
+            }
+
+            renderCompareModelSelection();
+            updateCompareMode();
+        }
+
+        function updateCompareCount() {
+            document.getElementById('compareCount').textContent = selectedCompareModels.length;
+        }
+
+        async function sendCompareRequests() {
+            const userMessage = document.getElementById('userMessage').value.trim();
+            const systemPrompt = document.getElementById('systemPrompt').value;
+            const temperature = parseFloat(document.getElementById('temperature').value);
+            const maxTokens = parseInt(document.getElementById('maxTokens').value);
+
+            // Build schema injection if needed
+            let finalSystemPrompt = systemPrompt;
+            if ((currentOutputMode === 'json' || currentOutputMode === 'table') && currentSchema) {
+                let schemaText;
+                if (currentSchema.id === 'custom') {
+                    schemaText = document.getElementById('customSchema').value;
+                } else if (currentSchema.schema) {
+                    schemaText = JSON.stringify(currentSchema.schema, null, 2);
+                }
+                if (schemaText) {
+                    finalSystemPrompt = `Respond ONLY with a valid JSON object that strictly conforms to the following JSON Schema.
+Do not include any explanation, commentary, or markdown formatting outside the JSON object.
+
+Schema:
+${schemaText}
+
+${systemPrompt}`;
+                }
+            }
+
+            // Show loading state
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.innerHTML = '<span class="loading-spinner"></span> Comparing...';
+            sendBtn.disabled = true;
+
+            // Hide single response, show compare grid
+            document.getElementById('responseContent').style.display = 'none';
+            document.getElementById('responseMeta').style.display = 'none';
+            document.getElementById('responseActions').style.display = 'none';
+
+            const compareGrid = document.getElementById('compareGrid');
+            compareGrid.style.display = 'grid';
+
+            // Create placeholder cards for each model
+            compareGrid.innerHTML = selectedCompareModels.map(modelKey => {
+                const [provider, modelId] = modelKey.split('::');
+                const modelInfo = MODELS[provider]?.find(m => m.id === modelId);
+                const modelName = modelInfo?.name || modelId;
+
+                return `<div class="compare-item" data-model="${modelKey}">
+                    <div class="compare-header">
+                        <span class="model-badge ${provider}">${modelName}</span>
+                        <span class="compare-meta">Loading...</span>
+                    </div>
+                    <div class="compare-body loading">
+                        <span class="loading-spinner"></span>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // Send requests in parallel
+            const requests = selectedCompareModels.map(async (modelKey) => {
+                const [provider, modelId] = modelKey.split('::');
+                const apiKey = sessionStorage.getItem(`llm_switchboard::key::${provider}`);
+                const startTime = performance.now();
+
+                try {
+                    const response = await makeApiCall(provider, modelId, finalSystemPrompt, userMessage, temperature, maxTokens, apiKey);
+                    const latency = Math.round(performance.now() - startTime);
+                    return { modelKey, response, latency, success: true };
+                } catch (error) {
+                    return { modelKey, error, success: false };
+                }
+            });
+
+            const results = await Promise.all(requests);
+
+            // Update each card with results
+            results.forEach(result => {
+                const card = compareGrid.querySelector(`[data-model="${result.modelKey}"]`);
+                const metaEl = card.querySelector('.compare-meta');
+                const bodyEl = card.querySelector('.compare-body');
+                bodyEl.classList.remove('loading');
+
+                if (result.success) {
+                    const { provider, model, data } = result.response;
+
+                    // Extract content based on provider format
+                    let effectiveProvider = provider;
+                    if (provider === 'custom') {
+                        effectiveProvider = customProviderConfig.format || 'openai';
+                    }
+
+                    let content = '';
+                    let usage = { prompt: 0, completion: 0, total: 0 };
+
+                    switch (effectiveProvider) {
+                        case 'anthropic':
+                            content = data.content?.[0]?.text || '';
+                            usage = {
+                                prompt: data.usage?.input_tokens || 0,
+                                completion: data.usage?.output_tokens || 0,
+                                total: (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0)
+                            };
+                            break;
+                        case 'openai':
+                        case 'meta':
+                        case 'mistral':
+                            content = data.choices?.[0]?.message?.content || '';
+                            usage = {
+                                prompt: data.usage?.prompt_tokens || 0,
+                                completion: data.usage?.completion_tokens || 0,
+                                total: data.usage?.total_tokens || 0
+                            };
+                            break;
+                        case 'google':
+                            content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                            usage = {
+                                prompt: data.usageMetadata?.promptTokenCount || 0,
+                                completion: data.usageMetadata?.candidatesTokenCount || 0,
+                                total: data.usageMetadata?.totalTokenCount || 0
+                            };
+                            break;
+                    }
+
+                    metaEl.textContent = `${result.latency}ms · ${usage.total} tokens`;
+                    bodyEl.textContent = content;
+                } else {
+                    bodyEl.classList.add('error');
+                    metaEl.textContent = 'Error';
+
+                    let errorMsg = 'Request failed';
+                    if (result.error.type === 'CORS_BLOCKED') {
+                        errorMsg = 'CORS blocked - use a proxy';
+                    } else if (result.error.status === 401) {
+                        errorMsg = 'Invalid API key';
+                    } else if (result.error.status === 429) {
+                        errorMsg = 'Rate limited';
+                    } else if (result.error.message) {
+                        errorMsg = result.error.message;
+                    }
+
+                    bodyEl.textContent = errorMsg;
+                }
+            });
+
+            // Reset button
+            sendBtn.innerHTML = 'Compare Models';
+            sendBtn.disabled = false;
+        }
+
+        // Request Handling
+        async function sendRequest() {
+            dismissError();
+
+            const userMessage = document.getElementById('userMessage').value.trim();
+            if (!userMessage) {
+                showError('EMPTY_PROMPT', 'The User Message field cannot be blank.');
+                return;
+            }
+
+            // Handle compare mode
+            if (compareMode) {
+                if (selectedCompareModels.length < 2) {
+                    showError('COMPARE_MIN', 'Please select at least 2 models to compare.');
+                    return;
+                }
+                await sendCompareRequests();
+                return;
+            }
+
+            const apiKey = sessionStorage.getItem(`llm_switchboard::key::${currentProvider}`);
+            if (!apiKey) {
+                showError('NO_API_KEY', `No API Key Set - You haven't entered an API key for ${currentProvider}.`);
+                return;
+            }
+
+            // For custom provider, get model from custom input and validate config
+            if (currentProvider === 'custom') {
+                currentModel = document.getElementById('customModelName').value.trim();
+                if (!currentModel) {
+                    showError('NO_MODEL', 'Please enter a model name for the custom provider.');
+                    return;
+                }
+                if (!customProviderConfig.endpoint) {
+                    showError('NO_ENDPOINT', 'Please configure the custom provider endpoint in the API Keys section.');
+                    return;
+                }
+            }
+
+            const systemPrompt = document.getElementById('systemPrompt').value;
+            const temperature = parseFloat(document.getElementById('temperature').value);
+            const maxTokens = parseInt(document.getElementById('maxTokens').value);
+
+            // Build schema injection if needed
+            let finalSystemPrompt = systemPrompt;
+            if ((currentOutputMode === 'json' || currentOutputMode === 'table') && currentSchema) {
+                let schemaText;
+                if (currentSchema.id === 'custom') {
+                    schemaText = document.getElementById('customSchema').value;
+                } else if (currentSchema.schema) {
+                    schemaText = JSON.stringify(currentSchema.schema, null, 2);
+                }
+                if (schemaText) {
+                    finalSystemPrompt = `Respond ONLY with a valid JSON object that strictly conforms to the following JSON Schema.
+Do not include any explanation, commentary, or markdown formatting outside the JSON object.
+
+Schema:
+${schemaText}
+
+${systemPrompt}`;
+                }
+            }
+
+            lastRequest = {
+                provider: currentProvider,
+                model: currentModel,
+                systemPrompt,
+                userMessage,
+                temperature,
+                maxTokens
+            };
+
+            saveToHistory(lastRequest);
+
+            // Show loading state
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.innerHTML = '<span class="loading-spinner"></span> Sending...';
+            sendBtn.disabled = true;
+
+            // Clear previous response and show loading
+            const contentEl = document.getElementById('responseContent');
+            contentEl.innerHTML = `<div class="empty-state">
+                <span class="loading-spinner" style="width: 32px; height: 32px;"></span>
+                <div class="empty-state-text" style="margin-top: 1rem;">Waiting for response...</div>
+            </div>`;
+            document.getElementById('responseMeta').style.display = 'none';
+            document.getElementById('responseActions').style.display = 'none';
+
+            const startTime = performance.now();
+
+            try {
+                const response = await makeApiCall(currentProvider, currentModel, finalSystemPrompt, userMessage, temperature, maxTokens, apiKey);
+                const latency = Math.round(performance.now() - startTime);
+
+                lastResponse = response;
+                displayResponse(response, latency);
+            } catch (error) {
+                handleApiError(error);
+                // Show error state
+                contentEl.innerHTML = `<div class="empty-state">
+                    <div class="empty-state-icon" style="color: var(--error-color);">&#9888;</div>
+                    <div class="empty-state-text">Request failed. Check the error above.</div>
+                </div>`;
+            } finally {
+                sendBtn.innerHTML = 'Send Request';
+                sendBtn.disabled = false;
+            }
+        }
+
+        async function makeApiCall(provider, model, systemPrompt, userMessage, temperature, maxTokens, apiKey) {
+            const settings = JSON.parse(localStorage.getItem('llm_switchboard::settings') || '{}');
+            const timeout = (settings.timeout || 30) * 1000;
+            const proxyUrl = settings.proxy;
+
+            let url, headers, body;
+
+            switch (provider) {
+                case 'anthropic':
+                    url = proxyUrl || 'https://api.anthropic.com/v1/messages';
+                    headers = {
+                        'Content-Type': 'application/json',
+                        'x-api-key': apiKey,
+                        'anthropic-version': '2023-06-01'
+                    };
+                    body = {
+                        model,
+                        max_tokens: maxTokens,
+                        messages: [{ role: 'user', content: userMessage }]
+                    };
+                    if (systemPrompt) body.system = systemPrompt;
+                    break;
+
+                case 'openai':
+                    url = proxyUrl || 'https://api.openai.com/v1/chat/completions';
+                    headers = {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    };
+                    body = {
+                        model,
+                        max_tokens: maxTokens,
+                        temperature,
+                        messages: []
+                    };
+                    if (systemPrompt) body.messages.push({ role: 'system', content: systemPrompt });
+                    body.messages.push({ role: 'user', content: userMessage });
+                    break;
+
+                case 'google':
+                    url = proxyUrl || `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+                    headers = { 'Content-Type': 'application/json' };
+                    body = {
+                        contents: [{ parts: [{ text: userMessage }] }],
+                        generationConfig: { maxOutputTokens: maxTokens, temperature }
+                    };
+                    if (systemPrompt) {
+                        body.systemInstruction = { parts: [{ text: systemPrompt }] };
+                    }
+                    break;
+
+                case 'meta':
+                    url = proxyUrl || 'https://api.groq.com/openai/v1/chat/completions';
+                    headers = {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    };
+                    body = {
+                        model,
+                        max_tokens: maxTokens,
+                        temperature,
+                        messages: []
+                    };
+                    if (systemPrompt) body.messages.push({ role: 'system', content: systemPrompt });
+                    body.messages.push({ role: 'user', content: userMessage });
+                    break;
+
+                case 'mistral':
+                    url = proxyUrl || 'https://api.mistral.ai/v1/chat/completions';
+                    headers = {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    };
+                    body = {
+                        model,
+                        max_tokens: maxTokens,
+                        temperature,
+                        messages: []
+                    };
+                    if (systemPrompt) body.messages.push({ role: 'system', content: systemPrompt });
+                    body.messages.push({ role: 'user', content: userMessage });
+                    break;
+
+                case 'custom':
+                    url = proxyUrl || customProviderConfig.endpoint;
+                    if (!url) {
+                        throw { type: 'NO_ENDPOINT', message: 'No custom endpoint configured' };
+                    }
+
+                    // Build headers based on format
+                    headers = {
+                        'Content-Type': 'application/json',
+                        ...customProviderConfig.headers
+                    };
+
+                    // Build request based on selected API format
+                    switch (customProviderConfig.format) {
+                        case 'anthropic':
+                            headers['x-api-key'] = apiKey;
+                            headers['anthropic-version'] = '2023-06-01';
+                            body = {
+                                model,
+                                max_tokens: maxTokens,
+                                messages: [{ role: 'user', content: userMessage }]
+                            };
+                            if (systemPrompt) body.system = systemPrompt;
+                            break;
+
+                        case 'google':
+                            // Append key to URL for Google format
+                            if (!url.includes('key=')) {
+                                url += (url.includes('?') ? '&' : '?') + `key=${apiKey}`;
+                            }
+                            body = {
+                                contents: [{ parts: [{ text: userMessage }] }],
+                                generationConfig: { maxOutputTokens: maxTokens, temperature }
+                            };
+                            if (systemPrompt) {
+                                body.systemInstruction = { parts: [{ text: systemPrompt }] };
+                            }
+                            break;
+
+                        case 'openai':
+                        default:
+                            headers['Authorization'] = `Bearer ${apiKey}`;
+                            body = {
+                                model,
+                                max_tokens: maxTokens,
+                                temperature,
+                                messages: []
+                            };
+                            if (systemPrompt) body.messages.push({ role: 'system', content: systemPrompt });
+                            body.messages.push({ role: 'user', content: userMessage });
+                            break;
+                    }
+                    break;
+            }
+
+            // Store request payload for display
+            document.getElementById('requestPayload').textContent = JSON.stringify({
+                url,
+                headers: { ...headers, Authorization: '[REDACTED]', 'x-api-key': '[REDACTED]' },
+                body
+            }, null, 2);
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(body),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw { status: response.status, data: errorData, provider };
+                }
+
+                const data = await response.json();
+                return { provider, model, data };
+            } catch (error) {
+                clearTimeout(timeoutId);
+                if (error.name === 'AbortError') {
+                    throw { type: 'NETWORK_TIMEOUT', timeout: timeout / 1000 };
+                }
+                if (error.message === 'Failed to fetch') {
+                    throw { type: 'CORS_BLOCKED', provider };
+                }
+                throw error;
+            }
+        }
+
+        function handleApiError(error) {
+            let errorId = 'UNKNOWN_ERROR';
+            let message = 'An unexpected error occurred.';
+
+            if (error.type === 'NO_ENDPOINT') {
+                errorId = 'NO_ENDPOINT';
+                message = 'No endpoint configured - Please configure the custom provider endpoint URL in the API Keys section.';
+            } else if (error.type === 'NETWORK_TIMEOUT') {
+                errorId = 'NETWORK_TIMEOUT';
+                message = `Request Timed Out - No response was received within ${error.timeout}s. Check your internet connection or try again.`;
+            } else if (error.type === 'CORS_BLOCKED') {
+                errorId = 'CORS_BLOCKED';
+                message = `Request Blocked - The browser's CORS policy blocked this request. ${error.provider === 'custom' ? 'The custom API' : error.provider + "'s API"} may not support direct browser requests. Configure a proxy URL in Settings to route requests through your own backend.`;
+            } else if (error.status === 401) {
+                errorId = 'AUTH_INVALID_KEY';
+                message = `Invalid API Key - The key provided for ${error.provider} was rejected. Please check that the key is correct and has not been revoked.`;
+                updateKeyStatus(error.provider, 'invalid');
+            } else if (error.status === 403) {
+                errorId = 'AUTH_INSUFFICIENT_PERMISSIONS';
+                message = `Access Denied - Your API key does not have permission to use this model or endpoint.`;
+            } else if (error.status === 429) {
+                errorId = 'RATE_LIMIT_REQUESTS';
+                message = `Too Many Requests - You've exceeded the request rate limit. Wait a moment before retrying.`;
+            } else if (error.status === 400) {
+                errorId = 'INVALID_REQUEST_BODY';
+                message = `Bad Request - ${error.data?.error?.message || 'The request was malformed.'}`;
+            } else if (error.status >= 500) {
+                errorId = 'PROVIDER_SERVER_ERROR';
+                message = `Provider Error - The API returned an internal server error. Please retry in a few moments.`;
+            }
+
+            showError(errorId, message);
+        }
+
+        function displayResponse(response, latency) {
+            const { provider, model, data } = response;
+
+            // Extract content and usage based on provider
+            let content = '';
+            let usage = { prompt: 0, completion: 0, total: 0 };
+
+            // For custom provider, determine format from config
+            let effectiveProvider = provider;
+            if (provider === 'custom') {
+                effectiveProvider = customProviderConfig.format || 'openai';
+            }
+
+            switch (effectiveProvider) {
+                case 'anthropic':
+                    content = data.content?.[0]?.text || '';
+                    usage = {
+                        prompt: data.usage?.input_tokens || 0,
+                        completion: data.usage?.output_tokens || 0,
+                        total: (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0)
+                    };
+                    break;
+                case 'openai':
+                case 'meta':
+                case 'mistral':
+                    content = data.choices?.[0]?.message?.content || '';
+                    usage = {
+                        prompt: data.usage?.prompt_tokens || 0,
+                        completion: data.usage?.completion_tokens || 0,
+                        total: data.usage?.total_tokens || 0
+                    };
+                    break;
+                case 'google':
+                    content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                    usage = {
+                        prompt: data.usageMetadata?.promptTokenCount || 0,
+                        completion: data.usageMetadata?.candidatesTokenCount || 0,
+                        total: data.usageMetadata?.totalTokenCount || 0
+                    };
+                    break;
+            }
+
+            // Update metadata
+            document.getElementById('responseMeta').style.display = 'flex';
+            document.getElementById('responseActions').style.display = 'flex';
+
+            const modelBadge = document.getElementById('responseModel');
+            modelBadge.textContent = model;
+            modelBadge.className = `model-badge ${provider}`;
+
+            document.getElementById('responseLatency').textContent = `${latency}ms`;
+            document.getElementById('responseTokens').textContent =
+                `${usage.prompt} / ${usage.completion} / ${usage.total}`;
+
+            // Render content based on output mode
+            const contentEl = document.getElementById('responseContent');
+
+            switch (currentOutputMode) {
+                case 'text':
+                    contentEl.innerHTML = `<pre>${escapeHtml(content)}</pre>`;
+                    break;
+                case 'json':
+                    try {
+                        const json = JSON.parse(content);
+                        contentEl.innerHTML = `<div class="json-tree">${renderJsonTree(json)}</div>`;
+                    } catch (e) {
+                        contentEl.innerHTML = `
+                            <div style="padding: 1rem;">
+                                <div class="error-banner show" style="margin-bottom: 1rem;">
+                                    <div class="error-title">&#9888; Response Parse Error</div>
+                                    <div class="error-message">The model returned a response that could not be parsed as valid JSON.</div>
+                                </div>
+                                <pre>${escapeHtml(content)}</pre>
+                            </div>`;
+                    }
+                    break;
+                case 'table':
+                    try {
+                        const json = JSON.parse(content);
+                        const arr = Array.isArray(json) ? json : [json];
+                        contentEl.innerHTML = renderTable(arr);
+                    } catch (e) {
+                        contentEl.innerHTML = `<pre>${escapeHtml(content)}</pre>`;
+                    }
+                    break;
+                case 'markdown':
+                    contentEl.innerHTML = `<div class="markdown-content">${renderMarkdown(content)}</div>`;
+                    break;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function renderJsonTree(obj, indent = 0) {
+            if (obj === null) return '<span class="json-null">null</span>';
+            if (typeof obj === 'boolean') return `<span class="json-boolean">${obj}</span>`;
+            if (typeof obj === 'number') return `<span class="json-number">${obj}</span>`;
+            if (typeof obj === 'string') return `<span class="json-string">"${escapeHtml(obj)}"</span>`;
+
+            if (Array.isArray(obj)) {
+                if (obj.length === 0) return '[]';
+                const items = obj.map(item => '  '.repeat(indent + 1) + renderJsonTree(item, indent + 1)).join(',\n');
+                return `[\n${items}\n${'  '.repeat(indent)}]`;
+            }
+
+            if (typeof obj === 'object') {
+                const keys = Object.keys(obj);
+                if (keys.length === 0) return '{}';
+                const items = keys.map(key =>
+                    `${'  '.repeat(indent + 1)}<span class="json-key">"${escapeHtml(key)}"</span>: ${renderJsonTree(obj[key], indent + 1)}`
+                ).join(',\n');
+                return `{\n${items}\n${'  '.repeat(indent)}}`;
+            }
+
+            return String(obj);
+        }
+
+        function renderTable(arr) {
+            if (!arr.length) return '<p>No data</p>';
+
+            const headers = [...new Set(arr.flatMap(obj => Object.keys(obj)))];
+
+            return `
+                <table class="response-table">
+                    <thead>
+                        <tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr>
+                    </thead>
+                    <tbody>
+                        ${arr.map(row => `
+                            <tr>${headers.map(h => `<td>${escapeHtml(String(row[h] ?? ''))}</td>`).join('')}</tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
+        }
+
+        function renderMarkdown(text) {
+            // Basic markdown rendering
+            return text
+                .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+                .replace(/^\- (.*$)/gm, '<li>$1</li>')
+                .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/^(.+)$/gm, (m) => m.startsWith('<') ? m : `<p>${m}</p>`);
+        }
+
+        function copyResponse() {
+            const content = document.getElementById('responseContent').textContent;
+            navigator.clipboard.writeText(content);
+        }
+
+        function downloadResponse() {
+            const content = document.getElementById('responseContent').textContent;
+            const extensions = { text: 'txt', json: 'json', table: 'csv', markdown: 'md' };
+            const ext = extensions[currentOutputMode] || 'txt';
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `response.${ext}`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function rerunRequest() {
+            if (lastRequest) {
+                document.getElementById('systemPrompt').value = lastRequest.systemPrompt;
+                document.getElementById('userMessage').value = lastRequest.userMessage;
+                document.getElementById('temperature').value = lastRequest.temperature;
+                document.getElementById('tempDisplay').textContent = lastRequest.temperature.toFixed(1);
+                document.getElementById('maxTokens').value = lastRequest.maxTokens;
+                sendRequest();
+            }
+        }
+
+        function toggleRequestMetadata() {
+            document.getElementById('requestMetadata').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>
