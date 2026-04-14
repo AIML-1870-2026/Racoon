@@ -201,6 +201,11 @@
             border-color: var(--accent-color);
         }
 
+        .api-key-input {
+            -webkit-text-security: disc;
+            text-security: disc;
+        }
+
         textarea {
             resize: vertical;
             min-height: 80px;
@@ -662,7 +667,7 @@
                     <div class="form-group">
                         <label>OpenAI API Key</label>
                         <div class="api-key-row">
-                            <input type="password" id="apiKeyInput" placeholder="sk-..." autocomplete="off">
+                            <input type="text" id="apiKeyInput" class="api-key-input" placeholder="sk-..." autocomplete="off">
                             <span class="status-badge no-key" id="keyStatus">No key</span>
                         </div>
                     </div>
